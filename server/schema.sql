@@ -14,6 +14,9 @@ CREATE INDEX IF NOT EXISTS idx_properties_created_at ON properties(created_at DE
 CREATE INDEX IF NOT EXISTS idx_properties_type ON properties(type);
 CREATE INDEX IF NOT EXISTS idx_properties_is_active ON properties(is_active);
 
+-- Composite index for sorting: active properties first, then by creation date
+CREATE INDEX IF NOT EXISTS idx_properties_active_created ON properties(is_active DESC, created_at DESC);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
 

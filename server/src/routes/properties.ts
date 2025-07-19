@@ -115,18 +115,30 @@ properties.get("/", async (c): Promise<Response> => {
   try {
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
-      // Return mock data for testing
+      // Sort mock data: active properties first, then by creation date (newest first)
+      const sortedMockProperties = mockProperties.sort((a, b) => {
+        // First sort by active status (active first)
+        if (a.isActive !== b.isActive) {
+          return b.isActive ? 1 : -1; // Active properties come first
+        }
+        // Then sort by creation date (newest first)
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+
       return c.json({
         message: "Properties fetched successfully (mock mode)",
         success: true,
-        data: mockProperties,
+        data: sortedMockProperties,
       });
     }
 
     const { data, error } = await supabase!
       .from("properties")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("is_active", { ascending: false }) // Active properties first
+      .order("created_at", { ascending: false }); // Then by creation date (newest first)
 
     if (error) {
       console.error("Supabase error:", error);

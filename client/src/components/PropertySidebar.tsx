@@ -24,7 +24,6 @@ export default function PropertySidebar({
   const { selectedProperty, setSelectedProperty } = useSelectedProperty();
   const { properties, propertySummaries, isLoading, error } =
     usePropertySidebar();
-  console.log("🚀 ~ properties:", properties);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -94,26 +93,24 @@ export default function PropertySidebar({
             <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
           </button>
 
-          {properties
-            .filter((p) => p.isActive)
-            .map((property) => (
-              <button
-                key={property.id}
-                onClick={() => setSelectedProperty(property.id)}
-                className={`w-full p-3 rounded-lg transition-colors ${
-                  selectedProperty === property.id
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-                title={property.name}
-              >
-                {property.type === "residential" ? (
-                  <FiHome className="mx-auto w-5 h-5" />
-                ) : (
-                  <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
-                )}
-              </button>
-            ))}
+          {properties.map((property) => (
+            <button
+              key={property.id}
+              onClick={() => setSelectedProperty(property.id)}
+              className={`w-full p-3 rounded-lg transition-colors ${
+                selectedProperty === property.id
+                  ? "bg-blue-100 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+              title={property.name}
+            >
+              {property.type === "residential" ? (
+                <FiHome className="mx-auto w-5 h-5" />
+              ) : (
+                <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
+              )}
+            </button>
+          ))}
         </div>
 
         <div className="p-2 border-t border-gray-200">

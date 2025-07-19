@@ -58,7 +58,7 @@ Create a new property.
 
 #### GET /properties
 
-Get all properties.
+Get all properties. Properties are sorted with active properties first, then inactive properties. Within each group, properties are sorted by creation date (newest first).
 
 **Response:**
 
@@ -80,9 +80,14 @@ Get all properties.
 }
 ```
 
+**Sorting Order:**
+
+1. Active properties (newest first)
+2. Inactive properties (newest first)
+
 ## Database Setup
 
-Run the SQL commands in `schema.sql` in your Supabase SQL editor to create the properties table.
+Run the SQL commands in `schema.sql` in your Supabase SQL editor to create the properties table and indexes for optimal performance.
 
 ## Environment Variables
 
