@@ -1,42 +1,43 @@
 import React, { useState } from "react";
-import { FiPlus, FiX } from "react-icons/fi";
+import { FiPlus, FiX, FiLoader } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { FiMapPin } from "react-icons/fi";
-import { Property } from "../types";
+import { useCreateProperty } from "../hooks/useProperties";
+import type { CreatePropertyRequest } from "shared";
 
 interface PropertyFormProps {
-  onAddProperty: (property: Omit<Property, "id" | "createdAt">) => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PropertyForm({
-  onAddProperty,
-  isOpen,
-  onClose,
-}: PropertyFormProps) {
-  const [formData, setFormData] = useState({
+export default function PropertyForm({ isOpen, onClose }: PropertyFormProps) {
+  const createPropertyMutation = useCreateProperty();
+  const [formData, setFormData] = useState<CreatePropertyRequest>({
     name: "",
     address: "",
-    type: "residential" as "residential" | "commercial",
+    type: "residential",
     units: 1,
     isActive: true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.address) return;
 
-    onAddProperty(formData);
+    try {
+      await createPropertyMutation.mutateAsync(formData);
 
-    setFormData({
-      name: "",
-      address: "",
-      type: "residential",
-      units: 1,
-      isActive: true,
-    });
-    onClose();
+      setFormData({
+        name: "",
+        address: "",
+        type: "residential",
+        units: 1,
+        isActive: true,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to create property:", error);
+    }
   };
 
   if (!isOpen) return null;
@@ -55,7 +56,8 @@ export default function PropertyForm({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 hover:bg-gray-100"
+            disabled={createPropertyMutation.isPending}
+            className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 hover:bg-gray-100 disabled:opacity-50"
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -75,6 +77,7 @@ export default function PropertyForm({
               className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="e.g., Greenview Executive Village Apartments"
               required
+              disabled={createPropertyMutation.isPending}
             />
           </div>
 
@@ -93,6 +96,7 @@ export default function PropertyForm({
                 className="py-2 pr-4 pl-10 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="123 Main Street, City, State"
                 required
+                disabled={createPropertyMutation.isPending}
               />
             </div>
           </div>
@@ -111,6 +115,7 @@ export default function PropertyForm({
                   }))
                 }
                 className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={createPropertyMutation.isPending}
               >
                 <option value="residential">Residential</option>
                 <option value="commercial">Commercial</option>
@@ -124,14 +129,17 @@ export default function PropertyForm({
               <input
                 type="number"
                 min="1"
-                value={formData.units}
+                value={formData.units || ""}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    units: parseInt(e.target.value) || 1,
+                    units: e.target.value
+                      ? parseInt(e.target.value)
+                      : undefined,
                   }))
                 }
                 className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={createPropertyMutation.isPending}
               />
             </div>
           </div>
@@ -145,6 +153,7 @@ export default function PropertyForm({
                 setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
               }
               className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              disabled={createPropertyMutation.isPending}
             />
             <label
               htmlFor="isActive"
@@ -158,16 +167,27 @@ export default function PropertyForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 rounded-lg border border-gray-300 transition-colors hover:bg-gray-50"
+              disabled={createPropertyMutation.isPending}
+              className="flex-1 px-4 py-2 text-gray-700 rounded-lg border border-gray-300 transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex flex-1 justify-center items-center px-4 py-2 space-x-2 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
+              disabled={createPropertyMutation.isPending}
+              className="flex flex-1 justify-center items-center px-4 py-2 space-x-2 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700 disabled:opacity-50"
             >
-              <FiPlus className="w-4 h-4" />
-              <span>Add Property</span>
+              {createPropertyMutation.isPending ? (
+                <>
+                  <FiLoader className="w-4 h-4 animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <FiPlus className="w-4 h-4" />
+                  <span>Add Property</span>
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -11,7 +11,6 @@ interface AppModalsProps {
   properties: Property[];
   selectedProperty: string;
   onAddTransaction: (transactionData: Omit<Transaction, "id">) => void;
-  onAddProperty: (propertyData: Omit<Property, "id" | "createdAt">) => void;
 }
 
 export default function AppModals({
@@ -23,7 +22,6 @@ export default function AppModals({
   properties,
   selectedProperty,
   onAddTransaction,
-  onAddProperty,
 }: AppModalsProps) {
   return (
     <>
@@ -36,11 +34,7 @@ export default function AppModals({
         onClose={onCloseTransactionForm}
       />
 
-      <PropertyForm
-        onAddProperty={onAddProperty}
-        isOpen={isPropertyFormOpen}
-        onClose={onClosePropertyForm}
-      />
+      <PropertyForm isOpen={isPropertyFormOpen} onClose={onClosePropertyForm} />
     </>
   );
 }

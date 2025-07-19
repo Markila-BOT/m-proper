@@ -1,26 +1,31 @@
-import { FiPlus, FiChevronRight, FiMapPin, FiUsers } from "react-icons/fi";
+import {
+  FiPlus,
+  FiChevronRight,
+  FiMapPin,
+  FiUsers,
+  FiHome,
+} from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import { Property, PropertySummary } from "../types";
+import { useSelectedProperty } from "../hooks/useProperties";
+import { usePropertySidebar } from "../hooks/usePropertySidebar";
+import { PropertySkeleton } from "./ui/property-skeleton";
 
 interface PropertySidebarProps {
-  properties: Property[];
-  selectedProperty: string;
-  onSelectProperty: (propertyId: string) => void;
-  propertySummaries: PropertySummary[];
   onAddProperty: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
 
 export default function PropertySidebar({
-  properties,
-  selectedProperty,
-  onSelectProperty,
-  propertySummaries,
   onAddProperty,
   isCollapsed,
   onToggleCollapse,
 }: PropertySidebarProps) {
+  const { selectedProperty, setSelectedProperty } = useSelectedProperty();
+  const { properties, propertySummaries, isLoading, error } =
+    usePropertySidebar();
+  console.log("🚀 ~ properties:", properties);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -33,6 +38,36 @@ export default function PropertySidebar({
   const getSummaryForProperty = (propertyId: string) => {
     return propertySummaries.find((s) => s.property.id === propertyId);
   };
+
+  // Show loading skeleton
+  if (isLoading) {
+    return <PropertySkeleton count={3} isCollapsed={isCollapsed} />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col w-80 bg-white border-r border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
+            <button
+              onClick={onToggleCollapse}
+              className="p-2 text-gray-500 rounded-lg transition-colors hover:text-gray-700 hover:bg-gray-100"
+            >
+              <FiChevronRight className="w-5 h-5 transform rotate-180" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 p-6">
+          <div className="text-center text-red-600">
+            <p>Error loading properties</p>
+            <p className="mt-2 text-sm text-gray-500">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isCollapsed) {
     return (
@@ -48,7 +83,7 @@ export default function PropertySidebar({
 
         <div className="flex-1 p-2 space-y-2">
           <button
-            onClick={() => onSelectProperty("all")}
+            onClick={() => setSelectedProperty("all")}
             className={`w-full p-3 rounded-lg transition-colors ${
               selectedProperty === "all"
                 ? "bg-blue-100 text-blue-700"
@@ -64,7 +99,7 @@ export default function PropertySidebar({
             .map((property) => (
               <button
                 key={property.id}
-                onClick={() => onSelectProperty(property.id)}
+                onClick={() => setSelectedProperty(property.id)}
                 className={`w-full p-3 rounded-lg transition-colors ${
                   selectedProperty === property.id
                     ? "bg-blue-100 text-blue-700"
@@ -72,7 +107,11 @@ export default function PropertySidebar({
                 }`}
                 title={property.name}
               >
-                <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
+                {property.type === "residential" ? (
+                  <FiHome className="mx-auto w-5 h-5" />
+                ) : (
+                  <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
+                )}
               </button>
             ))}
         </div>
@@ -116,7 +155,7 @@ export default function PropertySidebar({
       {/* All Properties Option */}
       <div className="p-4 border-b border-gray-200">
         <button
-          onClick={() => onSelectProperty("all")}
+          onClick={() => setSelectedProperty("all")}
           className={`w-full p-4 rounded-xl border-2 transition-all ${
             selectedProperty === "all"
               ? "border-blue-500 bg-blue-50"
@@ -146,104 +185,108 @@ export default function PropertySidebar({
       {/* Properties List */}
       <div className="overflow-y-auto flex-1">
         <div className="p-4 space-y-3">
-          {properties
-            .filter((p) => p.isActive)
-            .map((property) => {
-              const summary = getSummaryForProperty(property.id);
-              const isSelected = selectedProperty === property.id;
+          {properties.map((property) => {
+            const summary = getSummaryForProperty(property.id);
+            const isSelected = selectedProperty === property.id;
 
-              return (
-                <button
-                  key={property.id}
-                  onClick={() => onSelectProperty(property.id)}
-                  className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                    isSelected
-                      ? "bg-blue-50 border-blue-500"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="space-y-3">
-                    {/* Property Header */}
-                    <div className="flex items-start space-x-3">
-                      <div
-                        className={`p-2 rounded-lg flex-shrink-0 ${
-                          isSelected ? "bg-blue-100" : "bg-gray-100"
-                        }`}
-                      >
+            return (
+              <button
+                key={property.id}
+                onClick={() => setSelectedProperty(property.id)}
+                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                  isSelected
+                    ? "bg-blue-50 border-blue-500"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                <div className="space-y-3">
+                  {/* Property Header */}
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`p-2 rounded-lg flex-shrink-0 ${
+                        isSelected ? "bg-blue-100" : "bg-gray-100"
+                      }`}
+                    >
+                      {property.type === "residential" ? (
+                        <FiHome
+                          className={`w-5 h-5 ${
+                            isSelected ? "text-blue-600" : "text-gray-600"
+                          }`}
+                        />
+                      ) : (
                         <HiOutlineOfficeBuilding
                           className={`w-5 h-5 ${
                             isSelected ? "text-blue-600" : "text-gray-600"
                           }`}
                         />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {property.name}
-                        </h3>
-                        <div className="flex items-center mt-1 space-x-1 text-xs text-gray-500">
-                          <FiMapPin className="w-3 h-3" />
-                          <span className="truncate">{property.address}</span>
-                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {property.name}
+                      </h3>
+                      <div className="flex items-center mt-1 space-x-1 text-xs text-gray-500">
+                        <FiMapPin className="w-3 h-3" />
+                        <span className="truncate">{property.address}</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Property Details */}
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center space-x-1 text-gray-500">
-                        <FiUsers className="w-3 h-3" />
-                        <span>
-                          {property.units}{" "}
-                          {property.units === 1 ? "unit" : "units"}
-                        </span>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          property.type === "residential"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-purple-100 text-purple-700"
-                        }`}
-                      >
-                        {property.type}
+                  {/* Property Details */}
+                  <div className="flex justify-between items-center text-xs">
+                    <div className="flex items-center space-x-1 text-gray-500">
+                      <FiUsers className="w-3 h-3" />
+                      <span>
+                        {property.units}{" "}
+                        {property.units === 1 ? "unit" : "units"}
                       </span>
                     </div>
-
-                    {/* Financial Summary */}
-                    {summary && (
-                      <div className="pt-2 space-y-2 border-t border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">
-                            Net Profit
-                          </span>
-                          <span
-                            className={`text-sm font-semibold ${
-                              summary.netProfit >= 0
-                                ? "text-emerald-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {formatCurrency(summary.netProfit)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-emerald-600">
-                            Income
-                          </span>
-                          <span className="text-xs font-medium text-emerald-600">
-                            {formatCurrency(summary.totalIncome)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-red-600">Expenses</span>
-                          <span className="text-xs font-medium text-red-600">
-                            {formatCurrency(summary.totalExpenses)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        property.type === "residential"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
+                    >
+                      {property.type}
+                    </span>
                   </div>
-                </button>
-              );
-            })}
+
+                  {/* Financial Summary */}
+                  {summary && (
+                    <div className="pt-2 space-y-2 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                          Net Profit
+                        </span>
+                        <span
+                          className={`text-sm font-semibold ${
+                            summary.netProfit >= 0
+                              ? "text-emerald-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {formatCurrency(summary.netProfit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-emerald-600">Income</span>
+                        <span className="text-xs font-medium text-emerald-600">
+                          {formatCurrency(summary.totalIncome)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-red-600">Expenses</span>
+                        <span className="text-xs font-medium text-red-600">
+                          {formatCurrency(summary.totalExpenses)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

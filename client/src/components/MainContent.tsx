@@ -1,16 +1,18 @@
-import { Transaction, Category, Property } from "../types";
+import { Transaction, Category } from "../types";
 import Summary from "./Summary";
 import FilterControls from "./FilterControls";
 import TransactionList from "./TransactionList";
 import PropertiesList from "./PropertiesList";
+import {
+  useSelectedProperty,
+  usePropertiesWithStates,
+} from "../hooks/useProperties";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
 interface MainContentProps {
   activeTab: TabType;
   filteredTransactions: Transaction[];
-  properties: Property[];
-  selectedProperty: string;
   onDeleteTransaction: (id: string) => void;
   // Filter controls props
   searchTerm: string;
@@ -22,14 +24,11 @@ interface MainContentProps {
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
   categories: Category[];
-  onPropertyChange: (propertyId: string) => void;
 }
 
 export default function MainContent({
   activeTab,
   filteredTransactions,
-  properties,
-  selectedProperty,
   onDeleteTransaction,
   searchTerm,
   onSearchChange,
@@ -40,8 +39,10 @@ export default function MainContent({
   dateRange,
   onDateRangeChange,
   categories,
-  onPropertyChange,
 }: MainContentProps) {
+  const { selectedProperty, setSelectedProperty } = useSelectedProperty();
+  const { properties } = usePropertiesWithStates();
+
   return (
     <main className="flex-1">
       {activeTab === "overview" && (
@@ -69,7 +70,7 @@ export default function MainContent({
             properties={properties}
             selectedProperty={selectedProperty}
             showPropertyFilter={selectedProperty === "all"}
-            onPropertyChange={onPropertyChange}
+            onPropertyChange={setSelectedProperty}
           />
           <TransactionList
             transactions={filteredTransactions}

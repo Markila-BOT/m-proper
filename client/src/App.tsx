@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Transaction, Property } from "./types";
+import { Transaction } from "./types";
 import {
   AppLayout,
   AppHeader,
@@ -7,26 +7,20 @@ import {
   MainContent,
   AppModals,
 } from "./components";
+import { useLocalStorage, useTransactionFilters, useCSVExport } from "./hooks";
 import {
-  useLocalStorage,
-  useTransactionFilters,
-  usePropertySummaries,
-  useCSVExport,
-} from "./hooks";
+  useSelectedProperty,
+  usePropertiesWithStates,
+} from "./hooks/useProperties";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
 function App() {
   // Local storage management
-  const {
-    transactions,
-    setTransactions,
-    categories,
-    properties,
-    setProperties,
-    selectedProperty,
-    setSelectedProperty,
-  } = useLocalStorage();
+  const { transactions, setTransactions, categories } = useLocalStorage();
+
+  const { selectedProperty } = useSelectedProperty();
+  const { properties } = usePropertiesWithStates();
 
   // UI state
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
@@ -47,9 +41,6 @@ function App() {
     filteredTransactions,
   } = useTransactionFilters(transactions, selectedProperty);
 
-  // Property summaries
-  const propertySummaries = usePropertySummaries(properties, transactions);
-
   // CSV export
   const { exportToCSV } = useCSVExport();
 
@@ -60,15 +51,6 @@ function App() {
       id: Date.now().toString(),
     };
     setTransactions((prev) => [newTransaction, ...prev]);
-  };
-
-  const addProperty = (propertyData: Omit<Property, "id" | "createdAt">) => {
-    const newProperty: Property = {
-      ...propertyData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setProperties((prev) => [newProperty, ...prev]);
   };
 
   const deleteTransaction = (id: string) => {
@@ -101,10 +83,6 @@ function App() {
 
   return (
     <AppLayout
-      properties={properties}
-      selectedProperty={selectedProperty}
-      onSelectProperty={setSelectedProperty}
-      propertySummaries={propertySummaries}
       onAddProperty={handleAddProperty}
       isSidebarCollapsed={isSidebarCollapsed}
       onToggleSidebar={handleToggleSidebar}
@@ -117,8 +95,6 @@ function App() {
       <MainContent
         activeTab={activeTab}
         filteredTransactions={filteredTransactions}
-        properties={properties}
-        selectedProperty={selectedProperty}
         onDeleteTransaction={deleteTransaction}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -129,7 +105,6 @@ function App() {
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
         categories={categories}
-        onPropertyChange={setSelectedProperty}
       />
       <AppModals
         isTransactionFormOpen={isTransactionFormOpen}
@@ -140,7 +115,6 @@ function App() {
         properties={properties}
         selectedProperty={selectedProperty}
         onAddTransaction={addTransaction}
-        onAddProperty={addProperty}
       />
     </AppLayout>
   );

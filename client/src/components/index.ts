@@ -13,3 +13,6 @@ export { default as TransactionList } from "./TransactionList";
 export { default as Summary } from "./Summary";
 export { default as FilterControls } from "./FilterControls";
 export { default as PropertiesList } from "./PropertiesList";
+
+// UI components
+export { PropertySkeleton } from "./ui/property-skeleton";
