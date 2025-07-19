@@ -21,13 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import {
-  FiPlus,
-  FiHome,
-  FiBriefcase,
-  FiLoader,
-  FiAlertCircle,
-} from "react-icons/fi";
+import { FiPlus, FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
+import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import type { CreatePropertyRequest } from "shared";
 
 export default function PropertiesList() {
@@ -72,9 +67,9 @@ export default function PropertiesList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex justify-center items-center p-8">
         <div className="flex items-center space-x-2">
-          <FiLoader className="w-5 h-5 animate-spin text-blue-600" />
+          <FiLoader className="w-5 h-5 text-blue-600 animate-spin" />
           <span className="text-gray-600">Loading properties...</span>
         </div>
       </div>
@@ -83,7 +78,7 @@ export default function PropertiesList() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex justify-center items-center p-8">
         <div className="flex items-center space-x-2 text-red-600">
           <FiAlertCircle className="w-5 h-5" />
           <span>Error loading properties: {error.message}</span>
@@ -180,7 +175,7 @@ export default function PropertiesList() {
                 <Label htmlFor="isActive">Active Property</Label>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
+              <div className="flex justify-end pt-4 space-x-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -194,7 +189,7 @@ export default function PropertiesList() {
                 >
                   {createPropertyMutation.isPending ? (
                     <>
-                      <FiLoader className="w-4 h-4 animate-spin mr-2" />
+                      <FiLoader className="mr-2 w-4 h-4 animate-spin" />
                       Creating...
                     </>
                   ) : (
@@ -209,35 +204,35 @@ export default function PropertiesList() {
 
       {isEmpty ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <FiHome className="w-12 h-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <CardContent className="flex flex-col justify-center items-center p-8">
+            <FiHome className="mb-4 w-12 h-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900">
               No properties found
             </h3>
-            <p className="text-gray-500 text-center mb-4">
+            <p className="mb-4 text-center text-gray-500">
               Get started by adding your first property to track income and
               expenses.
             </p>
             <Button onClick={() => setIsDialogOpen(true)}>
-              <FiPlus className="w-4 h-4 mr-2" />
+              <FiPlus className="mr-2 w-4 h-4" />
               Add Property
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
             <Card
               key={property.id}
-              className="hover:shadow-md transition-shadow"
+              className="transition-shadow hover:shadow-md"
             >
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     {property.type === "residential" ? (
                       <FiHome className="w-5 h-5 text-blue-600" />
                     ) : (
-                      <FiBriefcase className="w-5 h-5 text-green-600" />
+                      <HiOutlineOfficeBuilding className="w-5 h-5 text-green-600" />
                     )}
                     <CardTitle className="text-lg">{property.name}</CardTitle>
                   </div>
@@ -255,7 +250,7 @@ export default function PropertiesList() {
               <CardContent>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">{property.address}</p>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500">Type: {property.type}</span>
                     {property.units && (
                       <span className="text-gray-500">
