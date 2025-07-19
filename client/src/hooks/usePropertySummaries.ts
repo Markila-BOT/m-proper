@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Transaction, Property, PropertySummary } from "../types";
+import { TRANSACTION_TYPE } from "shared";
 
 export function usePropertySummaries(
   properties: Property[],
@@ -12,10 +13,10 @@ export function usePropertySummaries(
         (t) => t.property === property.id
       );
       const totalIncome = propertyTransactions
-        .filter((t) => t.type === "income")
+        .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
         .reduce((sum, t) => sum + t.amount, 0);
       const totalExpenses = propertyTransactions
-        .filter((t) => t.type === "expense")
+        .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
         .reduce((sum, t) => sum + t.amount, 0);
 
       return {

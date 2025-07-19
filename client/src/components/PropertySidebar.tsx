@@ -10,11 +10,12 @@ import { useSelectedProperty } from "../hooks/useProperties";
 import { usePropertySidebar } from "../hooks/usePropertySidebar";
 import { PropertySkeleton } from "./ui/property-skeleton";
 import PropertyModal from "./PropertyModal";
+import { PROPERTY_TYPE } from "shared";
 
-interface PropertySidebarProps {
+type PropertySidebarProps = {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-}
+};
 
 export default function PropertySidebar({
   isCollapsed,
@@ -103,7 +104,7 @@ export default function PropertySidebar({
               }`}
               title={property.name}
             >
-              {property.type === "residential" ? (
+              {property.type === PROPERTY_TYPE.RESIDENTIAL ? (
                 <FiHome className="mx-auto w-5 h-5" />
               ) : (
                 <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
@@ -203,7 +204,7 @@ export default function PropertySidebar({
                         isSelected ? "bg-blue-100" : "bg-gray-100"
                       }`}
                     >
-                      {property.type === "residential" ? (
+                      {property.type === PROPERTY_TYPE.RESIDENTIAL ? (
                         <FiHome
                           className={`w-5 h-5 ${
                             isSelected ? "text-blue-600" : "text-gray-600"
@@ -239,7 +240,7 @@ export default function PropertySidebar({
                     </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        property.type === "residential"
+                        property.type === PROPERTY_TYPE.RESIDENTIAL
                           ? "bg-green-100 text-green-700"
                           : "bg-purple-100 text-purple-700"
                       }`}

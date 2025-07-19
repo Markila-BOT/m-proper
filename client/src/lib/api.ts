@@ -7,11 +7,11 @@ import type {
 const API_BASE_URL = "http://localhost:3000";
 
 // Generic API response type
-interface ApiResponse<T = unknown> {
+type ApiResponse<T = unknown> = {
   message: string;
   success: boolean;
   data?: T;
-}
+};
 
 // Properties API
 export const propertiesApi = {

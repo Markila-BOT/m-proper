@@ -1,14 +1,14 @@
 import { Transaction, Category, Property } from "../types";
 import TransactionForm from "./TransactionForm";
 
-interface AppModalsProps {
+type AppModalsProps = {
   isTransactionFormOpen: boolean;
   onCloseTransactionForm: () => void;
   categories: Category[];
   properties: Property[];
   selectedProperty: string;
   onAddTransaction: (transactionData: Omit<Transaction, "id">) => void;
-}
+};
 
 export default function AppModals({
   isTransactionFormOpen,

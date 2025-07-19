@@ -1,12 +1,13 @@
 import { FiTrash2, FiCalendar, FiTag } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { Transaction, Property } from "../types";
+import { TRANSACTION_TYPE } from "shared";
 
-interface TransactionListProps {
+type TransactionListProps = {
   transactions: Transaction[];
   properties: Property[];
   onDeleteTransaction: (id: string) => void;
-}
+};
 
 export default function TransactionList({
   transactions,
@@ -70,7 +71,7 @@ export default function TransactionList({
                   </h3>
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      transaction.type === "income"
+                      transaction.type === TRANSACTION_TYPE.INCOME
                         ? "bg-emerald-100 text-emerald-800"
                         : "bg-red-100 text-red-800"
                     }`}
@@ -96,12 +97,12 @@ export default function TransactionList({
               <div className="flex items-center space-x-3">
                 <span
                   className={`text-lg font-semibold ${
-                    transaction.type === "income"
+                    transaction.type === TRANSACTION_TYPE.INCOME
                       ? "text-emerald-600"
                       : "text-red-600"
                   }`}
                 >
-                  {transaction.type === "income" ? "+" : "-"}
+                  {transaction.type === TRANSACTION_TYPE.INCOME ? "+" : "-"}
                   {formatCurrency(transaction.amount)}
                 </span>
                 <button

@@ -2,12 +2,13 @@ import { FiTrendingUp, FiTrendingDown, FiCalendar } from "react-icons/fi";
 import { FaPesoSign } from "react-icons/fa6";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { Transaction, MonthlyTotal, Property } from "../types";
+import { TRANSACTION_TYPE } from "shared";
 
-interface SummaryProps {
+type SummaryProps = {
   transactions: Transaction[];
   properties: Property[];
   selectedProperty: string;
-}
+};
 
 export default function Summary({
   transactions,
@@ -29,11 +30,11 @@ export default function Summary({
 
   // Calculate totals
   const totalIncome = transactions
-    .filter((t) => t.type === "income")
+    .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpenses = transactions
-    .filter((t) => t.type === "expense")
+    .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const netProfit = totalIncome - totalExpenses;
@@ -46,11 +47,11 @@ export default function Summary({
   );
 
   const monthlyIncome = currentMonthTransactions
-    .filter((t) => t.type === "income")
+    .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const monthlyExpenses = currentMonthTransactions
-    .filter((t) => t.type === "expense")
+    .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const monthlyProfit = monthlyIncome - monthlyExpenses;
@@ -66,11 +67,11 @@ export default function Summary({
     );
 
     const income = monthTransactions
-      .filter((t) => t.type === "income")
+      .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
       .reduce((sum, t) => sum + t.amount, 0);
 
     const expenses = monthTransactions
-      .filter((t) => t.type === "expense")
+      .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
       .reduce((sum, t) => sum + t.amount, 0);
 
     monthlyTotals.push({

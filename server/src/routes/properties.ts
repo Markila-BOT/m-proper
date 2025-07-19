@@ -4,6 +4,7 @@ import type {
   CreatePropertyResponse,
   Property,
 } from "shared";
+import { PROPERTY_TYPE } from "shared";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 const properties = new Hono();
@@ -26,9 +27,9 @@ properties.post("/", async (c): Promise<Response> => {
       return c.json(response, 400);
     }
 
-    if (!["residential", "commercial"].includes(body.type)) {
+    if (!Object.values(PROPERTY_TYPE).includes(body.type)) {
       const response: CreatePropertyResponse = {
-        message: 'Invalid property type. Must be "residential" or "commercial"',
+        message: `Invalid property type. Must be "${PROPERTY_TYPE.RESIDENTIAL}" or "${PROPERTY_TYPE.COMMERCIAL}"`,
         success: false,
       };
       return c.json(response, 400);

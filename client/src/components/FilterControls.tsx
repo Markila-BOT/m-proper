@@ -1,7 +1,8 @@
 import { FiSearch } from "react-icons/fi";
 import { Category, Property } from "../types";
+import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "shared";
 
-interface FilterControlsProps {
+type FilterControlsProps = {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   selectedCategory: string;
@@ -15,7 +16,7 @@ interface FilterControlsProps {
   selectedProperty: string;
   showPropertyFilter: boolean;
   onPropertyChange: (value: string) => void;
-}
+};
 
 export default function FilterControls({
   searchTerm,
@@ -71,8 +72,12 @@ export default function FilterControls({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Types</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
+            <option value={TRANSACTION_TYPE.INCOME}>
+              {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.INCOME]}
+            </option>
+            <option value={TRANSACTION_TYPE.EXPENSE}>
+              {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.EXPENSE]}
+            </option>
           </select>
         </div>
 

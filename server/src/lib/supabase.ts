@@ -11,8 +11,10 @@ export const supabase = hasValidCredentials
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
+import type { PropertyType } from "shared";
+
 // Database table types
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       properties: {
@@ -20,7 +22,7 @@ export interface Database {
           id: string;
           name: string;
           address: string;
-          type: "residential" | "commercial";
+          type: PropertyType;
           units: number | null;
           is_active: boolean;
           created_at: string;
@@ -29,7 +31,7 @@ export interface Database {
           id?: string;
           name: string;
           address: string;
-          type: "residential" | "commercial";
+          type: PropertyType;
           units?: number | null;
           is_active?: boolean;
           created_at?: string;
@@ -38,7 +40,7 @@ export interface Database {
           id?: string;
           name?: string;
           address?: string;
-          type?: "residential" | "commercial";
+          type?: PropertyType;
           units?: number | null;
           is_active?: boolean;
           created_at?: string;
@@ -46,7 +48,7 @@ export interface Database {
       };
     };
   };
-}
+};
 
 // Helper function to check if Supabase is configured
 export const isSupabaseConfigured = () => {

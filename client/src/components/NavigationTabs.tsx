@@ -1,11 +1,13 @@
-import { FiBarChart, FiDatabase, FiSettings } from "react-icons/fi";
+import { FiBarChart, FiSettings } from "react-icons/fi";
+import { VscGraphLine } from "react-icons/vsc";
+import { TbBuildings } from "react-icons/tb";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
-interface NavigationTabsProps {
+type NavigationTabsProps = {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
-}
+};
 
 export default function NavigationTabs({
   activeTab,
@@ -20,12 +22,12 @@ export default function NavigationTabs({
     {
       id: "transactions" as const,
       label: "Transactions",
-      icon: FiBarChart,
+      icon: VscGraphLine,
     },
     {
       id: "properties" as const,
-      label: "Properties (React Query)",
-      icon: FiDatabase,
+      label: "Properties",
+      icon: TbBuildings,
     },
     {
       id: "reports" as const,

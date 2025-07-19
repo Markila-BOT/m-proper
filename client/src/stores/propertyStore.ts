@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface PropertyState {
+type PropertyState = {
   selectedProperty: string;
   setSelectedProperty: (propertyId: string) => void;
-}
+};
 
 export const usePropertyStore = create<PropertyState>()(
   persist(

@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 import PropertySidebar from "./PropertySidebar";
 
-interface AppLayoutProps {
+type AppLayoutProps = {
   children: ReactNode;
   isSidebarCollapsed: boolean;
   onToggleSidebar: () => void;
-}
+};
 
 export default function AppLayout({
   children,

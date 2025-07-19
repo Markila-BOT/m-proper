@@ -1,9 +1,9 @@
 import { FiHome, FiDownload, FiPlus } from "react-icons/fi";
 
-interface AppHeaderProps {
+type AppHeaderProps = {
   onExport: () => void;
   onAddTransaction: () => void;
-}
+};
 
 export default function AppHeader({
   onExport,

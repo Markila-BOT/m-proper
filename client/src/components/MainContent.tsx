@@ -10,7 +10,7 @@ import {
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
-interface MainContentProps {
+type MainContentProps = {
   activeTab: TabType;
   filteredTransactions: Transaction[];
   onDeleteTransaction: (id: string) => void;
@@ -24,7 +24,7 @@ interface MainContentProps {
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
   categories: Category[];
-}
+};
 
 export default function MainContent({
   activeTab,

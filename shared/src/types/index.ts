@@ -1,26 +1,28 @@
+import type { PropertyType } from "../constants";
+
 export type ApiResponse = {
   message: string;
   success: boolean;
 };
 
-export interface Property {
+export type Property = {
   id: string;
   name: string;
   address: string;
-  type: "residential" | "commercial";
+  type: PropertyType;
   units?: number;
   isActive: boolean;
   createdAt: string;
-}
+};
 
-export interface CreatePropertyRequest {
+export type CreatePropertyRequest = {
   name: string;
   address: string;
-  type: "residential" | "commercial";
+  type: PropertyType;
   units?: number;
   isActive?: boolean;
-}
+};
 
-export interface CreatePropertyResponse extends ApiResponse {
+export type CreatePropertyResponse = ApiResponse & {
   data?: Property;
-}
+};

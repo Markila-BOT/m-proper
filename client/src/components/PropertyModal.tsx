@@ -19,10 +19,11 @@ import {
 } from "./ui/dialog";
 import { FiLoader } from "react-icons/fi";
 import type { CreatePropertyRequest } from "shared";
+import { PROPERTY_TYPE, PROPERTY_TYPE_LABELS } from "shared";
 
-interface PropertyModalProps {
+type PropertyModalProps = {
   children: React.ReactNode;
-}
+};
 
 export default function PropertyModal({ children }: PropertyModalProps) {
   const createPropertyMutation = useCreateProperty();
@@ -30,7 +31,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
   const [formData, setFormData] = useState<CreatePropertyRequest>({
     name: "",
     address: "",
-    type: "residential",
+    type: PROPERTY_TYPE.RESIDENTIAL,
     units: undefined,
     isActive: true,
   });
@@ -44,7 +45,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
       setFormData({
         name: "",
         address: "",
-        type: "residential",
+        type: PROPERTY_TYPE.RESIDENTIAL,
         units: undefined,
         isActive: true,
       });
@@ -98,15 +99,22 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Select
               value={formData.type}
               onValueChange={(value) =>
-                handleInputChange("type", value as "residential" | "commercial")
+                handleInputChange(
+                  "type",
+                  value as CreatePropertyRequest["type"]
+                )
               }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="residential">Residential</SelectItem>
-                <SelectItem value="commercial">Commercial</SelectItem>
+                <SelectItem value={PROPERTY_TYPE.RESIDENTIAL}>
+                  {PROPERTY_TYPE_LABELS[PROPERTY_TYPE.RESIDENTIAL]}
+                </SelectItem>
+                <SelectItem value={PROPERTY_TYPE.COMMERCIAL}>
+                  {PROPERTY_TYPE_LABELS[PROPERTY_TYPE.COMMERCIAL]}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

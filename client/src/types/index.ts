@@ -1,36 +1,36 @@
-import type { Property } from "shared";
+import type { Property, TransactionType } from "shared";
 
-export interface Transaction {
+export type Transaction = {
   id: string;
   date: string;
   description: string;
   category: string;
   amount: number;
-  type: "income" | "expense"; //TODO: use as const
+  type: TransactionType;
   property: string;
-}
+};
 
-export interface Category {
+export type Category = {
   id: string;
   name: string;
-  type: "income" | "expense";
+  type: TransactionType;
   isDefault: boolean;
-}
+};
 
-export interface MonthlyTotal {
+export type MonthlyTotal = {
   month: string;
   income: number;
   expenses: number;
   profit: number;
-}
+};
 
 // Re-export Property from shared
 export type { Property };
 
-export interface PropertySummary {
+export type PropertySummary = {
   property: Property;
   totalIncome: number;
   totalExpenses: number;
   netProfit: number;
   transactionCount: number;
-}
+};
