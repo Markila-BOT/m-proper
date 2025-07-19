@@ -36,6 +36,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+*.cursor
 
 # Bun
 bun.lockb
