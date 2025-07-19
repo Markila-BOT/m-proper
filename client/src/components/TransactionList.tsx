@@ -1,4 +1,3 @@
-import React from "react";
 import { FiTrash2, FiCalendar, FiTag } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { Transaction, Property } from "../types";

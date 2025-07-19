@@ -1,22 +1,20 @@
-import React from 'react';
-import { FiSearch, FiFilter, FiCalendar, FiTag } from 'react-icons/fi';
-import { HiOutlineOfficeBuilding } from 'react-icons/hi';
-import { Category, Property } from '../types';
+import { FiSearch } from "react-icons/fi";
+import { Category, Property } from "../types";
 
 interface FilterControlsProps {
   searchTerm: string;
-  onSearchChange: (term: string) => void;
+  onSearchChange: (value: string) => void;
   selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+  onCategoryChange: (value: string) => void;
   selectedType: string;
-  onTypeChange: (type: string) => void;
+  onTypeChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
   categories: Category[];
   properties: Property[];
   selectedProperty: string;
-  showPropertyFilter?: boolean;
-  onPropertyChange?: (property: string) => void;
+  showPropertyFilter: boolean;
+  onPropertyChange: (value: string) => void;
 }
 
 export default function FilterControls({
@@ -31,17 +29,12 @@ export default function FilterControls({
   categories,
   properties,
   selectedProperty,
-  showPropertyFilter = false,
-  onPropertyChange
+  showPropertyFilter,
+  onPropertyChange,
 }: FilterControlsProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center space-x-2 mb-4">
-        <FiFilter className="w-5 h-5 text-gray-500" />
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-      </div>
-      
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${showPropertyFilter ? '5' : '4'} gap-4`}>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Search */}
         <div className="relative">
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -50,17 +43,32 @@ export default function FilterControls({
             placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
+        {/* Category Filter */}
+        <div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.name}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Type Filter */}
-        <div className="relative">
-          <FiTag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div>
           <select
             value={selectedType}
             onChange={(e) => onTypeChange(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Types</option>
             <option value="income">Income</option>
@@ -68,31 +76,16 @@ export default function FilterControls({
           </select>
         </div>
 
-        {/* Category Filter */}
-        <select
-          value={selectedCategory}
-          onChange={(e) => onCategoryChange(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">All Categories</option>
-          {categories.map(category => (
-            <option key={category.id} value={category.name}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-
-        {/* Property Filter (only shown when showPropertyFilter is true) */}
-        {showPropertyFilter && onPropertyChange && (
-          <div className="relative">
-            <HiOutlineOfficeBuilding className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        {/* Property Filter (only show when "all" is selected) */}
+        {showPropertyFilter && (
+          <div>
             <select
               value={selectedProperty}
               onChange={(e) => onPropertyChange(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Properties</option>
-              {properties.filter(p => p.isActive).map(property => (
+              {properties.map((property) => (
                 <option key={property.id} value={property.id}>
                   {property.name}
                 </option>
@@ -100,40 +93,37 @@ export default function FilterControls({
             </select>
           </div>
         )}
+      </div>
 
-        {/* Date Range */}
-        <div className="flex space-x-2">
+      {/* Date Range */}
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Start Date
+          </label>
           <input
             type="date"
             value={dateRange.start}
-            onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) =>
+              onDateRangeChange({ ...dateRange, start: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            End Date
+          </label>
           <input
             type="date"
             value={dateRange.end}
-            onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) =>
+              onDateRangeChange({ ...dateRange, end: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
-
-      {/* Clear Filters */}
-      {(searchTerm || selectedCategory || selectedType || dateRange.start || dateRange.end) && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <button
-            onClick={() => {
-              onSearchChange('');
-              onCategoryChange('');
-              onTypeChange('');
-              onDateRangeChange({ start: '', end: '' });
-            }}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Clear all filters
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,54 +1,139 @@
-# React + TypeScript + Vite
+# Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React application with React Query (TanStack Query) integration for efficient data fetching and state management.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React Query Integration**: Efficient data fetching with caching, background updates, and optimistic updates
+- **Supabase Integration**: Real-time database operations through the server API
+- **TypeScript**: Full type safety with shared types
+- **Modern UI**: Built with Tailwind CSS and Radix UI components
+- **Real-time Updates**: Automatic cache invalidation and refetching
 
-## Expanding the ESLint configuration
+## React Query Setup
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Query Client Configuration
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
+The application uses TanStack Query v5 with the following configuration:
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
     },
   },
-})
+});
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### API Service Layer
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Located in `src/lib/api.ts`:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+- **Properties API**: Functions for fetching and creating properties
+- **Query Keys**: Centralized query key management
+- **Error Handling**: Consistent error handling across all API calls
+
+### Custom Hooks
+
+Located in `src/hooks/useProperties.ts`:
+
+- `useProperties()`: Basic query hook for fetching properties
+- `useCreateProperty()`: Mutation hook for creating properties
+- `usePropertiesWithStates()`: Enhanced hook with loading/error states
+
+### Components
+
+- **PropertiesList**: Demonstrates React Query integration with:
+  - Loading states
+  - Error handling
+  - Optimistic updates
+  - Cache invalidation
+  - Real-time data synchronization
+
+## Usage
+
+### Fetching Data
+
+```typescript
+import { useProperties } from "../hooks/useProperties";
+
+function MyComponent() {
+  const { data: properties, isLoading, error } = useProperties();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {properties?.map((property) => (
+        <div key={property.id}>{property.name}</div>
+      ))}
+    </div>
+  );
+}
 ```
+
+### Creating Data
+
+```typescript
+import { useCreateProperty } from "../hooks/useProperties";
+
+function CreatePropertyForm() {
+  const createProperty = useCreateProperty();
+
+  const handleSubmit = async (data) => {
+    try {
+      await createProperty.mutateAsync(data);
+      // Cache is automatically invalidated and refetched
+    } catch (error) {
+      console.error("Failed to create property:", error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+      <button disabled={createProperty.isPending}>
+        {createProperty.isPending ? "Creating..." : "Create Property"}
+      </button>
+    </form>
+  );
+}
+```
+
+## Development
+
+To start the development server:
+
+```bash
+bun run dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+## React Query DevTools
+
+React Query DevTools are included in development mode. You can:
+
+- Inspect queries and mutations
+- View cache state
+- Manually trigger refetches
+- Monitor performance
+
+## API Endpoints
+
+The client connects to the server API at `http://localhost:3000`:
+
+- `GET /properties` - Fetch all properties
+- `POST /properties` - Create a new property
+
+## Environment Variables
+
+Make sure the server is running with proper Supabase configuration for the React Query features to work correctly.

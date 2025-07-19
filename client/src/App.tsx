@@ -5,6 +5,7 @@ import {
   FiBarChart,
   FiSettings,
   FiDownload,
+  FiDatabase,
 } from "react-icons/fi";
 import { Transaction, Category, Property, PropertySummary } from "./types";
 import { defaultCategories } from "./data/defaultCategories";
@@ -15,6 +16,7 @@ import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
 import Summary from "./components/Summary";
 import FilterControls from "./components/FilterControls";
+import PropertiesList from "./components/PropertiesList";
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -24,7 +26,7 @@ function App() {
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "transactions" | "reports"
+    "overview" | "transactions" | "reports" | "properties"
   >("overview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -252,89 +254,68 @@ function App() {
         <nav className="bg-white border-b border-gray-200">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex space-x-8">
-              {[
-                { id: "overview", label: "Overview", icon: FiBarChart },
-                { id: "transactions", label: "Transactions", icon: FiSettings },
-                { id: "reports", label: "Reports", icon: FiBarChart },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "overview"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FiBarChart className="w-4 h-4 inline mr-2" />
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("transactions")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "transactions"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FiBarChart className="w-4 h-4 inline mr-2" />
+                Transactions
+              </button>
+              <button
+                onClick={() => setActiveTab("properties")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "properties"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FiDatabase className="w-4 h-4 inline mr-2" />
+                Properties (React Query)
+              </button>
+              <button
+                onClick={() => setActiveTab("reports")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "reports"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <FiSettings className="w-4 h-4 inline mr-2" />
+                Reports
+              </button>
             </div>
           </div>
         </nav>
 
         {/* Main Content Area */}
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="flex-1">
           {activeTab === "overview" && (
-            <div className="space-y-8">
+            <div className="p-6">
               <Summary
                 transactions={filteredTransactions}
                 properties={properties}
                 selectedProperty={selectedProperty}
               />
-              <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                  <TransactionList
-                    transactions={filteredTransactions.slice(0, 10)}
-                    properties={properties}
-                    onDeleteTransaction={deleteTransaction}
-                  />
-                </div>
-                <div className="space-y-6">
-                  <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                      Quick Stats
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Total Transactions
-                        </span>
-                        <span className="font-medium">
-                          {filteredTransactions.length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">This Month</span>
-                        <span className="font-medium">
-                          {
-                            filteredTransactions.filter((t) =>
-                              t.date.startsWith(
-                                new Date().toISOString().slice(0, 7)
-                              )
-                            ).length
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Active Properties</span>
-                        <span className="font-medium">
-                          {properties.filter((p) => p.isActive).length}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
           {activeTab === "transactions" && (
-            <div className="space-y-6">
+            <div className="p-6">
               <FilterControls
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
@@ -358,92 +339,24 @@ function App() {
             </div>
           )}
 
+          {activeTab === "properties" && <PropertiesList />}
+
           {activeTab === "reports" && (
-            <div className="space-y-8">
-              <Summary
-                transactions={filteredTransactions}
-                properties={properties}
-                selectedProperty={selectedProperty}
-              />
-
-              {/* Category Breakdown */}
-              <div className="grid gap-8 md:grid-cols-2">
-                <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                    Income by Category
-                  </h3>
-                  <div className="space-y-3">
-                    {categories
-                      .filter((cat) => cat.type === "income")
-                      .map((category) => {
-                        const total = filteredTransactions
-                          .filter(
-                            (t) =>
-                              t.type === "income" &&
-                              t.category === category.name
-                          )
-                          .reduce((sum, t) => sum + t.amount, 0);
-
-                        if (total === 0) return null;
-
-                        return (
-                          <div
-                            key={category.id}
-                            className="flex justify-between items-center"
-                          >
-                            <span className="text-gray-700">
-                              {category.name}
-                            </span>
-                            <span className="font-medium text-emerald-600">
-                              ${total.toLocaleString()}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-
-                <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                    Expenses by Category
-                  </h3>
-                  <div className="space-y-3">
-                    {categories
-                      .filter((cat) => cat.type === "expense")
-                      .map((category) => {
-                        const total = filteredTransactions
-                          .filter(
-                            (t) =>
-                              t.type === "expense" &&
-                              t.category === category.name
-                          )
-                          .reduce((sum, t) => sum + t.amount, 0);
-
-                        if (total === 0) return null;
-
-                        return (
-                          <div
-                            key={category.id}
-                            className="flex justify-between items-center"
-                          >
-                            <span className="text-gray-700">
-                              {category.name}
-                            </span>
-                            <span className="font-medium text-red-600">
-                              ${total.toLocaleString()}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
+            <div className="p-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Reports & Analytics
+                </h2>
+                <p className="text-gray-600">
+                  Advanced reporting and analytics features coming soon...
+                </p>
               </div>
             </div>
           )}
         </main>
       </div>
 
-      {/* Forms */}
+      {/* Modals */}
       <TransactionForm
         categories={categories}
         properties={properties}
