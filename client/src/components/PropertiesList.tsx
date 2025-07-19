@@ -1,69 +1,10 @@
-import { useState } from "react";
-import {
-  usePropertiesWithStates,
-  useCreateProperty,
-} from "../hooks/useProperties";
-import { Button } from "./ui/button";
+import { usePropertiesWithStates } from "../hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import { FiPlus, FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
+import { FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import type { CreatePropertyRequest } from "shared";
 
 export default function PropertiesList() {
   const { properties, isLoading, error, isEmpty } = usePropertiesWithStates();
-  const createPropertyMutation = useCreateProperty();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<CreatePropertyRequest>({
-    name: "",
-    address: "",
-    type: "residential",
-    units: undefined,
-    isActive: true,
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      await createPropertyMutation.mutateAsync(formData);
-      setIsDialogOpen(false);
-      setFormData({
-        name: "",
-        address: "",
-        type: "residential",
-        units: undefined,
-        isActive: true,
-      });
-    } catch (error) {
-      console.error("Failed to create property:", error);
-    }
-  };
-
-  const handleInputChange = (
-    field: keyof CreatePropertyRequest,
-    value: string | number | boolean | undefined
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
 
   if (isLoading) {
     return (
@@ -89,117 +30,11 @@ export default function PropertiesList() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Properties</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2">
-              <FiPlus className="w-4 h-4" />
-              <span>Add Property</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Property</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Property Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="Enter property name"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  placeholder="Enter property address"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="type">Property Type</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) =>
-                    handleInputChange(
-                      "type",
-                      value as "residential" | "commercial"
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="residential">Residential</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="units">Number of Units (Optional)</Label>
-                <Input
-                  id="units"
-                  type="number"
-                  value={formData.units || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "units",
-                      e.target.value ? parseInt(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="Enter number of units"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  id="isActive"
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    handleInputChange("isActive", e.target.checked)
-                  }
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="isActive">Active Property</Label>
-              </div>
-
-              <div className="flex justify-end pt-4 space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createPropertyMutation.isPending}
-                >
-                  {createPropertyMutation.isPending ? (
-                    <>
-                      <FiLoader className="mr-2 w-4 h-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Property"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <p className="text-gray-600 mt-2">
+          View detailed information about all your properties
+        </p>
       </div>
 
       {isEmpty ? (
@@ -210,13 +45,8 @@ export default function PropertiesList() {
               No properties found
             </h3>
             <p className="mb-4 text-center text-gray-500">
-              Get started by adding your first property to track income and
-              expenses.
+              Add your first property using the sidebar to get started.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <FiPlus className="mr-2 w-4 h-4" />
-              Add Property
-            </Button>
           </CardContent>
         </Card>
       ) : (

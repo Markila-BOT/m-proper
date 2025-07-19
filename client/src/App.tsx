@@ -24,7 +24,6 @@ function App() {
 
   // UI state
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
-  const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -65,16 +64,8 @@ function App() {
     setIsTransactionFormOpen(true);
   };
 
-  const handleAddProperty = () => {
-    setIsPropertyFormOpen(true);
-  };
-
   const handleCloseTransactionForm = () => {
     setIsTransactionFormOpen(false);
-  };
-
-  const handleClosePropertyForm = () => {
-    setIsPropertyFormOpen(false);
   };
 
   const handleToggleSidebar = () => {
@@ -83,7 +74,6 @@ function App() {
 
   return (
     <AppLayout
-      onAddProperty={handleAddProperty}
       isSidebarCollapsed={isSidebarCollapsed}
       onToggleSidebar={handleToggleSidebar}
     >
@@ -109,8 +99,6 @@ function App() {
       <AppModals
         isTransactionFormOpen={isTransactionFormOpen}
         onCloseTransactionForm={handleCloseTransactionForm}
-        isPropertyFormOpen={isPropertyFormOpen}
-        onClosePropertyForm={handleClosePropertyForm}
         categories={categories}
         properties={properties}
         selectedProperty={selectedProperty}

@@ -7,7 +7,7 @@ export { default as AppModals } from "./AppModals";
 
 // Existing components
 export { default as PropertySidebar } from "./PropertySidebar";
-export { default as PropertyForm } from "./PropertyForm";
+export { default as PropertyModal } from "./PropertyModal";
 export { default as TransactionForm } from "./TransactionForm";
 export { default as TransactionList } from "./TransactionList";
 export { default as Summary } from "./Summary";

@@ -1,12 +1,9 @@
 import { Transaction, Category, Property } from "../types";
 import TransactionForm from "./TransactionForm";
-import PropertyForm from "./PropertyForm";
 
 interface AppModalsProps {
   isTransactionFormOpen: boolean;
   onCloseTransactionForm: () => void;
-  isPropertyFormOpen: boolean;
-  onClosePropertyForm: () => void;
   categories: Category[];
   properties: Property[];
   selectedProperty: string;
@@ -16,8 +13,6 @@ interface AppModalsProps {
 export default function AppModals({
   isTransactionFormOpen,
   onCloseTransactionForm,
-  isPropertyFormOpen,
-  onClosePropertyForm,
   categories,
   properties,
   selectedProperty,
@@ -33,8 +28,6 @@ export default function AppModals({
         isOpen={isTransactionFormOpen}
         onClose={onCloseTransactionForm}
       />
-
-      <PropertyForm isOpen={isPropertyFormOpen} onClose={onClosePropertyForm} />
     </>
   );
 }

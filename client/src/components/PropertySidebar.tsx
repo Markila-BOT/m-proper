@@ -9,15 +9,14 @@ import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { useSelectedProperty } from "../hooks/useProperties";
 import { usePropertySidebar } from "../hooks/usePropertySidebar";
 import { PropertySkeleton } from "./ui/property-skeleton";
+import PropertyModal from "./PropertyModal";
 
 interface PropertySidebarProps {
-  onAddProperty: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
 
 export default function PropertySidebar({
-  onAddProperty,
   isCollapsed,
   onToggleCollapse,
 }: PropertySidebarProps) {
@@ -114,13 +113,14 @@ export default function PropertySidebar({
         </div>
 
         <div className="p-2 border-t border-gray-200">
-          <button
-            onClick={onAddProperty}
-            className="p-3 w-full text-gray-500 rounded-lg transition-colors hover:text-blue-600 hover:bg-blue-50"
-            title="Add Property"
-          >
-            <FiPlus className="mx-auto w-5 h-5" />
-          </button>
+          <PropertyModal>
+            <button
+              className="p-3 w-full text-gray-500 rounded-lg transition-colors hover:text-blue-600 hover:bg-blue-50"
+              title="Add Property"
+            >
+              <FiPlus className="mx-auto w-5 h-5" />
+            </button>
+          </PropertyModal>
         </div>
       </div>
     );
@@ -140,13 +140,12 @@ export default function PropertySidebar({
           </button>
         </div>
 
-        <button
-          onClick={onAddProperty}
-          className="flex justify-center items-center px-4 py-2 space-x-2 w-full text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
-        >
-          <FiPlus className="w-4 h-4" />
-          <span>Add Property</span>
-        </button>
+        <PropertyModal>
+          <button className="flex justify-center items-center px-4 py-2 space-x-2 w-full text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700">
+            <FiPlus className="w-4 h-4" />
+            <span>Add Property</span>
+          </button>
+        </PropertyModal>
       </div>
 
       {/* All Properties Option */}
