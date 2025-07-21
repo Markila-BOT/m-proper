@@ -1,10 +1,15 @@
+// client/src/components/TransactionForm.tsx
+// Use split income/expense categories for the category dropdown
 import React, { useState } from "react";
 import { FiPlus, FiX } from "react-icons/fi";
-import { Transaction, Category, Property } from "../types";
+import { Transaction } from "../types/transactions";
+import { Category } from "../types/categories";
+import { Property } from "../types/properties";
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "shared";
 
 type TransactionFormProps = {
-  categories: Category[];
+  incomeCategories: Category[];
+  expenseCategories: Category[];
   properties: Property[];
   selectedProperty: string;
   onAddTransaction: (transaction: Omit<Transaction, "id">) => void;
@@ -13,7 +18,8 @@ type TransactionFormProps = {
 };
 
 export default function TransactionForm({
-  categories,
+  incomeCategories,
+  expenseCategories,
   properties,
   selectedProperty,
   onAddTransaction,
@@ -59,9 +65,11 @@ export default function TransactionForm({
     onClose();
   };
 
-  const filteredCategories = categories.filter(
-    (cat) => cat.type === formData.type
-  );
+  // Use the correct category array based on type
+  const categoryOptions =
+    formData.type === TRANSACTION_TYPE.INCOME
+      ? incomeCategories
+      : expenseCategories;
   const activeProperties = properties.filter((p) => p.isActive);
 
   if (!isOpen) return null;
@@ -191,7 +199,7 @@ export default function TransactionForm({
               required
             >
               <option value="">Select category</option>
-              {filteredCategories.map((category) => (
+              {categoryOptions.map((category) => (
                 <option key={category.id} value={category.name}>
                   {category.name}
                 </option>

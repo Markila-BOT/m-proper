@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Transaction } from "../types";
+import { Transaction } from "../types/transactions";
 
 export function useTransactionFilters(
   transactions: Transaction[],

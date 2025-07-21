@@ -1,6 +1,7 @@
 import { FiTrash2, FiCalendar, FiTag } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import { Transaction, Property } from "../types";
+import { Transaction } from "../types/transactions";
+import { Property } from "../types/properties";
 import { TRANSACTION_TYPE } from "shared";
 
 type TransactionListProps = {

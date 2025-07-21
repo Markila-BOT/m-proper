@@ -1,4 +1,6 @@
-import { Transaction, Category } from "../types";
+// client/src/components/MainContent.tsx
+// Pass allCategories to FilterControls for category filtering
+import { Transaction } from "../types/transactions";
 import Summary from "./Summary";
 import FilterControls from "./FilterControls";
 import TransactionList from "./TransactionList";
@@ -7,6 +9,7 @@ import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from "../hooks/useProperties";
+import { allCategories } from "../constants/categories";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
@@ -23,7 +26,7 @@ type MainContentProps = {
   onTypeChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
-  categories: Category[];
+  // No longer need categories prop
 };
 
 export default function MainContent({
@@ -38,7 +41,6 @@ export default function MainContent({
   onTypeChange,
   dateRange,
   onDateRangeChange,
-  categories,
 }: MainContentProps) {
   const { selectedProperty, setSelectedProperty } = useSelectedProperty();
   const { properties } = usePropertiesWithStates();
@@ -66,7 +68,7 @@ export default function MainContent({
             onTypeChange={onTypeChange}
             dateRange={dateRange}
             onDateRangeChange={onDateRangeChange}
-            categories={categories}
+            allCategories={allCategories}
             properties={properties}
             selectedProperty={selectedProperty}
             showPropertyFilter={selectedProperty === "all"}

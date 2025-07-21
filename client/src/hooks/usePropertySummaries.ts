@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Transaction, Property, PropertySummary } from "../types";
+import { Transaction } from "../types/transactions";
+import { Property, PropertySummary } from "../types/properties";
 import { TRANSACTION_TYPE } from "shared";
 
 export function usePropertySummaries(

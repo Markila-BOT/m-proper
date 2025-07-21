@@ -1,7 +1,8 @@
 import { FiTrendingUp, FiTrendingDown, FiCalendar } from "react-icons/fi";
 import { FaPesoSign } from "react-icons/fa6";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import { Transaction, MonthlyTotal, Property } from "../types";
+import { Transaction, MonthlyTotal } from "../types/transactions";
+import { Property } from "../types/properties";
 import { TRANSACTION_TYPE } from "shared";
 
 type SummaryProps = {

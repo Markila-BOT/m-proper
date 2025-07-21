@@ -1,10 +1,14 @@
-import { Transaction, Category, Property } from "../types";
+// client/src/components/AppModals.tsx
+// Pass split income/expense categories to TransactionForm
+import { Transaction } from "../types/transactions";
+import { Property } from "../types/properties";
 import TransactionForm from "./TransactionForm";
+
+import { incomeCategories, expenseCategories } from "../constants/categories";
 
 type AppModalsProps = {
   isTransactionFormOpen: boolean;
   onCloseTransactionForm: () => void;
-  categories: Category[];
   properties: Property[];
   selectedProperty: string;
   onAddTransaction: (transactionData: Omit<Transaction, "id">) => void;
@@ -13,7 +17,6 @@ type AppModalsProps = {
 export default function AppModals({
   isTransactionFormOpen,
   onCloseTransactionForm,
-  categories,
   properties,
   selectedProperty,
   onAddTransaction,
@@ -21,7 +24,8 @@ export default function AppModals({
   return (
     <>
       <TransactionForm
-        categories={categories}
+        incomeCategories={incomeCategories}
+        expenseCategories={expenseCategories}
         properties={properties}
         selectedProperty={selectedProperty}
         onAddTransaction={onAddTransaction}

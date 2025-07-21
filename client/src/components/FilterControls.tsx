@@ -1,5 +1,8 @@
+// client/src/components/FilterControls.tsx
+// Use allCategories for the category filter dropdown
 import { FiSearch } from "react-icons/fi";
-import { Category, Property } from "../types";
+import { Category } from "../types/categories";
+import { Property } from "../types/properties";
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "shared";
 
 type FilterControlsProps = {
@@ -11,7 +14,7 @@ type FilterControlsProps = {
   onTypeChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
-  categories: Category[];
+  allCategories: Category[];
   properties: Property[];
   selectedProperty: string;
   showPropertyFilter: boolean;
@@ -27,24 +30,24 @@ export default function FilterControls({
   onTypeChange,
   dateRange,
   onDateRangeChange,
-  categories,
+  allCategories,
   properties,
   selectedProperty,
   showPropertyFilter,
   onPropertyChange,
 }: FilterControlsProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="p-6 mb-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Search */}
         <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <FiSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="py-2 pr-4 pl-10 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -53,10 +56,10 @@ export default function FilterControls({
           <select
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Categories</option>
-            {categories.map((category) => (
+            {allCategories.map((category) => (
               <option key={category.id} value={category.name}>
                 {category.name}
               </option>
@@ -69,7 +72,7 @@ export default function FilterControls({
           <select
             value={selectedType}
             onChange={(e) => onTypeChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Types</option>
             <option value={TRANSACTION_TYPE.INCOME}>
@@ -87,7 +90,7 @@ export default function FilterControls({
             <select
               value={selectedProperty}
               onChange={(e) => onPropertyChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Properties</option>
               {properties.map((property) => (
@@ -101,9 +104,9 @@ export default function FilterControls({
       </div>
 
       {/* Date Range */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block mb-1 text-sm font-medium text-gray-700">
             Start Date
           </label>
           <input
@@ -112,11 +115,11 @@ export default function FilterControls({
             onChange={(e) =>
               onDateRangeChange({ ...dateRange, start: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block mb-1 text-sm font-medium text-gray-700">
             End Date
           </label>
           <input
@@ -125,7 +128,7 @@ export default function FilterControls({
             onChange={(e) =>
               onDateRangeChange({ ...dateRange, end: e.target.value })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>

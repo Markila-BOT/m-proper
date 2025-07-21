@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Transaction } from "./types";
+import { Transaction } from "./types/transactions";
 import {
   AppLayout,
   AppHeader,
@@ -17,7 +17,7 @@ type TabType = "overview" | "transactions" | "reports" | "properties";
 
 function App() {
   // Local storage management
-  const { transactions, setTransactions, categories } = useLocalStorage();
+  const { transactions, setTransactions } = useLocalStorage();
 
   const { selectedProperty } = useSelectedProperty();
   const { properties } = usePropertiesWithStates();
@@ -94,12 +94,10 @@ function App() {
         onTypeChange={setSelectedType}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
-        categories={categories}
       />
       <AppModals
         isTransactionFormOpen={isTransactionFormOpen}
         onCloseTransactionForm={handleCloseTransactionForm}
-        categories={categories}
         properties={properties}
         selectedProperty={selectedProperty}
         onAddTransaction={addTransaction}

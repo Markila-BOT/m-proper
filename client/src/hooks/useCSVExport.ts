@@ -1,4 +1,5 @@
-import { Transaction, Property } from "../types";
+import { Transaction } from "../types/transactions";
+import { Property } from "../types/properties";
 
 export function useCSVExport() {
   const exportToCSV = (
