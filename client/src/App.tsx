@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { Transaction } from "./types/transactions";
-import {
-  AppLayout,
-  AppHeader,
-  NavigationTabs,
-  MainContent,
-  AppModals,
-} from "./components";
 import { useLocalStorage, useTransactionFilters, useCSVExport } from "./hooks";
 import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from "./hooks/useProperties";
+import AppLayout from "./components/AppLayout";
+import AppHeader from "./components/AppHeader";
+import AppModals from "./components/AppModals";
+import MainContent from "./components/MainContent";
+import NavigationTabs from "./components/NavigationTabs";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 

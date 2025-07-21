@@ -1,17 +1,7 @@
 import { usePropertiesWithStates } from "../hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
-import { MdLandscape } from "react-icons/md";
-import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import { PROPERTY_TYPE } from "shared";
-
-const propertyTypeIcons = {
-  [PROPERTY_TYPE.RESIDENTIAL]: <FiHome className="w-5 h-5 text-blue-600" />,
-  [PROPERTY_TYPE.COMMERCIAL]: (
-    <HiOutlineOfficeBuilding className="w-5 h-5 text-green-600" />
-  ),
-  [PROPERTY_TYPE.LOT]: <MdLandscape className="w-5 h-5 text-yellow-600" />,
-};
+import { PropertyTypeIcon } from "./PropertyTypeIcon";
 
 export default function PropertiesList() {
   const { properties, isLoading, error, isEmpty } = usePropertiesWithStates();
@@ -68,7 +58,10 @@ export default function PropertiesList() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
-                    {propertyTypeIcons[property.type]}
+                    <PropertyTypeIcon
+                      type={property.type}
+                      className="w-5 h-5"
+                    />
                     <CardTitle className="text-lg">{property.name}</CardTitle>
                   </div>
                   <div

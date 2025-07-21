@@ -7,10 +7,10 @@ import {
 } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { MdLandscape } from "react-icons/md";
-import { useSelectedProperty } from "../hooks/useProperties";
-import { usePropertySidebar } from "../hooks/usePropertySidebar";
-import { PropertySkeleton } from "./ui/property-skeleton";
-import PropertyModal from "./PropertyModal";
+import { useSelectedProperty } from "../../hooks/useProperties";
+import { usePropertySidebar } from "../../hooks/usePropertySidebar";
+import { PropertySidebarSkeleton } from "./PropertySidebarSkeleton";
+import PropertyModal from "../PropertyModal";
 import { PROPERTY_TYPE, PropertyType } from "shared";
 
 type PropertySidebarProps = {
@@ -19,16 +19,16 @@ type PropertySidebarProps = {
 };
 
 const getPropertyTypeIcon = (type: PropertyType, isSelected: boolean) => {
-  const colorHome = isSelected ? "text-blue-600" : "text-gray-600";
-  const colorOffice = isSelected ? "text-blue-600" : "text-gray-600";
-  const colorLot = isSelected ? "text-yellow-600" : "text-yellow-400";
+  const color = isSelected ? "text-blue-600" : "text-gray-600";
+  const className = `w-5 h-5 ${color}`;
+
   switch (type) {
     case PROPERTY_TYPE.RESIDENTIAL:
-      return <FiHome className={`w-5 h-5 ${colorHome}`} />;
+      return <FiHome className={className} />;
     case PROPERTY_TYPE.COMMERCIAL:
-      return <HiOutlineOfficeBuilding className={`w-5 h-5 ${colorOffice}`} />;
+      return <HiOutlineOfficeBuilding className={className} />;
     case PROPERTY_TYPE.LOT:
-      return <MdLandscape className={`w-5 h-5 ${colorLot}`} />;
+      return <MdLandscape className={className} />;
     default:
       return null;
   }
@@ -57,7 +57,7 @@ export default function PropertySidebar({
 
   // Show loading skeleton
   if (isLoading) {
-    return <PropertySkeleton count={3} isCollapsed={isCollapsed} />;
+    return <PropertySidebarSkeleton count={3} isCollapsed={isCollapsed} />;
   }
 
   // Show error state

@@ -1,6 +1,7 @@
 import { FiTrendingUp, FiTrendingDown, FiCalendar } from "react-icons/fi";
 import { FaPesoSign } from "react-icons/fa6";
-import { HiOutlineOfficeBuilding } from "react-icons/hi";
+import { PropertyTypeIcon } from "./PropertyTypeIcon";
+import { PROPERTY_TYPE } from "shared";
 import { Transaction, MonthlyTotal } from "../types/transactions";
 import { Property } from "../types/properties";
 import { TRANSACTION_TYPE } from "shared";
@@ -92,7 +93,15 @@ export default function Summary({
       <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="p-3 bg-blue-100 rounded-xl">
-            <HiOutlineOfficeBuilding className="w-6 h-6 text-blue-600" />
+            <PropertyTypeIcon
+              type={
+                selectedProperty === "all"
+                  ? PROPERTY_TYPE.COMMERCIAL
+                  : properties.find((p) => p.id === selectedProperty)?.type ||
+                    PROPERTY_TYPE.COMMERCIAL
+              }
+              className="w-6 h-6 text-blue-600"
+            />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
