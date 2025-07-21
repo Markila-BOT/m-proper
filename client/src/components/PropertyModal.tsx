@@ -115,6 +115,9 @@ export default function PropertyModal({ children }: PropertyModalProps) {
                 <SelectItem value={PROPERTY_TYPE.COMMERCIAL}>
                   {PROPERTY_TYPE_LABELS[PROPERTY_TYPE.COMMERCIAL]}
                 </SelectItem>
+                <SelectItem value={PROPERTY_TYPE.LOT}>
+                  {PROPERTY_TYPE_LABELS[PROPERTY_TYPE.LOT]}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS properties (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY, --TODO: do not use gen_random_uuid() or long id
   name VARCHAR(255) NOT NULL,
   address TEXT NOT NULL,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('residential', 'commercial')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('residential', 'commercial', 'lot')),
   units INTEGER,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

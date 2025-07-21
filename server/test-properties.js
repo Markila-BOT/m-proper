@@ -30,6 +30,31 @@ async function testPropertiesEndpoint() {
     console.error("❌ Create Property Error:", error.message);
   }
 
+  console.log("1b️⃣ Testing POST /properties with type 'lot'");
+  try {
+    const createResponse = await fetch(`${BASE_URL}/properties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "Test Lot Property",
+        address: "456 Lot Avenue, Test City",
+        type: "lot",
+        units: 0,
+        isActive: true,
+      }),
+    });
+
+    const createResult = await createResponse.json();
+    console.log(
+      "✅ Create Lot Property Response:",
+      JSON.stringify(createResult, null, 2)
+    );
+  } catch (error) {
+    console.error("❌ Create Lot Property Error:", error.message);
+  }
+
   console.log("\n2️⃣ Testing GET /properties");
   try {
     const getResponse = await fetch(`${BASE_URL}/properties`);

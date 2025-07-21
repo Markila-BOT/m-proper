@@ -36,6 +36,13 @@ async function testPropertySorting() {
       units: 4,
       isActive: true,
     },
+    {
+      name: "Lot Property",
+      address: "202 Lot Blvd",
+      type: "lot",
+      units: 0,
+      isActive: true,
+    },
   ];
 
   // Create properties

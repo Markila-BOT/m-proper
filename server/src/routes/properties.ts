@@ -29,7 +29,9 @@ properties.post("/", async (c): Promise<Response> => {
 
     if (!Object.values(PROPERTY_TYPE).includes(body.type)) {
       const response: CreatePropertyResponse = {
-        message: `Invalid property type. Must be "${PROPERTY_TYPE.RESIDENTIAL}" or "${PROPERTY_TYPE.COMMERCIAL}"`,
+        message: `Invalid property type. Must be one of: "${Object.values(
+          PROPERTY_TYPE
+        ).join('", "')}"`,
         success: false,
       };
       return c.json(response, 400);

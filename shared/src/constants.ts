@@ -2,6 +2,7 @@
 export const PROPERTY_TYPE = {
   RESIDENTIAL: "residential",
   COMMERCIAL: "commercial",
+  LOT: "lot",
 } as const;
 
 export type PropertyType = (typeof PROPERTY_TYPE)[keyof typeof PROPERTY_TYPE];
@@ -19,6 +20,7 @@ export type TransactionType =
 export const PROPERTY_TYPE_LABELS = {
   [PROPERTY_TYPE.RESIDENTIAL]: "Residential",
   [PROPERTY_TYPE.COMMERCIAL]: "Commercial",
+  [PROPERTY_TYPE.LOT]: "Lot",
 } as const;
 
 // Transaction type labels for display

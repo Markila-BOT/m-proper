@@ -1,8 +1,17 @@
 import { usePropertiesWithStates } from "../hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
+import { MdLandscape } from "react-icons/md";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
 import { PROPERTY_TYPE } from "shared";
+
+const propertyTypeIcons = {
+  [PROPERTY_TYPE.RESIDENTIAL]: <FiHome className="w-5 h-5 text-blue-600" />,
+  [PROPERTY_TYPE.COMMERCIAL]: (
+    <HiOutlineOfficeBuilding className="w-5 h-5 text-green-600" />
+  ),
+  [PROPERTY_TYPE.LOT]: <MdLandscape className="w-5 h-5 text-yellow-600" />,
+};
 
 export default function PropertiesList() {
   const { properties, isLoading, error, isEmpty } = usePropertiesWithStates();
@@ -33,11 +42,10 @@ export default function PropertiesList() {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Properties</h2>
-        <p className="text-gray-600 mt-2">
+        <p className="mt-2 text-gray-600">
           View detailed information about all your properties
         </p>
       </div>
-
       {isEmpty ? (
         <Card>
           <CardContent className="flex flex-col justify-center items-center p-8">
@@ -60,11 +68,7 @@ export default function PropertiesList() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
-                    {property.type === PROPERTY_TYPE.RESIDENTIAL ? (
-                      <FiHome className="w-5 h-5 text-blue-600" />
-                    ) : (
-                      <HiOutlineOfficeBuilding className="w-5 h-5 text-green-600" />
-                    )}
+                    {propertyTypeIcons[property.type]}
                     <CardTitle className="text-lg">{property.name}</CardTitle>
                   </div>
                   <div

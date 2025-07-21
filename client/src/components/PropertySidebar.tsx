@@ -6,15 +6,32 @@ import {
   FiHome,
 } from "react-icons/fi";
 import { HiOutlineOfficeBuilding } from "react-icons/hi";
+import { MdLandscape } from "react-icons/md";
 import { useSelectedProperty } from "../hooks/useProperties";
 import { usePropertySidebar } from "../hooks/usePropertySidebar";
 import { PropertySkeleton } from "./ui/property-skeleton";
 import PropertyModal from "./PropertyModal";
-import { PROPERTY_TYPE } from "shared";
+import { PROPERTY_TYPE, PropertyType } from "shared";
 
 type PropertySidebarProps = {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+};
+
+const getPropertyTypeIcon = (type: PropertyType, isSelected: boolean) => {
+  const colorHome = isSelected ? "text-blue-600" : "text-gray-600";
+  const colorOffice = isSelected ? "text-blue-600" : "text-gray-600";
+  const colorLot = isSelected ? "text-yellow-600" : "text-yellow-400";
+  switch (type) {
+    case PROPERTY_TYPE.RESIDENTIAL:
+      return <FiHome className={`w-5 h-5 ${colorHome}`} />;
+    case PROPERTY_TYPE.COMMERCIAL:
+      return <HiOutlineOfficeBuilding className={`w-5 h-5 ${colorOffice}`} />;
+    case PROPERTY_TYPE.LOT:
+      return <MdLandscape className={`w-5 h-5 ${colorLot}`} />;
+    default:
+      return null;
+  }
 };
 
 export default function PropertySidebar({
@@ -104,10 +121,9 @@ export default function PropertySidebar({
               }`}
               title={property.name}
             >
-              {property.type === PROPERTY_TYPE.RESIDENTIAL ? (
-                <FiHome className="mx-auto w-5 h-5" />
-              ) : (
-                <HiOutlineOfficeBuilding className="mx-auto w-5 h-5" />
+              {getPropertyTypeIcon(
+                property.type,
+                selectedProperty === property.id
               )}
             </button>
           ))}
@@ -204,19 +220,7 @@ export default function PropertySidebar({
                         isSelected ? "bg-blue-100" : "bg-gray-100"
                       }`}
                     >
-                      {property.type === PROPERTY_TYPE.RESIDENTIAL ? (
-                        <FiHome
-                          className={`w-5 h-5 ${
-                            isSelected ? "text-blue-600" : "text-gray-600"
-                          }`}
-                        />
-                      ) : (
-                        <HiOutlineOfficeBuilding
-                          className={`w-5 h-5 ${
-                            isSelected ? "text-blue-600" : "text-gray-600"
-                          }`}
-                        />
-                      )}
+                      {getPropertyTypeIcon(property.type, isSelected)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">
@@ -242,7 +246,9 @@ export default function PropertySidebar({
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         property.type === PROPERTY_TYPE.RESIDENTIAL
                           ? "bg-green-100 text-green-700"
-                          : "bg-purple-100 text-purple-700"
+                          : property.type === PROPERTY_TYPE.COMMERCIAL
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
                       {property.type}
