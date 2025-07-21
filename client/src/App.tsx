@@ -7,9 +7,9 @@ import {
 } from "./hooks/useProperties";
 import AppLayout from "./components/AppLayout";
 import AppHeader from "./components/AppHeader";
-import AppModals from "./components/AppModals";
 import MainContent from "./components/MainContent";
 import NavigationTabs from "./components/NavigationTabs";
+import TransactionForm from "./components/TransactionForm";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
@@ -93,12 +93,12 @@ function App() {
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
       />
-      <AppModals
-        isTransactionFormOpen={isTransactionFormOpen}
-        onCloseTransactionForm={handleCloseTransactionForm}
+      <TransactionForm
         properties={properties}
         selectedProperty={selectedProperty}
         onAddTransaction={addTransaction}
+        isOpen={isTransactionFormOpen}
+        onClose={handleCloseTransactionForm}
       />
     </AppLayout>
   );

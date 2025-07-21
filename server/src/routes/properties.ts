@@ -176,4 +176,52 @@ properties.get("/", async (c): Promise<Response> => {
   }
 });
 
+// DELETE /properties/:id - Delete a property by ID
+properties.delete("/:id", async (c): Promise<Response> => {
+  const id = c.req.param("id");
+  try {
+    if (!id) {
+      return c.json(
+        { message: "Property ID is required", success: false },
+        400
+      );
+    }
+
+    // Mock mode
+    if (!isSupabaseConfigured()) {
+      const initialLength = mockProperties.length;
+      mockProperties = mockProperties.filter((p) => p.id !== id);
+      if (mockProperties.length === initialLength) {
+        return c.json(
+          { message: "Property not found (mock mode)", success: false },
+          404
+        );
+      }
+      return c.json({
+        message: "Property deleted successfully (mock mode)",
+        success: true,
+      });
+    }
+
+    // Supabase mode
+    const { error } = await supabase!.from("properties").delete().eq("id", id);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return c.json(
+        {
+          message: `Failed to delete property: ${error.message}`,
+          success: false,
+        },
+        500
+      );
+    }
+
+    return c.json({ message: "Property deleted successfully", success: true });
+  } catch (error) {
+    console.error("Server error:", error);
+    return c.json({ message: "Internal server error", success: false }, 500);
+  }
+});
+
 export default properties;

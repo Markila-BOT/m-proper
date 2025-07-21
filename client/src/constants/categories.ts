@@ -1,6 +1,6 @@
 import { Category } from "../types/categories";
 
-export const incomeCategories: Category[] = [
+export const INCOME_CATEGORIES: Category[] = [
   { id: "1", name: "Rental Income", type: "income" },
   { id: "2", name: "Late Fees", type: "income" },
   { id: "3", name: "Parking Fees", type: "income" },
@@ -11,7 +11,7 @@ export const incomeCategories: Category[] = [
   { id: "8", name: "Storage Fees", type: "income" },
 ];
 
-export const expenseCategories: Category[] = [
+export const EXPENSE_CATEGORIES: Category[] = [
   { id: "9", name: "Property Management", type: "expense" },
   { id: "10", name: "Maintenance & Repairs", type: "expense" },
   { id: "11", name: "Property Insurance", type: "expense" },
@@ -28,7 +28,7 @@ export const expenseCategories: Category[] = [
   { id: "22", name: "Depreciation", type: "expense" },
 ];
 
-export const allCategories: Category[] = [
-  ...incomeCategories,
-  ...expenseCategories,
+export const ALL_CATEGORIES: Category[] = [
+  ...INCOME_CATEGORIES,
+  ...EXPENSE_CATEGORIES,
 ];

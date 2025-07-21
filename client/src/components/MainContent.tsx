@@ -1,5 +1,3 @@
-// client/src/components/MainContent.tsx
-// Pass allCategories to FilterControls for category filtering
 import { Transaction } from "../types/transactions";
 import Summary from "./Summary";
 import FilterControls from "./FilterControls";
@@ -9,7 +7,6 @@ import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from "../hooks/useProperties";
-import { allCategories } from "../constants/categories";
 
 type TabType = "overview" | "transactions" | "reports" | "properties";
 
@@ -17,7 +14,6 @@ type MainContentProps = {
   activeTab: TabType;
   filteredTransactions: Transaction[];
   onDeleteTransaction: (id: string) => void;
-  // Filter controls props
   searchTerm: string;
   onSearchChange: (value: string) => void;
   selectedCategory: string;
@@ -26,7 +22,6 @@ type MainContentProps = {
   onTypeChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
-  // No longer need categories prop
 };
 
 export default function MainContent({
@@ -68,7 +63,6 @@ export default function MainContent({
             onTypeChange={onTypeChange}
             dateRange={dateRange}
             onDateRangeChange={onDateRangeChange}
-            allCategories={allCategories}
             properties={properties}
             selectedProperty={selectedProperty}
             showPropertyFilter={selectedProperty === "all"}
@@ -86,8 +80,8 @@ export default function MainContent({
 
       {activeTab === "reports" && (
         <div className="p-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="p-6 bg-white rounded-lg shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
               Reports & Analytics
             </h2>
             <p className="text-gray-600">

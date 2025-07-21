@@ -3,13 +3,11 @@
 import React, { useState } from "react";
 import { FiPlus, FiX } from "react-icons/fi";
 import { Transaction } from "../types/transactions";
-import { Category } from "../types/categories";
 import { Property } from "../types/properties";
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "shared";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
 
 type TransactionFormProps = {
-  incomeCategories: Category[];
-  expenseCategories: Category[];
   properties: Property[];
   selectedProperty: string;
   onAddTransaction: (transaction: Omit<Transaction, "id">) => void;
@@ -18,8 +16,6 @@ type TransactionFormProps = {
 };
 
 export default function TransactionForm({
-  incomeCategories,
-  expenseCategories,
   properties,
   selectedProperty,
   onAddTransaction,
@@ -68,8 +64,8 @@ export default function TransactionForm({
   // Use the correct category array based on type
   const categoryOptions =
     formData.type === TRANSACTION_TYPE.INCOME
-      ? incomeCategories
-      : expenseCategories;
+      ? INCOME_CATEGORIES
+      : EXPENSE_CATEGORIES;
   const activeProperties = properties.filter((p) => p.isActive);
 
   if (!isOpen) return null;

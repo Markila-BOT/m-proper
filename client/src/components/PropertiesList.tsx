@@ -1,10 +1,17 @@
-import { usePropertiesWithStates } from "../hooks/useProperties";
+import {
+  usePropertiesWithStates,
+  useDeleteProperty,
+} from "../hooks/useProperties";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { FiHome, FiLoader, FiAlertCircle } from "react-icons/fi";
+import { FiHome, FiLoader, FiAlertCircle, FiTrash2 } from "react-icons/fi";
 import { PropertyTypeIcon } from "./PropertyTypeIcon";
+import { useState } from "react";
 
 export default function PropertiesList() {
   const { properties, isLoading, error, isEmpty } = usePropertiesWithStates();
+  const deleteProperty = useDeleteProperty();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -35,6 +42,12 @@ export default function PropertiesList() {
         <p className="mt-2 text-gray-600">
           View detailed information about all your properties
         </p>
+        {deleteError && (
+          <div className="flex items-center mt-4 space-x-2 text-red-600">
+            <FiAlertCircle className="w-4 h-4" />
+            <span>{deleteError}</span>
+          </div>
+        )}
       </div>
       {isEmpty ? (
         <Card>
@@ -64,16 +77,58 @@ export default function PropertiesList() {
                     />
                     <CardTitle className="text-lg">{property.name}</CardTitle>
                   </div>
-                  <div
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      property.isActive
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {property.isActive ? "Active" : "Inactive"}
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        property.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {property.isActive ? "Active" : "Inactive"}
+                    </div>
+                    <button
+                      className="p-2 text-gray-400 rounded-lg transition-colors hover:text-red-600 hover:bg-red-50"
+                      title="Delete property"
+                      onClick={() => setConfirmingId(property.id)}
+                      disabled={deleteProperty.isPending}
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
+                {/* Confirm dialog */}
+                {confirmingId === property.id && (
+                  <div className="flex items-center mt-2 space-x-2">
+                    <span>Delete this property?</span>
+                    <button
+                      className="px-2 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700"
+                      onClick={async () => {
+                        setDeleteError(null);
+                        try {
+                          await deleteProperty.mutateAsync(property.id);
+                          setConfirmingId(null);
+                        } catch (err: unknown) {
+                          if (err instanceof Error) {
+                            setDeleteError(err.message);
+                          } else {
+                            setDeleteError("Failed to delete property");
+                          }
+                        }
+                      }}
+                      disabled={deleteProperty.isPending}
+                    >
+                      {deleteProperty.isPending ? "Deleting..." : "Confirm"}
+                    </button>
+                    <button
+                      className="px-2 py-1 text-xs text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                      onClick={() => setConfirmingId(null)}
+                      disabled={deleteProperty.isPending}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

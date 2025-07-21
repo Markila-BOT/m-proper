@@ -1,9 +1,7 @@
-// client/src/components/FilterControls.tsx
-// Use allCategories for the category filter dropdown
 import { FiSearch } from "react-icons/fi";
-import { Category } from "../types/categories";
 import { Property } from "../types/properties";
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "shared";
+import { ALL_CATEGORIES } from "@/constants/categories";
 
 type FilterControlsProps = {
   searchTerm: string;
@@ -14,7 +12,6 @@ type FilterControlsProps = {
   onTypeChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (range: { start: string; end: string }) => void;
-  allCategories: Category[];
   properties: Property[];
   selectedProperty: string;
   showPropertyFilter: boolean;
@@ -30,7 +27,6 @@ export default function FilterControls({
   onTypeChange,
   dateRange,
   onDateRangeChange,
-  allCategories,
   properties,
   selectedProperty,
   showPropertyFilter,
@@ -59,7 +55,7 @@ export default function FilterControls({
             className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">All Categories</option>
-            {allCategories.map((category) => (
+            {ALL_CATEGORIES.map((category) => (
               <option key={category.id} value={category.name}>
                 {category.name}
               </option>

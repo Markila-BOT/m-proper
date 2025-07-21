@@ -49,6 +49,18 @@ export const propertiesApi = {
 
     return result.data;
   },
+
+  // Delete a property by ID
+  async delete(id: string): Promise<boolean> {
+    const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
+      method: "DELETE",
+    });
+    const result: ApiResponse = await response.json();
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    return true;
+  },
 };
 
 // Query keys for React Query

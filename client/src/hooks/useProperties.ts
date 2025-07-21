@@ -28,6 +28,20 @@ export const useCreateProperty = () => {
   });
 };
 
+// Hook to delete a property by ID
+export const useDeleteProperty = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => propertiesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.properties.all });
+    },
+    onError: (error: Error) => {
+      console.error("Failed to delete property:", error);
+    },
+  });
+};
+
 // Hook to get properties with loading and error states
 export const usePropertiesWithStates = () => {
   const { data: properties, isLoading, error, refetch } = useProperties();
