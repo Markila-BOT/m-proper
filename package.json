@@ -1,41 +1,22 @@
 {
   "name": "m-proper",
-  "version": "0.3.1",
-  "description": "A monorepo template built with Bun, Hono, Vite, and React",
-  "author": "Steve Simkins",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "Landlord property tracker — Rust Axum API + TanStack Start",
   "license": "MIT",
-  "homepage": "https://github.com/stevedylandev/bhvr",
-  "workspaces": [
-    "./server",
-    "./client",
-    "./shared"
-  ],
+  "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "dev:client": "cd client && bun run dev",
-    "dev:server": "cd server && bun run dev",
-    "dev:shared": "cd shared && bun run dev",
-    "dev": "concurrently \"bun run dev:shared\" \"bun run dev:server\" \"bun run dev:client\"",
-    "build:client": "cd client && bun run build",
-    "build:shared": "cd shared && bun run build",
-    "build:server": "cd server && bun run build",
-    "build": "bun run build:shared && bun run build:server && bun run build:client",
-    "postinstall": "bun run build:shared && bun run build:server"
+    "dev": "pnpm run dev:stack",
+    "dev:stack": "concurrently -n api,web -c blue,green \"pnpm run dev:api\" \"pnpm run dev:web\"",
+    "dev:api": "cd api && cargo watch -x run",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm run build:api && pnpm run build:web",
+    "build:api": "cd api && cargo build --release",
+    "build:web": "pnpm --filter web build",
+    "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts"
   },
-  "keywords": [
-    "bun",
-    "hono",
-    "react",
-    "vite",
-    "monorepo"
-  ],
   "devDependencies": {
-    "bun-types": "latest",
     "concurrently": "^9.1.2"
-  },
-  "peerDependencies": {
-    "typescript": "^5.7.3"
-  },
-  "dependencies": {
-    "hono": "^4.8.5"
   }
 }

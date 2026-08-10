@@ -1,0 +1,26 @@
+schema: spec-driven
+
+context: |
+  m-proper is a landlord property income/expense tracker.
+  Stack: Rust Axum API (sqlx → Supabase Postgres), TanStack Start web app (React Query), pnpm for JS.
+  Domain API owns properties CRUD; transactions currently remain in browser localStorage.
+  Architecture A: Start is UI shell only — business logic lives in Rust, not Start server functions.
+  Wire format: JSON envelope { success, message, data? } with camelCase fields.
+  Monorepo: api/ (Cargo), web/ (TanStack Start).
+  DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL.
+  Conventional commits. Prefer small, focused changes.
+
+rules:
+  proposal:
+    - Include Non-goals when scope is a migration or stack change
+  tasks:
+    - Prefer checkboxes completable in one session
+    - Call out env prerequisites (e.g. DATABASE_URL) explicitly
+
+operations:
+  apply:
+    guidance:
+      - Keep strangler cutover until smoke tests pass against real Postgres
+  archive:
+    guidance:
+      - Summarize archive outcome before finishing

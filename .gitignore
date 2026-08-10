@@ -1,4 +1,3 @@
-# bhvr/.gitignore
 # dependencies
 node_modules
 .pnp
@@ -10,8 +9,15 @@ coverage
 # production
 dist
 build
+.output
+.vinxi
+.tanstack
 
-# misc
+# Rust
+api/target/
+**/target/
+
+# env / secrets
 .DS_Store
 .env
 .env.local
@@ -26,7 +32,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# editor directories and files
+# editor
 .idea
 .vscode/*
 !.vscode/extensions.json
@@ -38,5 +44,6 @@ pnpm-debug.log*
 *.sw?
 *.cursor
 
-# Bun
+# legacy Bun lockfiles
 bun.lockb
+bun.lock
