@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Landlord property tracker — Rust Axum API + TanStack Start",
   "license": "MIT",
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@11.21.0+sha512.521705bce689924eac72f5a3587122f362689ef6571e55ba80076fd637c11132ecffada26fad4ea79c485bfddbfd3d5a2a5b05805a77e893de71ec8a6cca3bb1",
   "scripts": {
     "dev": "pnpm run dev:stack",
     "dev:stack": "concurrently -n api,web -c blue,green \"pnpm run dev:api\" \"pnpm run dev:web\"",
@@ -17,6 +17,6 @@
     "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^10.0.4"
   }
 }

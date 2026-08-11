@@ -1,22 +1,22 @@
-import { FiSearch } from "react-icons/fi";
-import type { Property } from "../types/properties";
-import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from "#/lib/domain";
-import { ALL_CATEGORIES } from "@/constants/categories";
+import { FiSearch } from 'react-icons/fi'
+import type { Property } from '../types/properties'
+import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
+import { ALL_CATEGORIES } from '@/constants/categories'
 
 type FilterControlsProps = {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  selectedCategory: string;
-  onCategoryChange: (value: string) => void;
-  selectedType: string;
-  onTypeChange: (value: string) => void;
-  dateRange: { start: string; end: string };
-  onDateRangeChange: (range: { start: string; end: string }) => void;
-  properties: Property[];
-  selectedProperty: string;
-  showPropertyFilter: boolean;
-  onPropertyChange: (value: string) => void;
-};
+  searchTerm: string
+  onSearchChange: (value: string) => void
+  selectedCategory: string
+  onCategoryChange: (value: string) => void
+  selectedType: string
+  onTypeChange: (value: string) => void
+  dateRange: { start: string; end: string }
+  onDateRangeChange: (range: { start: string; end: string }) => void
+  properties: Property[]
+  selectedProperty: string
+  showPropertyFilter: boolean
+  onPropertyChange: (value: string) => void
+}
 
 export default function FilterControls({
   searchTerm,
@@ -129,5 +129,5 @@ export default function FilterControls({
         </div>
       </div>
     </div>
-  );
+  )
 }

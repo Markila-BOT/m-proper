@@ -1,7 +1,7 @@
-import type { TransactionType } from "#/lib/domain";
+import type { TransactionType } from '#/lib/domain'
 
 export type Category = {
-  id: string;
-  name: string;
-  type: TransactionType;
-};
+  id: string
+  name: string
+  type: TransactionType
+}

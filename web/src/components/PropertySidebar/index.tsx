@@ -4,60 +4,61 @@ import {
   FiMapPin,
   FiUsers,
   FiHome,
-} from "react-icons/fi";
-import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import { MdLandscape } from "react-icons/md";
-import { useSelectedProperty } from "../../hooks/useProperties";
-import { usePropertySidebar } from "../../hooks/usePropertySidebar";
-import { PropertySidebarSkeleton } from "./PropertySidebarSkeleton";
-import PropertyModal from "../PropertyModal";
-import { PROPERTY_TYPE, type PropertyType } from "#/lib/domain";
+} from 'react-icons/fi'
+import { HiOutlineOfficeBuilding } from 'react-icons/hi'
+import { MdLandscape } from 'react-icons/md'
+import { useSelectedProperty } from '../../hooks/useProperties'
+import { usePropertySidebar } from '../../hooks/usePropertySidebar'
+import { PropertySidebarSkeleton } from './PropertySidebarSkeleton'
+import PropertyModal from '../PropertyModal'
+import { PROPERTY_TYPE } from '#/lib/domain'
+import type { PropertyType } from '#/lib/domain'
 
 type PropertySidebarProps = {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
-};
+  isCollapsed: boolean
+  onToggleCollapse: () => void
+}
 
 const getPropertyTypeIcon = (type: PropertyType, isSelected: boolean) => {
-  const color = isSelected ? "text-blue-600" : "text-gray-600";
-  const className = `w-5 h-5 ${color}`;
+  const color = isSelected ? 'text-blue-600' : 'text-gray-600'
+  const className = `w-5 h-5 ${color}`
 
   switch (type) {
     case PROPERTY_TYPE.RESIDENTIAL:
-      return <FiHome className={className} />;
+      return <FiHome className={className} />
     case PROPERTY_TYPE.COMMERCIAL:
-      return <HiOutlineOfficeBuilding className={className} />;
+      return <HiOutlineOfficeBuilding className={className} />
     case PROPERTY_TYPE.LOT:
-      return <MdLandscape className={className} />;
+      return <MdLandscape className={className} />
     default:
-      return null;
+      return null
   }
-};
+}
 
 export default function PropertySidebar({
   isCollapsed,
   onToggleCollapse,
 }: PropertySidebarProps) {
-  const { selectedProperty, setSelectedProperty } = useSelectedProperty();
+  const { selectedProperty, setSelectedProperty } = useSelectedProperty()
   const { properties, propertySummaries, isLoading, error } =
-    usePropertySidebar();
+    usePropertySidebar()
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "PHP",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'PHP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   const getSummaryForProperty = (propertyId: string) => {
-    return propertySummaries.find((s) => s.property.id === propertyId);
-  };
+    return propertySummaries.find((s) => s.property.id === propertyId)
+  }
 
   // Show loading skeleton
   if (isLoading) {
-    return <PropertySidebarSkeleton count={3} isCollapsed={isCollapsed} />;
+    return <PropertySidebarSkeleton count={3} isCollapsed={isCollapsed} />
   }
 
   // Show error state
@@ -82,7 +83,7 @@ export default function PropertySidebar({
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (isCollapsed) {
@@ -99,11 +100,11 @@ export default function PropertySidebar({
 
         <div className="flex-1 p-2 space-y-2">
           <button
-            onClick={() => setSelectedProperty("all")}
+            onClick={() => setSelectedProperty('all')}
             className={`w-full p-3 rounded-lg transition-colors ${
-              selectedProperty === "all"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
+              selectedProperty === 'all'
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
             title="All Properties"
           >
@@ -116,14 +117,14 @@ export default function PropertySidebar({
               onClick={() => setSelectedProperty(property.id)}
               className={`w-full p-3 rounded-lg transition-colors ${
                 selectedProperty === property.id
-                  ? "bg-blue-100 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`}
               title={property.name}
             >
               {getPropertyTypeIcon(
                 property.type,
-                selectedProperty === property.id
+                selectedProperty === property.id,
               )}
             </button>
           ))}
@@ -140,7 +141,7 @@ export default function PropertySidebar({
           </PropertyModal>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -168,22 +169,22 @@ export default function PropertySidebar({
       {/* All Properties Option */}
       <div className="p-4 border-b border-gray-200">
         <button
-          onClick={() => setSelectedProperty("all")}
+          onClick={() => setSelectedProperty('all')}
           className={`w-full p-4 rounded-xl border-2 transition-all ${
-            selectedProperty === "all"
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+            selectedProperty === 'all'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
           }`}
         >
           <div className="flex items-center space-x-3">
             <div
               className={`p-2 rounded-lg ${
-                selectedProperty === "all" ? "bg-blue-100" : "bg-gray-100"
+                selectedProperty === 'all' ? 'bg-blue-100' : 'bg-gray-100'
               }`}
             >
               <HiOutlineOfficeBuilding
                 className={`w-5 h-5 ${
-                  selectedProperty === "all" ? "text-blue-600" : "text-gray-600"
+                  selectedProperty === 'all' ? 'text-blue-600' : 'text-gray-600'
                 }`}
               />
             </div>
@@ -199,8 +200,8 @@ export default function PropertySidebar({
       <div className="overflow-y-auto flex-1">
         <div className="p-4 space-y-3">
           {properties.map((property) => {
-            const summary = getSummaryForProperty(property.id);
-            const isSelected = selectedProperty === property.id;
+            const summary = getSummaryForProperty(property.id)
+            const isSelected = selectedProperty === property.id
 
             return (
               <button
@@ -208,8 +209,8 @@ export default function PropertySidebar({
                 onClick={() => setSelectedProperty(property.id)}
                 className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                   isSelected
-                    ? "bg-blue-50 border-blue-500"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    ? 'bg-blue-50 border-blue-500'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <div className="space-y-3">
@@ -217,7 +218,7 @@ export default function PropertySidebar({
                   <div className="flex items-start space-x-3">
                     <div
                       className={`p-2 rounded-lg flex-shrink-0 ${
-                        isSelected ? "bg-blue-100" : "bg-gray-100"
+                        isSelected ? 'bg-blue-100' : 'bg-gray-100'
                       }`}
                     >
                       {getPropertyTypeIcon(property.type, isSelected)}
@@ -238,17 +239,17 @@ export default function PropertySidebar({
                     <div className="flex items-center space-x-1 text-gray-500">
                       <FiUsers className="w-3 h-3" />
                       <span>
-                        {property.units}{" "}
-                        {property.units === 1 ? "unit" : "units"}
+                        {property.units}{' '}
+                        {property.units === 1 ? 'unit' : 'units'}
                       </span>
                     </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         property.type === PROPERTY_TYPE.RESIDENTIAL
-                          ? "bg-green-100 text-green-700"
+                          ? 'bg-green-100 text-green-700'
                           : property.type === PROPERTY_TYPE.COMMERCIAL
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-yellow-100 text-yellow-700"
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-yellow-100 text-yellow-700'
                       }`}
                     >
                       {property.type}
@@ -265,8 +266,8 @@ export default function PropertySidebar({
                         <span
                           className={`text-sm font-semibold ${
                             summary.netProfit >= 0
-                              ? "text-emerald-600"
-                              : "text-red-600"
+                              ? 'text-emerald-600'
+                              : 'text-red-600'
                           }`}
                         >
                           {formatCurrency(summary.netProfit)}
@@ -288,10 +289,10 @@ export default function PropertySidebar({
                   )}
                 </div>
               </button>
-            );
+            )
           })}
         </div>
       </div>
     </div>
-  );
+  )
 }

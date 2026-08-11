@@ -1,1 +1,1 @@
-export { usePropertyStore } from "./propertyStore";
+export { usePropertyStore } from './propertyStore'

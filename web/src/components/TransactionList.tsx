@@ -1,14 +1,14 @@
-import { FiTrash2, FiCalendar, FiTag } from "react-icons/fi";
-import { HiOutlineOfficeBuilding } from "react-icons/hi";
-import type { Transaction } from "../types/transactions";
-import type { Property } from "../types/properties";
-import { TRANSACTION_TYPE } from "#/lib/domain";
+import { FiTrash2, FiCalendar, FiTag } from 'react-icons/fi'
+import { HiOutlineOfficeBuilding } from 'react-icons/hi'
+import type { Transaction } from '../types/transactions'
+import type { Property } from '../types/properties'
+import { TRANSACTION_TYPE } from '#/lib/domain'
 
 type TransactionListProps = {
-  transactions: Transaction[];
-  properties: Property[];
-  onDeleteTransaction: (id: string) => void;
-};
+  transactions: Transaction[]
+  properties: Property[]
+  onDeleteTransaction: (id: string) => void
+}
 
 export default function TransactionList({
   transactions,
@@ -16,24 +16,24 @@ export default function TransactionList({
   onDeleteTransaction,
 }: TransactionListProps) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "PHP",
-    }).format(amount);
-  };
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'PHP',
+    }).format(amount)
+  }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
 
   const getPropertyName = (propertyId: string) => {
-    const property = properties.find((p) => p.id === propertyId);
-    return property ? property.name : "Unknown Property";
-  };
+    const property = properties.find((p) => p.id === propertyId)
+    return property ? property.name : 'Unknown Property'
+  }
 
   if (transactions.length === 0) {
     return (
@@ -48,7 +48,7 @@ export default function TransactionList({
           Start by adding your first income or expense transaction.
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -73,8 +73,8 @@ export default function TransactionList({
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       transaction.type === TRANSACTION_TYPE.INCOME
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-red-100 text-red-800"
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-red-100 text-red-800'
                     }`}
                   >
                     {transaction.type}
@@ -99,11 +99,11 @@ export default function TransactionList({
                 <span
                   className={`text-lg font-semibold ${
                     transaction.type === TRANSACTION_TYPE.INCOME
-                      ? "text-emerald-600"
-                      : "text-red-600"
+                      ? 'text-emerald-600'
+                      : 'text-red-600'
                   }`}
                 >
-                  {transaction.type === TRANSACTION_TYPE.INCOME ? "+" : "-"}
+                  {transaction.type === TRANSACTION_TYPE.INCOME ? '+' : '-'}
                   {formatCurrency(transaction.amount)}
                 </span>
                 <button
@@ -118,5 +118,5 @@ export default function TransactionList({
         ))}
       </div>
     </div>
-  );
+  )
 }

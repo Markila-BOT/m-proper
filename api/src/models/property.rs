@@ -1,4 +1,3 @@
-// api/src/models.rs
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

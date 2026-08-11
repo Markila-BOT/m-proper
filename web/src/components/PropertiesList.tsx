@@ -1,17 +1,17 @@
 import {
   usePropertiesWithStates,
   useDeleteProperty,
-} from "../hooks/useProperties";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { FiHome, FiLoader, FiAlertCircle, FiTrash2 } from "react-icons/fi";
-import { PropertyTypeIcon } from "./PropertyTypeIcon";
-import { useState } from "react";
+} from '../hooks/useProperties'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { FiHome, FiLoader, FiAlertCircle, FiTrash2 } from 'react-icons/fi'
+import { PropertyTypeIcon } from './PropertyTypeIcon'
+import { useState } from 'react'
 
 export default function PropertiesList() {
-  const { properties, isLoading, error, isEmpty } = usePropertiesWithStates();
-  const deleteProperty = useDeleteProperty();
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const { properties, isLoading, error, isEmpty } = usePropertiesWithStates()
+  const deleteProperty = useDeleteProperty()
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ export default function PropertiesList() {
           <span className="text-gray-600">Loading properties...</span>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -32,7 +32,7 @@ export default function PropertiesList() {
           <span>Error loading properties: {error.message}</span>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -81,11 +81,11 @@ export default function PropertiesList() {
                     <div
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         property.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {property.isActive ? "Active" : "Inactive"}
+                      {property.isActive ? 'Active' : 'Inactive'}
                     </div>
                     <button
                       className="p-2 text-gray-400 rounded-lg transition-colors hover:text-red-600 hover:bg-red-50"
@@ -104,21 +104,21 @@ export default function PropertiesList() {
                     <button
                       className="px-2 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700"
                       onClick={async () => {
-                        setDeleteError(null);
+                        setDeleteError(null)
                         try {
-                          await deleteProperty.mutateAsync(property.id);
-                          setConfirmingId(null);
+                          await deleteProperty.mutateAsync(property.id)
+                          setConfirmingId(null)
                         } catch (err: unknown) {
                           if (err instanceof Error) {
-                            setDeleteError(err.message);
+                            setDeleteError(err.message)
                           } else {
-                            setDeleteError("Failed to delete property");
+                            setDeleteError('Failed to delete property')
                           }
                         }
                       }}
                       disabled={deleteProperty.isPending}
                     >
-                      {deleteProperty.isPending ? "Deleting..." : "Confirm"}
+                      {deleteProperty.isPending ? 'Deleting...' : 'Confirm'}
                     </button>
                     <button
                       className="px-2 py-1 text-xs text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
@@ -151,5 +151,5 @@ export default function PropertiesList() {
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from '../ui/skeleton'
 
 type PropertySidebarSkeletonProps = {
-  count?: number;
-  isCollapsed?: boolean;
-};
+  count?: number
+  isCollapsed?: boolean
+}
 
 export function PropertySidebarSkeleton({
   count = 3,
@@ -25,7 +25,7 @@ export function PropertySidebarSkeleton({
           <Skeleton className="mx-auto w-10 h-10 rounded-lg" />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -103,5 +103,5 @@ export function PropertySidebarSkeleton({
         </div>
       </div>
     </div>
-  );
+  )
 }

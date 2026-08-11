@@ -1,28 +1,21 @@
 // api/src/routes/properties.rs
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     routing::{delete, get},
-    Json, Router,
 };
 use chrono::{DateTime, Utc};
-use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::{
-    ApiEnvelope, CreatePropertyRequest, Property, PropertyType,
-};
+use crate::errors::AppError;
+use crate::models::{ApiEnvelope, CreatePropertyRequest, Property, PropertyType};
+use crate::state::AppState;
 
-#[derive(Clone)]
-pub struct PropertiesState {
-    pub pool: PgPool,
-}
-
-pub fn router(pool: PgPool) -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_properties).post(create_property))
         .route("/{id}", delete(delete_property))
-        .with_state(PropertiesState { pool })
 }
 
 #[derive(Debug, sqlx::FromRow)]
@@ -38,9 +31,13 @@ struct PropertyRow {
 }
 
 impl PropertyRow {
-    fn into_property(self) -> Result<Property, String> {
-        let property_type = PropertyType::parse(&self.property_type)
-            .ok_or_else(|| format!("Invalid property type in database: {}", self.property_type))?;
+    fn into_property(self) -> Result<Property, AppError> {
+        let property_type = PropertyType::parse(&self.property_type).ok_or_else(|| {
+            AppError::Internal(format!(
+                "Invalid property type in database: {}",
+                self.property_type
+            ))
+        })?;
 
         Ok(Property {
             id: self.id,
@@ -65,9 +62,9 @@ impl PropertyRow {
     tag = "properties"
 )]
 pub async fn list_properties(
-    State(state): State<PropertiesState>,
-) -> (StatusCode, Json<ApiEnvelope<Vec<Property>>>) {
-    let result = sqlx::query_as::<_, PropertyRow>(
+    State(state): State<AppState>,
+) -> Result<Json<ApiEnvelope<Vec<Property>>>, AppError> {
+    let rows = sqlx::query_as::<_, PropertyRow>(
         r#"
         SELECT id, name, address, type, units, is_active, created_at
         FROM properties
@@ -75,48 +72,17 @@ pub async fn list_properties(
         "#,
     )
     .fetch_all(&state.pool)
-    .await;
+    .await?;
 
-    match result {
-        Ok(rows) => {
-            let mut properties = Vec::with_capacity(rows.len());
-            for row in rows {
-                match row.into_property() {
-                    Ok(property) => properties.push(property),
-                    Err(message) => {
-                        tracing::error!("{message}");
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ApiEnvelope {
-                                success: false,
-                                message: "Internal server error".into(),
-                                data: None,
-                            }),
-                        );
-                    }
-                }
-            }
+    let properties = rows
+        .into_iter()
+        .map(PropertyRow::into_property)
+        .collect::<Result<Vec<_>, _>>()?;
 
-            (
-                StatusCode::OK,
-                Json(ApiEnvelope::ok(
-                    "Properties fetched successfully",
-                    properties,
-                )),
-            )
-        }
-        Err(error) => {
-            tracing::error!("Failed to fetch properties: {error}");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiEnvelope {
-                    success: false,
-                    message: format!("Failed to fetch properties: {error}"),
-                    data: None,
-                }),
-            )
-        }
-    }
+    Ok(Json(ApiEnvelope::ok(
+        "Properties fetched successfully",
+        properties,
+    )))
 }
 
 /// Create a new property.
@@ -132,38 +98,29 @@ pub async fn list_properties(
     tag = "properties"
 )]
 pub async fn create_property(
-    State(state): State<PropertiesState>,
+    State(state): State<AppState>,
     Json(body): Json<CreatePropertyRequest>,
-) -> (StatusCode, Json<ApiEnvelope<Property>>) {
+) -> Result<(StatusCode, Json<ApiEnvelope<Property>>), AppError> {
     let name = body.name.trim();
     let address = body.address.trim();
 
     if name.is_empty() || address.is_empty() || body.property_type.trim().is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiEnvelope {
-                success: false,
-                message: "Missing required fields: name, address, and type are required".into(),
-                data: None,
-            }),
-        );
+        return Err(AppError::BadRequest(
+            "Missing required fields: name, address, and type are required".into(),
+        ));
     }
 
     let Some(property_type) = PropertyType::parse(body.property_type.trim()) else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiEnvelope {
-                success: false,
-                message: "Invalid property type. Must be one of: \"residential\", \"commercial\", \"lot\"".into(),
-                data: None,
-            }),
-        );
+        return Err(AppError::BadRequest(
+            "Invalid property type. Must be one of: \"residential\", \"commercial\", \"lot\""
+                .into(),
+        ));
     };
 
     let is_active = body.is_active.unwrap_or(true);
     let units = body.units;
 
-    let result = sqlx::query_as::<_, PropertyRow>(
+    let row = sqlx::query_as::<_, PropertyRow>(
         r#"
         INSERT INTO properties (name, address, type, units, is_active)
         VALUES ($1, $2, $3, $4, $5)
@@ -176,38 +133,15 @@ pub async fn create_property(
     .bind(units)
     .bind(is_active)
     .fetch_one(&state.pool)
-    .await;
+    .await?;
 
-    match result {
-        Ok(row) => match row.into_property() {
-            Ok(property) => (
-                StatusCode::CREATED,
-                Json(ApiEnvelope::ok("Property created successfully", property)),
-            ),
-            Err(message) => {
-                tracing::error!("{message}");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ApiEnvelope {
-                        success: false,
-                        message: "Internal server error".into(),
-                        data: None,
-                    }),
-                )
-            }
-        },
-        Err(error) => {
-            tracing::error!("Failed to create property: {error}");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiEnvelope {
-                    success: false,
-                    message: format!("Failed to create property: {error}"),
-                    data: None,
-                }),
-            )
-        }
-    }
+    Ok((
+        StatusCode::CREATED,
+        Json(ApiEnvelope::ok(
+            "Property created successfully",
+            row.into_property()?,
+        )),
+    ))
 }
 
 /// Delete a property by id.
@@ -225,42 +159,30 @@ pub async fn create_property(
     tag = "properties"
 )]
 pub async fn delete_property(
-    State(state): State<PropertiesState>,
+    State(state): State<AppState>,
     Path(id): Path<String>,
-) -> (StatusCode, Json<ApiEnvelope<()>>) {
+) -> Result<(StatusCode, Json<ApiEnvelope<()>>), AppError> {
     let id = id.trim();
     if id.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiEnvelope::err("Property ID is required")),
-        );
+        return Err(AppError::BadRequest("Property ID is required".into()));
     }
 
     let Ok(uuid) = Uuid::parse_str(id) else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiEnvelope::err("Property ID is required")),
-        );
+        return Err(AppError::BadRequest("Property ID is required".into()));
     };
 
-    let result = sqlx::query("DELETE FROM properties WHERE id = $1")
+    let rows_affected = sqlx::query("DELETE FROM properties WHERE id = $1")
         .bind(uuid)
         .execute(&state.pool)
-        .await;
+        .await?
+        .rows_affected();
 
-    match result {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiEnvelope::ok_message("Property deleted successfully")),
-        ),
-        Err(error) => {
-            tracing::error!("Failed to delete property: {error}");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiEnvelope::err(format!(
-                    "Failed to delete property: {error}"
-                ))),
-            )
-        }
+    if rows_affected == 0 {
+        return Err(AppError::NotFound(format!("Property {uuid} not found")));
     }
+
+    Ok((
+        StatusCode::OK,
+        Json(ApiEnvelope::ok_message("Property deleted successfully")),
+    ))
 }

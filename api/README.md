@@ -6,9 +6,14 @@ HTTP API for properties, backed by Supabase Postgres via sqlx.
 
 ## Prerequisites
 
-- Rust (stable)
+- Rust 1.85+ / Rust 2024 edition
 - Postgres connection string (`DATABASE_URL`) from Supabase → Project Settings → Database → **URI**
   (must start with `postgresql://`, not the `https://….supabase.co` project URL)
+- `sqlx-cli` for manual migration commands:
+
+```bash
+cargo install sqlx-cli --features postgres
+```
 
 ## Setup
 
@@ -36,6 +41,21 @@ Default listen address: `http://localhost:3000`
 - Health: `GET /health`
 - Swagger UI: `http://localhost:3000/swagger-ui`
 - OpenAPI JSON: `http://localhost:3000/api-docs/openapi.json` (also written to `api/openapi.json` on startup)
+
+The API runs embedded SQLx migrations from `api/migrations/` during startup. To run them manually:
+
+```bash
+cd api && sqlx migrate run
+```
+
+## Check
+
+```bash
+cd api
+cargo check
+cargo clippy -- -D warnings
+cargo test
+```
 
 ## Regenerate TypeScript client
 

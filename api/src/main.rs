@@ -1,13 +1,17 @@
 // api/src/main.rs
+mod config;
 mod db;
+mod errors;
+mod extractors;
+mod middleware;
 mod models;
 mod routes;
+mod state;
 
-use axum::{routing::get, Json, Router};
-use models::{ApiEnvelope, CreatePropertyRequest, Property};
+use config::Config;
+use models::{CreatePropertyRequest, Property};
 use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -27,8 +31,9 @@ struct ApiDoc;
 async fn main() {
     dotenvy::dotenv().ok();
 
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("info".parse().unwrap()))
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| "info,tower_http=debug".into()))
         .init();
 
     // Export OpenAPI document for TS client generation (does not require DB)
@@ -36,54 +41,43 @@ async fn main() {
         tracing::warn!("Failed to write openapi.json: {error}");
     }
 
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        eprintln!("DATABASE_URL is required. Copy api/.env.example to api/.env and set it.");
+    let config = Config::from_env().unwrap_or_else(|error| {
+        eprintln!("{error}. Copy api/.env.example to api/.env and set it.");
         std::process::exit(1);
     });
 
-    let pool = db::connect(&database_url)
-        .await
-        .unwrap_or_else(|error| {
-            eprintln!("Failed to connect to Postgres: {error}");
-            std::process::exit(1);
-        });
+    let state = state::AppState::new(config).await.unwrap_or_else(|error| {
+        eprintln!("Failed to connect to Postgres: {error}");
+        std::process::exit(1);
+    });
 
-    db::health_check(&pool).await.unwrap_or_else(|error| {
+    db::health_check(&state.pool).await.unwrap_or_else(|error| {
         eprintln!("Database health check failed: {error}");
         std::process::exit(1);
     });
     tracing::info!("Connected to Postgres");
 
-    let cors = CorsLayer::new()
-        .allow_origin([
-            "http://localhost:3000".parse().unwrap(),
-            "http://localhost:3001".parse().unwrap(),
-            "http://localhost:5173".parse().unwrap(),
-            "http://127.0.0.1:3000".parse().unwrap(),
-            "http://127.0.0.1:3001".parse().unwrap(),
-            "http://127.0.0.1:5173".parse().unwrap(),
-        ])
-        .allow_methods(Any)
-        .allow_headers(Any);
+    sqlx::migrate!("./migrations")
+        .run(&state.pool)
+        .await
+        .unwrap_or_else(|error| {
+            eprintln!("Failed to run migrations: {error}");
+            std::process::exit(1);
+        });
 
-    let app = Router::new()
-        .route("/", get(|| async { "m-proper api" }))
-        .route(
-            "/health",
-            get(|| async { Json(ApiEnvelope::ok_message("ok")) }),
-        )
+    let port = state.config.port;
+    let app = routes::create_router(state)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .merge(routes::api_router(pool))
-        .layer(cors);
+        .fallback(routes::not_found);
 
-    let port: u16 = std::env::var("PORT")
-        .ok()
-        .and_then(|value| value.parse().ok())
-        .unwrap_or(3000);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     tracing::info!("Listening on http://{addr}");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .unwrap_or_else(|error| {
+            panic!("Failed to bind {addr}: {error}");
+        });
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -91,6 +85,11 @@ fn export_openapi() -> std::io::Result<()> {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("openapi.json");
     let json = ApiDoc::openapi()
         .to_pretty_json()
-        .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+        .map_err(std::io::Error::other)?;
+
+    if std::fs::read_to_string(&path).is_ok_and(|existing| existing == json) {
+        return Ok(());
+    }
+
     std::fs::write(path, json)
 }

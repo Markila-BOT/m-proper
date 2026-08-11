@@ -1,68 +1,68 @@
-import { useState } from "react";
-import { useCreateProperty } from "../hooks/useProperties";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { useState } from 'react'
+import { useCreateProperty } from '../hooks/useProperties'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from './ui/select'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
-import { FiLoader } from "react-icons/fi";
-import type { CreatePropertyRequest } from "#/lib/domain";
-import { PROPERTY_TYPE, PROPERTY_TYPE_LABELS } from "#/lib/domain";
+} from './ui/dialog'
+import { FiLoader } from 'react-icons/fi'
+import type { CreatePropertyRequest } from '#/lib/domain'
+import { PROPERTY_TYPE, PROPERTY_TYPE_LABELS } from '#/lib/domain'
 
 type PropertyModalProps = {
-  children: React.ReactNode;
-};
+  children: React.ReactNode
+}
 
 export default function PropertyModal({ children }: PropertyModalProps) {
-  const createPropertyMutation = useCreateProperty();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const createPropertyMutation = useCreateProperty()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formData, setFormData] = useState<CreatePropertyRequest>({
-    name: "",
-    address: "",
+    name: '',
+    address: '',
     type: PROPERTY_TYPE.RESIDENTIAL,
     units: undefined,
     isActive: true,
-  });
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     try {
-      await createPropertyMutation.mutateAsync(formData);
-      setIsDialogOpen(false);
+      await createPropertyMutation.mutateAsync(formData)
+      setIsDialogOpen(false)
       setFormData({
-        name: "",
-        address: "",
+        name: '',
+        address: '',
         type: PROPERTY_TYPE.RESIDENTIAL,
         units: undefined,
         isActive: true,
-      });
+      })
     } catch (error) {
-      console.error("Failed to create property:", error);
+      console.error('Failed to create property:', error)
     }
-  };
+  }
 
   const handleInputChange = (
     field: keyof CreatePropertyRequest,
-    value: string | number | boolean | undefined
+    value: string | number | boolean | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }));
-  };
+    }))
+  }
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -77,7 +77,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Enter property name"
               required
             />
@@ -88,7 +88,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
+              onChange={(e) => handleInputChange('address', e.target.value)}
               placeholder="Enter property address"
               required
             />
@@ -98,12 +98,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Label htmlFor="type">Property Type</Label>
             <Select
               value={formData.type}
-              onValueChange={(value) =>
-                handleInputChange(
-                  "type",
-                  value as CreatePropertyRequest["type"]
-                )
-              }
+              onValueChange={(value) => handleInputChange('type', value)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -127,11 +122,11 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Input
               id="units"
               type="number"
-              value={formData.units || ""}
+              value={formData.units || ''}
               onChange={(e) =>
                 handleInputChange(
-                  "units",
-                  e.target.value ? parseInt(e.target.value) : undefined
+                  'units',
+                  e.target.value ? parseInt(e.target.value) : undefined,
                 )
               }
               placeholder="Enter number of units"
@@ -143,7 +138,7 @@ export default function PropertyModal({ children }: PropertyModalProps) {
               id="isActive"
               type="checkbox"
               checked={formData.isActive}
-              onChange={(e) => handleInputChange("isActive", e.target.checked)}
+              onChange={(e) => handleInputChange('isActive', e.target.checked)}
               className="rounded border-gray-300"
             />
             <Label htmlFor="isActive">Active Property</Label>
@@ -164,12 +159,12 @@ export default function PropertyModal({ children }: PropertyModalProps) {
                   Creating...
                 </>
               ) : (
-                "Create Property"
+                'Create Property'
               )}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

@@ -1,6 +1,6 @@
 // api/src/db.rs
-use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 
 pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {

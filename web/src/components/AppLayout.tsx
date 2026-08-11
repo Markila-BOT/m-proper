@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-import PropertySidebar from "./PropertySidebar";
+import type { ReactNode } from 'react'
+import PropertySidebar from './PropertySidebar'
 
 type AppLayoutProps = {
-  children: ReactNode;
-  isSidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-};
+  children: ReactNode
+  isSidebarCollapsed: boolean
+  onToggleSidebar: () => void
+}
 
 export default function AppLayout({
   children,
@@ -20,5 +20,5 @@ export default function AppLayout({
       />
       <div className="flex flex-col flex-1">{children}</div>
     </div>
-  );
+  )
 }
