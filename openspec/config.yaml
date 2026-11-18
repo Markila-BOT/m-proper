@@ -1,26 +1,49 @@
-schema: spec-driven
+schema: intent-driven
 
 context: |
-  m-proper is a landlord property income/expense tracker.
-  Stack: Rust Axum API (sqlx → Supabase Postgres), TanStack Start web app (React Query), pnpm for JS.
-  Domain API owns properties CRUD; transactions currently remain in browser localStorage.
+  Product: m-proper — landlord property income/expense tracker.
+  Domain: properties and income/expense transactions; financial records are sensitive.
+  Stack: Rust Axum API (sqlx → Supabase Postgres), TanStack Start web app (React Query, Tailwind), pnpm for JS.
+  Tooling: cargo build/clippy/test, pnpm --filter web build, pnpm run generate:api-client.
+
   Architecture A: Start is UI shell only — business logic lives in Rust, not Start server functions.
   Wire format: JSON envelope { success, message, data? } with camelCase fields.
   Monorepo: api/ (Cargo), web/ (TanStack Start).
   DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL.
   Conventional commits. Prefer small, focused changes.
 
+  Agents: Route source implementation to the senior-dev subagent and
+  acceptance-test work to senior-qa. Do not batch their tasks; call them as
+  often as needed in smaller batches because development and test work may
+  interleave.
+
 rules:
   proposal:
+    - Must use grill-with-docs skill
     - Include Non-goals when scope is a migration or stack change
+    - Must use adversarial-authoring skill
+    - Must use glossary skill
+  design:
+    - Must use c4-diagrams skill
+    - Must use glossary skill
+  adr:
+    - Must use architectural-decision-records skill
   tasks:
     - Prefer checkboxes completable in one session
     - Call out env prerequisites (e.g. DATABASE_URL) explicitly
+  # Enable executable specs by uncommenting both blocks and recording `stack:`.
+  # The second block replaces this tasks list.
+  # specs:
+  #   - Must use spec-as-source skill
+  # tasks:
+  #   - Must use spec-as-source skill
 
 operations:
   apply:
     guidance:
+      - Must use test-driven-development skill
       - Keep strangler cutover until smoke tests pass against real Postgres
   archive:
     guidance:
+      - Must run OpenSpec Sync before archiving
       - Summarize archive outcome before finishing

@@ -32,6 +32,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# OpenCode local dependencies
+.opencode/node_modules/
+
+# OpenSpec local output
+openspec/.cache/
+
 # editor
 .idea
 .vscode/*
