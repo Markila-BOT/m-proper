@@ -17,6 +17,8 @@ context: |
   often as needed in smaller batches because development and test work may
   interleave.
 
+stack: javascript      # javascript | python - required for spec-as-source
+
 rules:
   proposal:
     - Must use grill-with-docs skill
@@ -28,15 +30,10 @@ rules:
     - Must use glossary skill
   adr:
     - Must use architectural-decision-records skill
+  specs:
+    - Must use spec-as-source skill
   tasks:
-    - Prefer checkboxes completable in one session
-    - Call out env prerequisites (e.g. DATABASE_URL) explicitly
-  # Enable executable specs by uncommenting both blocks and recording `stack:`.
-  # The second block replaces this tasks list.
-  # specs:
-  #   - Must use spec-as-source skill
-  # tasks:
-  #   - Must use spec-as-source skill
+    - Must use spec-as-source skill
 
 operations:
   apply:
