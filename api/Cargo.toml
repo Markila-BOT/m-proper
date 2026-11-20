@@ -20,7 +20,3 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 utoipa = { version = "6", features = ["chrono", "uuid"] }
 utoipa-swagger-ui = { version = "10", features = ["axum"] }
 uuid = { version = "1", features = ["serde", "v4"] }
-
-[dev-dependencies]
-reqwest = { version = "0.12", features = ["json"] }
-tokio-test = "0.4"
