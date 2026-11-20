@@ -53,3 +53,6 @@ openspec/.cache/
 # legacy Bun lockfiles
 bun.lockb
 bun.lock
+
+# Impeccable working mocks
+web/.impeccable/mocks/
