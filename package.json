@@ -17,6 +17,6 @@
     "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "concurrently": "^10.0.7"
   }
 }
