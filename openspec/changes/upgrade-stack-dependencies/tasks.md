@@ -3,7 +3,7 @@
 - [x] 1.1 Create branch `chore/upgrade-stack-dependencies`
 - [x] 1.2 Record `cargo check` output from `api/` into `openspec/.cache/upgrade-baseline/cargo-check.txt`
 - [x] 1.3 Record `pnpm --filter web build` output into `openspec/.cache/upgrade-baseline/web-build.txt`
-- [ ] 1.4 Save `pnpm outdated -r` and the crates.io comparison table into `openspec/.cache/upgrade-baseline/versions.txt`
+- [x] 1.4 Save `pnpm outdated -r` and the crates.io comparison table into `openspec/.cache/upgrade-baseline/versions.txt`
 - [x] 1.5 Capture screenshots of the five states at 1440×900 and 390×844 into `openspec/.cache/upgrade-baseline/screens/`: property list with sidebar, create-property modal, delete confirmation, transaction form, filters with summary
 - [x] 1.6 Confirm `api/.env` holds a `postgresql://` `DATABASE_URL` and that the API boots against it
 
@@ -58,7 +58,7 @@
 - [x] 8.4 Confirm recorded transactions still load from local storage and that summaries and filters behave as before
 - [x] 8.5 Re-confirm the final `api/openapi.json` diff contains no contract change
 - [x] 8.6 Run `openspec validate upgrade-stack-dependencies --type change --strict`
-- [ ] 8.7 Merge the branch locally into `master`; do not archive this change
+- [x] 8.7 Merge the branch locally into `master`; do not archive this change
 
 ## 9. Records
 
