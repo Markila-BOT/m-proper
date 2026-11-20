@@ -1,10 +1,10 @@
 ## Why
 
-Both halves of m-proper sit behind current upstream releases, and `web/package.json` declares `"latest"` for eight dependencies, so any lockfile refresh silently adopts whatever upstream publishes with no review surface. The baseline is build-green (`cargo check` and `vite build` pass; there is no test suite), which makes this the cheapest moment to close the drift deliberately.
+Both halves of m-proper sit behind current upstream releases, and `web/package.json` declares `"latest"` for nine dependencies, so any lockfile refresh silently adopts whatever upstream publishes with no review surface. The baseline is build-green (`cargo check` and `vite build` pass; there is no test suite), which makes this the cheapest moment to close the drift deliberately.
 
 ## What Changes
 
-- Replace the eight `"latest"` specifiers in `web/package.json` with an explicit version range at the version currently resolved, so a refresh becomes a reviewable diff instead of an unpinned fetch
+- Replace the nine `"latest"` specifiers in `web/package.json` with an explicit version range at the version currently resolved, so a refresh becomes a reviewable diff instead of an unpinned fetch
 - Upgrade web direct dependencies to: React/react-dom 19.3.1, `@types/react` 19.3.0, `@types/react-dom` 19.3.0, TanStack Start 1.169.5, Router 1.170.46, Router devtools/SSR-query 1.167.3, Query and Query devtools 5.107.2, router-cli 1.168.0, react-devtools 0.10.14, devtools-vite 0.8.6, eslint-config 0.5.0, Vite 8.3.8, `@vitejs/plugin-react` 6.3.0, ESLint 10.15.0, Prettier 3.10.1, `@types/node` 26.6.6, Tailwind and `@tailwindcss/vite` 4.3.5, Radix dialog 1.3.1, select 2.4.1, slot 1.5.0, label 2.1.17, Zustand 5.1.0, tailwind-merge 3.7.0, concurrently 10.0.7
 - **BREAKING**: `sqlx` 0.8 → 0.9.1 — compile-time surface and migration runner; `runtime-tokio`, `tls-rustls`, `migrate`, `postgres`, `chrono`, and `uuid` features carry over unchanged
 - **BREAKING**: `utoipa` 5 → 6.0.0 together with `utoipa-swagger-ui` 9 → 10.0.2 — they emit one spec, so they move as a pair
