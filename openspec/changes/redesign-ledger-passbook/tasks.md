@@ -25,10 +25,10 @@
 
 ## 5. Craft pass and verification
 
-- [ ] 5.1 Read the impeccable craft floor; batch the spacing, border, and padding corrections across the redesigned surfaces (ui-taste: aligned grid, consistent rhythm, deliberate table borders)
-- [ ] 5.2 Responsive sweep; capture `desktop.png` (1440) and `mobile.png` (390) into `.impeccable/review/`
-- [ ] 5.3 Acceptance suite green across web-app's five kept and two added scenarios
-- [ ] 5.4 Run the design detector once over the changed targets; fix what is mechanical
+- [x] 5.1 Read the impeccable craft floor; batch the spacing, border, and padding corrections across the redesigned surfaces (ui-taste: aligned grid, consistent rhythm, deliberate table borders)
+- [x] 5.2 Responsive sweep; capture `desktop.png` (1440) and `mobile.png` (390) into `.impeccable/review/`
+- [x] 5.3 Acceptance suite green across web-app's five kept and two added scenarios
+- [x] 5.4 Run the design detector once over the changed targets; fix what is mechanical
 - [ ] 5.5 Independent finish review against the direction contract and `model-pick.html`; act on its disposition
 - [ ] 5.6 DESIGN.md written from the built world at finish
 - [ ] 5.7 `openspec validate` non-strict clean; every shipping raster carries its provenance

@@ -3,7 +3,9 @@
 // model and the sort state; the running balance rail is the transactions
 // module's runningBalance computed over the rows in the order the eye
 // reads them (sorted, filtered), so the balance follows whatever is
-// displayed.
+// displayed. Below the last entry the page carries its blank printed
+// lines — aria-hidden ruled rows with the balance column's print wash,
+// no text and no pointer — the unfilled remainder of a sparse page.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   createSortedRowModel,
@@ -25,6 +27,12 @@ type LedgerColumnMeta = {
   label: string
   align?: 'left' | 'right'
 }
+
+// The blank printed lines below the last entry cap at a page's worth —
+// viewport height over one ruled line, never more than fifteen — so a
+// sparse page carries mass without faking an endless sheet.
+const BLANK_LINE_CAP = 15
+const BLANK_LINE_HEIGHT = 40
 
 // Module scope, stable: the ledger's feature set — column sorting with a
 // client-side sorted model, the comparators its columns resolve to, and
@@ -53,6 +61,25 @@ export default function TransactionList({
 }: TransactionListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+
+  // The unfilled printed lines: enough ruled rows to carry the page to
+  // about one viewport's worth of lines, minus the entries already
+  // displayed. Decoration only — rendered after mount so server and
+  // client paint identically, and aria-hidden so it never reads or
+  // intercepts.
+  const [blankLineCount, setBlankLineCount] = useState(0)
+  useEffect(() => {
+    const compute = () => {
+      const pageLines = Math.min(
+        BLANK_LINE_CAP,
+        Math.floor(window.innerHeight / BLANK_LINE_HEIGHT),
+      )
+      setBlankLineCount(Math.max(0, pageLines - transactions.length))
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    return () => window.removeEventListener('resize', compute)
+  }, [transactions.length])
 
   const propertyNames = useMemo(() => {
     const names = new Map<string, string>()
@@ -274,6 +301,20 @@ export default function TransactionList({
             )
           })}
         </tbody>
+        {/* The passbook's unfilled printed lines: hairline row rules and
+            the balance column's print wash, nothing written on them.
+            aria-hidden and transparent to the pointer — they are paper,
+            not content. */}
+        {blankLineCount > 0 && (
+          <tbody aria-hidden="true" className="pointer-events-none">
+            {Array.from({ length: blankLineCount }, (_, index) => (
+              <tr key={`blank-line-${index}`}>
+                <td colSpan={5} className="h-10 border-b border-rule" />
+                <td className="h-10 border-b border-l border-rule bg-print-wash" />
+              </tr>
+            ))}
+          </tbody>
+        )}
         <tfoot>
           <tr>
             <td

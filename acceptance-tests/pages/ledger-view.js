@@ -48,12 +48,21 @@ async function clearStoredTransactions(page) {
   await page.evaluate((key) => window.localStorage.removeItem(key), STORAGE_KEY);
 }
 
+// The ledger's entry rows: the first tbody of the passbook table. The rows
+// after it are the page's blank printed lines (aria-hidden decoration for
+// sparse pages), so every reader of entries — descriptions, balances —
+// scopes here. (redesign-ledger-passbook's finish batch added the blank
+// ruled tbody; this file is the one place that knows.)
+function entryRows(page) {
+  return page.locator('main').locator('table tbody').first().locator('tr');
+}
+
 async function displayedTransactionDescriptions(page) {
   // The ledger rows name each transaction in the description cell of their
   // table row inside main (the sidebar's property names never match — they
   // sit outside main). The description is the cell's first span; the row's
   // Delete control is a sibling, never part of the name.
-  const rows = page.locator('main').locator('table tbody tr');
+  const rows = entryRows(page);
   const count = await rows.count();
   const descriptions = [];
   for (let i = 0; i < count; i += 1) {
@@ -75,11 +84,11 @@ async function expectTransactionVisible(page, transaction) {
 
 async function balanceColumnValues(page) {
   // The running balance renders as the ledger's rightmost column — the
-  // header names "Balance" and each row's final cell carries its
-  // right-edge figure.
+  // header names "Balance" and each entry row's final cell carries its
+  // right-edge figure (the blank printed lines below carry none).
   const balanceHeader = page.locator('main').getByText(/balance/i).first();
   await balanceHeader.waitFor({ state: 'visible', timeout: 5000 });
-  const rows = page.locator('main').locator('table tbody tr');
+  const rows = entryRows(page);
   const count = await rows.count();
   const values = [];
   for (let i = 0; i < count; i += 1) {

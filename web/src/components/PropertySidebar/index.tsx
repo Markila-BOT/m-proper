@@ -1,6 +1,7 @@
 import { FiPlus, FiChevronRight, FiMapPin, FiUsers } from 'react-icons/fi'
 import { useSelectedProperty } from '../../hooks/useProperties'
 import { usePropertySidebar } from '../../hooks/usePropertySidebar'
+import { useIsDesktop } from '../../hooks/useIsDesktop'
 import { PropertySidebarSkeleton } from './PropertySidebarSkeleton'
 import PropertyModal from '../PropertyModal'
 import { PropertyTypeIcon } from '../PropertyTypeIcon'
@@ -20,13 +21,19 @@ export default function PropertySidebar({
   const { properties, propertySummaries, isLoading, error } =
     usePropertySidebar()
 
+  // The rail's breakpoint behavior: below lg it ships icon-only (the
+  // tooltips carry the names) so the ledger keeps the width it needs; the
+  // collapse toggle is a desktop control, so it hides with the labels.
+  const isDesktop = useIsDesktop()
+  const railCollapsed = !isDesktop || isCollapsed
+
   const getSummaryForProperty = (propertyId: string) => {
     return propertySummaries.find((s) => s.property.id === propertyId)
   }
 
   // Show loading skeleton
   if (isLoading) {
-    return <PropertySidebarSkeleton count={3} isCollapsed={isCollapsed} />
+    return <PropertySidebarSkeleton count={3} isCollapsed={railCollapsed} />
   }
 
   // Show error state
@@ -34,9 +41,9 @@ export default function PropertySidebar({
     return (
       <nav
         aria-label="Properties"
-        className="flex flex-col w-80 bg-paper border-r border-rule"
+        className="flex flex-col w-16 lg:w-80 bg-paper border-r border-rule"
       >
-        <div className="p-6 border-b border-rule">
+        <div className="hidden lg:block p-6 border-b border-rule">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
               Properties
@@ -49,7 +56,7 @@ export default function PropertySidebar({
             </button>
           </div>
         </div>
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 lg:p-6">
           <div className="text-center text-stamp">
             <p>Error loading properties</p>
             <p className="mt-2 text-sm text-ink-soft">{error.message}</p>
@@ -59,13 +66,15 @@ export default function PropertySidebar({
     )
   }
 
-  if (isCollapsed) {
+  if (railCollapsed) {
     return (
       <nav
         aria-label="Properties"
         className="flex flex-col w-16 bg-paper border-r border-rule"
       >
-        <div className="p-4 border-b border-rule">
+        {/* The expand control is a desktop control: below lg the rail is
+            icon-only by viewport, so the toggle (and its rule) hide. */}
+        <div className="hidden lg:block p-4 border-b border-rule">
           <button
             onClick={onToggleCollapse}
             className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash"

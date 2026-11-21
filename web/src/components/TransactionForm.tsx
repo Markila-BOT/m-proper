@@ -1,7 +1,9 @@
 // web/src/components/TransactionForm.tsx
 // The add-transaction form: a passbook line being written. Radix dialog
 // portal, hairline grid fields with navy caption labels, Radix selects,
-// and validation that names the problem and its recovery in stamp-red.
+// and validation that names the problem and its recovery as a stamp —
+// bordered on all sides, uppercase mono, stamp-red ink on paper (the
+// craft floor's generic left-stripe alert is refused).
 import { useState } from 'react'
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
@@ -258,7 +260,7 @@ export default function TransactionForm({
           {validationError && (
             <p
               role="alert"
-              className="border-l-2 border-stamp pl-3 text-sm text-stamp"
+              className="rounded-[2px] border-[1.5px] border-stamp bg-paper px-3 py-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-stamp"
             >
               {validationError}
             </p>

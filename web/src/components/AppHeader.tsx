@@ -1,41 +1,47 @@
 // web/src/components/AppHeader.tsx
 // The passbook shell's top rule: the product's name set with quiet
-// confidence in ink, the export control quiet, and "+ Add transaction" as
-// the one primary control. The data flow is unchanged — export writes the
-// selected property scope's transactions to CSV.
+// confidence in ink, the export control disclosing the scope it writes
+// (the selected-property slice), and "+ Add transaction" as the one
+// primary control. The data flow is unchanged — export still writes the
+// shell's selected-property slice to CSV; the control now says so.
+//
+// Below the lg breakpoint the rule composes as a masthead block: the name,
+// the quiet disclosure control, then the primary control full-width —
+// nothing clips, and the labels keep their words. At lg the rule is one
+// line, exactly the desktop passbook header.
 type AppHeaderProps = {
+  exportScopeLabel: string
   onExport: () => void
   onAddTransaction: () => void
 }
 
 export default function AppHeader({
+  exportScopeLabel,
   onExport,
   onAddTransaction,
 }: AppHeaderProps) {
   return (
     <header className="border-b border-rule bg-paper">
-      <div className="flex h-14 items-center justify-between gap-6 px-6 lg:px-9">
-        <h1 className="text-[17px] font-bold tracking-[0.01em] text-ink">
+      <div className="flex flex-col gap-y-2.5 px-6 py-2.5 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-x-2 lg:px-9 lg:py-0">
+        <h1 className="text-[17px] font-bold tracking-[0.01em] text-ink lg:mr-auto">
           Landlord Ledger
         </h1>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onExport}
-            className="rounded-[2px] px-3 py-2 text-sm font-semibold text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
-          >
-            Export CSV
-          </button>
+        <button
+          type="button"
+          onClick={onExport}
+          className="self-start rounded-[2px] px-3 py-2 text-sm font-semibold text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-print lg:self-auto"
+        >
+          Export CSV · {exportScopeLabel}
+        </button>
 
-          <button
-            type="button"
-            onClick={onAddTransaction}
-            className="h-9 rounded-[2px] bg-ink px-4 text-sm font-semibold text-paper transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print"
-          >
-            + Add transaction
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onAddTransaction}
+          className="h-9 w-full rounded-[2px] bg-ink px-4 text-sm font-semibold text-paper transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print lg:w-auto"
+        >
+          + Add transaction
+        </button>
       </div>
     </header>
   )

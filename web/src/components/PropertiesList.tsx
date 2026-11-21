@@ -89,7 +89,7 @@ export default function PropertiesList() {
                       {property.isActive ? 'Active' : 'Inactive'}
                     </div>
                     <button
-                      className="p-2 text-gray-400 rounded-lg transition-colors hover:text-red-600 hover:bg-red-50"
+                      className="p-2 text-ink-faint rounded-[2px] transition-colors hover:text-stamp hover:bg-print-wash"
                       title="Delete property"
                       onClick={() => setConfirmingId(property.id)}
                       disabled={deleteProperty.isPending}
@@ -98,12 +98,17 @@ export default function PropertiesList() {
                     </button>
                   </div>
                 </div>
-                {/* Confirm dialog */}
+                {/* Confirm cluster — the passbook's destructive idiom: the
+                    question in the caption style, stamp-red only on the
+                    destructive action, Cancel a quiet hairline control on
+                    paper. */}
                 {confirmingId === property.id && (
-                  <div className="flex items-center mt-2 space-x-2">
-                    <span>Delete this property?</span>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
+                      Delete this property?
+                    </span>
                     <button
-                      className="px-2 py-1 text-xs text-paper bg-stamp rounded-[2px] hover:opacity-90"
+                      className="px-2 py-1 text-xs font-semibold text-paper bg-stamp rounded-[2px] transition-colors hover:opacity-90"
                       onClick={async () => {
                         setDeleteError(null)
                         try {
@@ -122,7 +127,7 @@ export default function PropertiesList() {
                       {deleteProperty.isPending ? 'Deleting...' : 'Confirm'}
                     </button>
                     <button
-                      className="px-2 py-1 text-xs text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                      className="px-2 py-1 text-xs font-semibold text-ink-soft bg-paper border border-rule rounded-[2px] transition-colors hover:text-ink"
                       onClick={() => setConfirmingId(null)}
                       disabled={deleteProperty.isPending}
                     >

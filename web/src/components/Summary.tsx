@@ -1,12 +1,26 @@
 // web/src/components/Summary.tsx
 // The summary as a printed totals line — dense, tabular, ruled like the
-// totals row of a passbook page (the card shapes are retired). Overview
-// composes the strip with the six-month trend table; the Transactions view
-// reuses the strip alone.
+// totals row of a passbook page (the card shapes are retired). The strip
+// totals the DISPLAYED ledger slice and its label names that scope, so it
+// can never disagree with what the eye audits beneath it; the six-month
+// trend keeps its own labeled semantics. Overview composes the strip with
+// the trend table; the Transactions view reuses the strip alone.
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { monthlyTotals, summarizeTransactions } from '../transactions'
 import { formatMoney } from '#/lib/format'
+
+// The scope every "displayed ledger" surface names: the selected
+// property's own name, or "All properties" for the combined slice.
+export function propertyScopeLabel(
+  selectedProperty: string,
+  properties: Property[],
+): string {
+  return (
+    properties.find((p) => p.id === selectedProperty)?.name ??
+    'Unknown Property'
+  )
+}
 
 type TotalsLineProps = {
   transactions: Transaction[]
@@ -14,17 +28,15 @@ type TotalsLineProps = {
 }
 
 export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
-  const {
-    currentMonth: { income, expenses, profit },
-  } = summarizeTransactions(transactions)
-  const monthLabel = new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
+  // The strip follows the display: its figures total exactly the slice the
+  // ledger shows beneath it — property selection, search, category, type,
+  // and date range all included — never a calendar month of its own.
+  const { totalIncome, totalExpenses, netProfit } =
+    summarizeTransactions(transactions)
 
   return (
     <section
-      aria-label={`Totals for ${monthLabel}`}
+      aria-label={`Totals for the displayed ledger · ${scopeLabel}`}
       className="flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-print border-b border-rule py-3.5 pr-3"
     >
       <div>
@@ -32,7 +44,7 @@ export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
           Income
         </p>
         <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
-          {formatMoney(income)}
+          {formatMoney(totalIncome)}
         </p>
       </div>
       <div className="border-l border-rule pl-7">
@@ -40,7 +52,7 @@ export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
           Expenses
         </p>
         <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
-          {formatMoney(expenses)}
+          {formatMoney(totalExpenses)}
         </p>
       </div>
       <div className="border-l border-rule pl-7">
@@ -48,11 +60,11 @@ export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
           Net
         </p>
         <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
-          {formatMoney(profit)}
+          {formatMoney(netProfit)}
         </p>
       </div>
       <p className="ml-auto font-mono text-caption font-medium uppercase tracking-[0.1em] text-ink-soft">
-        For {monthLabel} · {scopeLabel}
+        Displayed ledger · {scopeLabel}
       </p>
     </section>
   )
@@ -72,57 +84,60 @@ export default function Summary({
   const scopeLabel =
     selectedProperty === 'all'
       ? 'All properties'
-      : (properties.find((p) => p.id === selectedProperty)?.name ??
-        'Unknown Property')
+      : propertyScopeLabel(selectedProperty, properties)
 
   // The six-month trend as a small green-ruled table: hairline row rules,
-  // mono tabular figures. No rings, no bars — the numbers in print.
+  // mono tabular figures. No rings, no bars — the numbers in print. Like
+  // the ledger sheet, the table slides inside its own ruled region when
+  // the viewport is narrower than the print.
   const sixMonthTrend = monthlyTotals(transactions, 6)
 
   return (
     <div className="space-y-6">
       <TotalsLine transactions={transactions} scopeLabel={scopeLabel} />
-      <table className="w-full border-collapse">
-        <caption className="border-b border-print px-3 pb-2.5 text-left font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft">
-          Six-month trend
-          <span className="ml-3 font-mono text-[10px] font-medium normal-case tracking-[0.1em] text-ink-faint">
-            income against expenses, by month
-          </span>
-        </caption>
-        <thead>
-          <tr>
-            {['Month', 'Income', 'Expenses', 'Net'].map((label, index) => (
-              <th
-                key={label}
-                scope="col"
-                className={`border-b border-rule px-3 py-2 font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft ${
-                  index > 0 ? 'text-right' : ''
-                }`}
-              >
-                {label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sixMonthTrend.map((month) => (
-            <tr key={month.month}>
-              <td className="border-b border-rule px-3 py-2.5 font-mono text-[12.5px] text-ink-soft">
-                {month.month}
-              </td>
-              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-print tabular-nums">
-                +{formatMoney(month.income)}
-              </td>
-              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-ink-soft tabular-nums">
-                {formatMoney(-month.expenses)}
-              </td>
-              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger font-semibold text-ink tabular-nums">
-                {formatMoney(month.profit)}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <caption className="border-b border-print px-3 pb-2.5 text-left font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft">
+            Six-month trend
+            <span className="ml-3 font-mono text-[10px] font-medium normal-case tracking-[0.1em] text-ink-faint">
+              income against expenses, by month
+            </span>
+          </caption>
+          <thead>
+            <tr>
+              {['Month', 'Income', 'Expenses', 'Net'].map((label, index) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className={`border-b border-rule px-3 py-2 font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft ${
+                    index > 0 ? 'text-right' : ''
+                  }`}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sixMonthTrend.map((month) => (
+              <tr key={month.month}>
+                <td className="border-b border-rule px-3 py-2.5 font-mono text-[12.5px] text-ink-soft">
+                  {month.month}
+                </td>
+                <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-print tabular-nums">
+                  +{formatMoney(month.income)}
+                </td>
+                <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-ink-soft tabular-nums">
+                  {formatMoney(-month.expenses)}
+                </td>
+                <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger font-semibold text-ink tabular-nums">
+                  {formatMoney(month.profit)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -19,7 +19,7 @@ Audience: landlords tracking their own portfolios. Job: record income/expense en
 
 THESIS: The ledger reads the way a bank records money — dense printed columns and a running balance auditable by eye — refusing the category's dashboard-of-white-cards default.
 
-OWN-WORLD: Machine-print green hairline grid on ivory paper; ink-navy type; stamp-red held out for the one over-budget mark; entries at print density with tabular numerals. Recognizable with all content removed by the hairline grid and the red stamp.
+OWN-WORLD: Machine-print green hairline grid on ivory paper; ink-navy type; stamp-red held out for state marks — destructive confirm and validation failures (renegotiated 2026-11-21: the original contract's over-budget mark had no trigger, since the product has no budget concept; no budget scope was added, and stamp-red's role is recorded here as the state-mark idiom); entries at print density with tabular numerals. Recognizable with all content removed by the hairline grid and the red stamp.
 
 STORY: The visitor recognizes bank-record trust before reading a word, enters a transaction like writing a passbook line, and audits the month by running their eye down the balance rail.
 

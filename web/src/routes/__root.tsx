@@ -20,6 +20,7 @@ import {
   usePropertiesWithStates,
 } from '../hooks/useProperties'
 import { addTransaction } from '../transactions'
+import { propertyScopeLabel } from '../components/Summary'
 import AppLayout from '../components/AppLayout'
 import AppHeader from '../components/AppHeader'
 import NavigationTabs from '../components/NavigationTabs'
@@ -74,6 +75,14 @@ function RootComponent() {
   // CSV export
   const { exportToCSV } = useCSVExport()
 
+  // The export control's disclosed scope: the shell's selected-property
+  // slice — the same slice handleExport writes. The data flow is
+  // unchanged; the control names it.
+  const exportScopeLabel =
+    selectedProperty === 'all'
+      ? 'All properties'
+      : propertyScopeLabel(selectedProperty, properties)
+
   // Event handlers — transaction add/delete delegate to the transactions module
   const handleExport = () => {
     exportToCSV(filteredTransactions, properties, selectedProperty)
@@ -97,6 +106,7 @@ function RootComponent() {
       onToggleSidebar={handleToggleSidebar}
     >
       <AppHeader
+        exportScopeLabel={exportScopeLabel}
         onExport={handleExport}
         onAddTransaction={handleAddTransaction}
       />

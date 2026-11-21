@@ -13,7 +13,10 @@ const tabs = [
 export default function NavigationTabs() {
   return (
     <nav aria-label="Sections" className="border-b border-rule bg-paper">
-      <div className="flex gap-7 px-6 lg:px-9">
+      {/* The one green-ruled row of tabs slides when the viewport is
+          narrower than the rule — overflow lives inside the rule, never
+          under the body. Wide viewports never see a scrollbar. */}
+      <div className="flex gap-7 overflow-x-auto px-6 lg:px-9">
         {tabs.map((tab) => (
           <Link
             key={tab.to}
