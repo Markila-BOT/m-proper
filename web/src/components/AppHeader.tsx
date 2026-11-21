@@ -1,5 +1,8 @@
-import { FiHome, FiDownload, FiPlus } from 'react-icons/fi'
-
+// web/src/components/AppHeader.tsx
+// The passbook shell's top rule: the product's name set with quiet
+// confidence in ink, the export control quiet, and "+ Add transaction" as
+// the one primary control. The data flow is unchanged — export writes the
+// selected property scope's transactions to CSV.
 type AppHeaderProps = {
   onExport: () => void
   onAddTransaction: () => void
@@ -10,40 +13,28 @@ export default function AppHeader({
   onAddTransaction,
 }: AppHeaderProps) {
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <FiHome className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                Landlord Ledger
-              </h1>
-              <p className="text-sm text-gray-500">
-                Property Management Finance
-              </p>
-            </div>
-          </div>
+    <header className="border-b border-rule bg-paper">
+      <div className="flex h-14 items-center justify-between gap-6 px-6 lg:px-9">
+        <h1 className="text-[17px] font-bold tracking-[0.01em] text-ink">
+          Landlord Ledger
+        </h1>
 
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onExport}
-              className="flex items-center px-4 py-2 space-x-2 text-gray-600 rounded-lg transition-colors hover:text-gray-900 hover:bg-gray-100"
-            >
-              <FiDownload className="w-4 h-4" />
-              <span>Export</span>
-            </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onExport}
+            className="rounded-[2px] px-3 py-2 text-sm font-semibold text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
+          >
+            Export CSV
+          </button>
 
-            <button
-              onClick={onAddTransaction}
-              className="flex items-center px-4 py-2 space-x-2 text-white bg-blue-600 rounded-lg shadow-sm transition-colors hover:bg-blue-700"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span>Add Transaction</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onAddTransaction}
+            className="h-9 rounded-[2px] bg-ink px-4 text-sm font-semibold text-paper transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print"
+          >
+            + Add transaction
+          </button>
         </div>
       </div>
     </header>

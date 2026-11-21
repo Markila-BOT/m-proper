@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { FiHome, FiLoader, FiAlertCircle, FiTrash2 } from 'react-icons/fi'
 import { PropertyTypeIcon } from './PropertyTypeIcon'
 import { useState } from 'react'
+import { formatDate } from '../lib/format'
 
 export default function PropertiesList() {
   const { properties, isLoading, error, isEmpty } = usePropertiesWithStates()
@@ -102,7 +103,7 @@ export default function PropertiesList() {
                   <div className="flex items-center mt-2 space-x-2">
                     <span>Delete this property?</span>
                     <button
-                      className="px-2 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700"
+                      className="px-2 py-1 text-xs text-paper bg-stamp rounded-[2px] hover:opacity-90"
                       onClick={async () => {
                         setDeleteError(null)
                         try {
@@ -142,7 +143,7 @@ export default function PropertiesList() {
                     )}
                   </div>
                   <p className="text-xs text-gray-400">
-                    Created: {new Date(property.createdAt).toLocaleDateString()}
+                    Created: {formatDate(property.createdAt)}
                   </p>
                 </div>
               </CardContent>

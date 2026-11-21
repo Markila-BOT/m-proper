@@ -26,7 +26,10 @@ function OverviewView() {
   )
 
   return (
-    <div className="p-6">
+    <div className="space-y-5 px-6 py-6 lg:px-9">
+      <header>
+        <h1 className="text-[17px] font-bold text-ink">Overview</h1>
+      </header>
       <Summary
         transactions={filteredTransactions}
         properties={properties}

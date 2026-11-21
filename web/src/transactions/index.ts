@@ -5,6 +5,7 @@
 export {
   STORAGE_KEY,
   STORAGE_EVENT,
+  EMPTY_SNAPSHOT,
   getTransactionsSnapshot,
   parseStoredTransactions,
   loadTransactions,

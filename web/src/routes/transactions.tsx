@@ -7,6 +7,7 @@ import {
 import { removeTransaction } from '../transactions'
 import FilterControls from '../components/FilterControls'
 import TransactionList from '../components/TransactionList'
+import { TotalsLine } from '../components/Summary'
 
 export const Route = createFileRoute('/transactions')({
   component: TransactionsView,
@@ -33,8 +34,27 @@ function TransactionsView() {
     filteredTransactions,
   } = useTransactionFilters(transactions, selectedProperty)
 
+  // The strip's scope note names the property filter's current state;
+  // the figures total the displayed page for the current month.
+  const scopeProperty =
+    selectedProperty === 'all'
+      ? 'All properties'
+      : (properties.find((p) => p.id === selectedProperty)?.name ??
+        'Unknown Property')
+
   return (
-    <div className="p-6">
+    <div className="space-y-5 px-6 py-6 lg:px-9">
+      <header className="flex items-baseline justify-between gap-4">
+        <h1 className="text-[17px] font-bold text-ink">Transactions</h1>
+        <p className="font-mono text-caption text-ink-soft">
+          {filteredTransactions.length}{' '}
+          {filteredTransactions.length === 1 ? 'entry' : 'entries'}
+        </p>
+      </header>
+      <TotalsLine
+        transactions={filteredTransactions}
+        scopeLabel={scopeProperty}
+      />
       <FilterControls
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}

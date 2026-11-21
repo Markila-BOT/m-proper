@@ -1,13 +1,12 @@
 'use strict';
 
 // Step definitions for the web-app capability. The effective spec is the
-// redesign-ledger-passbook delta: five scenarios describe current behavior
-// and drive the live web app through Playwright page objects; the two
-// ledger scenarios (running balance, column sorting) describe behavior the
-// redesign change has not implemented yet — their steps are honest
-// attempts, and they stay red (naming the missing feature) until that
-// change lands. That red is documented and expected; deleting, skipping or
-// weakening them is not an option.
+// redesign-ledger-passbook delta: seven scenarios describe current behavior
+// and drive the live web app through Playwright page objects. The two
+// ledger scenarios (running balance, column sorting) stayed red — naming
+// the missing feature — until that change landed; they now run green
+// against the passbook ledger, and deleting, skipping or weakening them
+// is not an option.
 
 const assert = require('node:assert/strict');
 const { Given, When, Then } = require('@cucumber/cucumber');

@@ -5,12 +5,11 @@
 // are the app's own (web/src/hooks/useLocalStorage.ts,
 // web/src/components/TransactionList.tsx).
 //
-// The two redesign-ledger-passbook features (running balance, column
-// sorting) do not exist yet. Their page-object methods below make an
-// honest attempt to find the feature in the live DOM and, when it is
-// absent, throw an error that names the missing feature — so those
-// scenarios stay red for the right reason and go green without a step
-// change once the redesign lands.
+// redesign-ledger-passbook landed: the ledger is now the passbook table
+// (TanStack Table, web/src/components/TransactionList.tsx) with its
+// running-balance rail as the rightmost column and sortable column
+// headers. The readers below target that table; this file stays the one
+// place to adjust when the app's row structure changes again.
 
 const shell = require('./app-shell');
 
@@ -50,15 +49,19 @@ async function clearStoredTransactions(page) {
 }
 
 async function displayedTransactionDescriptions(page) {
-  // The ledger rows name each transaction in a level-3 heading inside main
-  // (the sidebar's property names never match — they sit outside main).
-  const headings = await page
-    .locator('main')
-    .getByRole('heading', { level: 3 })
-    .allTextContents();
-  return headings
-    .map((heading) => heading.trim())
-    .filter((heading) => heading.length > 0 && heading !== 'No transactions yet');
+  // The ledger rows name each transaction in the description cell of their
+  // table row inside main (the sidebar's property names never match — they
+  // sit outside main). The description is the cell's first span; the row's
+  // Delete control is a sibling, never part of the name.
+  const rows = page.locator('main').locator('table tbody tr');
+  const count = await rows.count();
+  const descriptions = [];
+  for (let i = 0; i < count; i += 1) {
+    const cell = rows.nth(i).locator('td').nth(1).locator('span').first();
+    const text = await cell.innerText();
+    descriptions.push(text.trim());
+  }
+  return descriptions.filter((heading) => heading.length > 0);
 }
 
 async function expectTransactionVisible(page, transaction) {
@@ -68,38 +71,19 @@ async function expectTransactionVisible(page, transaction) {
     .waitFor({ state: 'visible', timeout: WAIT_MS });
 }
 
-// --- the redesign-ledger-passbook features (not implemented yet) ---
-
-const MISSING_BALANCE_MESSAGE =
-  'the ledger has no running balance column — nothing in the transactions view names a balance, ' +
-  'so no balance accumulates along the rows\' right edge. The running balance is described by ' +
-  'openspec/changes/redesign-ledger-passbook (rule "The ledger shows a running balance") and is not ' +
-  'implemented in the web app yet; this scenario stays red until that change lands.';
-
-const MISSING_SORT_MESSAGE =
-  'the ledger has no sortable column — no control in the transactions view is named by a column, ' +
-  'so the rows cannot be sorted. Column sorting is described by ' +
-  'openspec/changes/redesign-ledger-passbook (rule "The ledger can be sorted by its columns") and is ' +
-  'not implemented in the web app yet; this scenario stays red until that change lands.';
+// --- the redesign-ledger-passbook features (landed: the passbook ledger) ---
 
 async function balanceColumnValues(page) {
-  // Honest attempt: a running balance renders as a column — something in
-  // the ledger names "balance" and each row carries a right-edge figure.
-  // Today nothing does, and this throws naming the missing feature.
+  // The running balance renders as the ledger's rightmost column — the
+  // header names "Balance" and each row's final cell carries its
+  // right-edge figure.
   const balanceHeader = page.locator('main').getByText(/balance/i).first();
-  try {
-    await balanceHeader.waitFor({ state: 'visible', timeout: 5000 });
-  } catch {
-    throw new Error(MISSING_BALANCE_MESSAGE);
-  }
-  // With the feature present: read each row's right-edge balance figure.
-  // The row structure is this page object's to maintain — one place to
-  // adjust when the redesign lands.
-  const rows = page.locator('main').locator('div.divide-y > div');
+  await balanceHeader.waitFor({ state: 'visible', timeout: 5000 });
+  const rows = page.locator('main').locator('table tbody tr');
   const count = await rows.count();
   const values = [];
   for (let i = 0; i < count; i += 1) {
-    const cell = rows.nth(i).locator('span').last();
+    const cell = rows.nth(i).locator('td').last();
     const text = await cell.innerText();
     values.push(Number(text.replace(/[^0-9.-]/g, '')));
   }
@@ -107,18 +91,12 @@ async function balanceColumnValues(page) {
 }
 
 async function sortByColumn(page, column) {
-  // Honest attempt: a sortable column renders its header as a control
-  // named by the column. Today no such control exists, and this throws
-  // naming the missing feature.
+  // A sortable column renders its header as a control named by the column.
   const header = page
     .locator('main')
     .getByRole('button', { name: new RegExp(`\\b${column}\\b`, 'i') })
     .first();
-  try {
-    await header.waitFor({ state: 'visible', timeout: 5000 });
-  } catch {
-    throw new Error(MISSING_SORT_MESSAGE);
-  }
+  await header.waitFor({ state: 'visible', timeout: 5000 });
   await header.click();
 }
 
@@ -131,6 +109,4 @@ module.exports = {
   expectTransactionVisible,
   balanceColumnValues,
   sortByColumn,
-  MISSING_BALANCE_MESSAGE,
-  MISSING_SORT_MESSAGE,
 };

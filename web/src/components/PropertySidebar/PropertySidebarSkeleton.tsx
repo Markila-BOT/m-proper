@@ -11,39 +11,39 @@ export function PropertySidebarSkeleton({
 }: PropertySidebarSkeletonProps) {
   if (isCollapsed) {
     return (
-      <div className="flex flex-col w-16 bg-white border-r border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <Skeleton className="w-10 h-10 rounded-lg" />
+      <div className="flex flex-col w-16 bg-paper border-r border-rule">
+        <div className="p-4 border-b border-rule">
+          <Skeleton className="w-10 h-10" />
         </div>
         <div className="flex-1 p-2 space-y-2">
-          <Skeleton className="mx-auto w-10 h-10 rounded-lg" />
+          <Skeleton className="mx-auto w-10 h-10" />
           {Array.from({ length: count }).map((_, i) => (
-            <Skeleton key={i} className="mx-auto w-10 h-10 rounded-lg" />
+            <Skeleton key={i} className="mx-auto w-10 h-10" />
           ))}
         </div>
-        <div className="p-2 border-t border-gray-200">
-          <Skeleton className="mx-auto w-10 h-10 rounded-lg" />
+        <div className="p-2 border-t border-rule">
+          <Skeleton className="mx-auto w-10 h-10" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col w-80 bg-white border-r border-gray-200">
+    <div className="flex flex-col w-80 bg-paper border-r border-rule">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-rule">
         <div className="flex justify-between items-center mb-4">
-          <Skeleton className="w-24 h-6" />
-          <Skeleton className="w-10 h-10 rounded-lg" />
+          <Skeleton className="w-24 h-4" />
+          <Skeleton className="w-10 h-10" />
         </div>
-        <Skeleton className="w-full h-10 rounded-lg" />
+        <Skeleton className="w-full h-9" />
       </div>
 
       {/* All Properties Option */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="p-4 w-full rounded-xl border-2 border-gray-200">
+      <div className="border-b border-rule">
+        <div className="px-5 py-3.5 w-full">
           <div className="flex items-center space-x-3">
-            <Skeleton className="w-10 h-10 rounded-lg" />
+            <Skeleton className="w-5 h-5" />
             <div className="flex-1 space-y-2">
               <Skeleton className="w-24 h-4" />
               <Skeleton className="w-32 h-3" />
@@ -54,53 +54,45 @@ export function PropertySidebarSkeleton({
 
       {/* Properties List */}
       <div className="overflow-y-auto flex-1">
-        <div className="p-4 space-y-3">
-          {Array.from({ length: count }).map((_, i) => (
-            <div
-              key={i}
-              className="p-4 w-full rounded-xl border-2 border-gray-200"
-            >
-              <div className="space-y-3">
-                {/* Property Header */}
-                <div className="flex items-start space-x-3">
-                  <Skeleton className="flex-shrink-0 w-10 h-10 rounded-lg" />
-                  <div className="flex-1 space-y-2 min-w-0">
-                    <Skeleton className="w-32 h-4" />
-                    <div className="flex items-center space-x-1">
-                      <Skeleton className="w-3 h-3 rounded-full" />
-                      <Skeleton className="w-24 h-3" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Property Details */}
-                <div className="flex justify-between items-center">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="px-5 py-3.5 w-full border-b border-rule">
+            <div className="space-y-2.5">
+              {/* Property Header */}
+              <div className="flex items-start space-x-3">
+                <Skeleton className="flex-shrink-0 w-5 h-5" />
+                <div className="flex-1 space-y-2 min-w-0">
+                  <Skeleton className="w-32 h-4" />
                   <div className="flex items-center space-x-1">
-                    <Skeleton className="w-3 h-3 rounded-full" />
-                    <Skeleton className="w-16 h-3" />
-                  </div>
-                  <Skeleton className="w-20 h-5 rounded-full" />
-                </div>
-
-                {/* Financial Summary */}
-                <div className="pt-2 space-y-2 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-16 h-3" />
-                    <Skeleton className="w-20 h-4" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-12 h-3" />
-                    <Skeleton className="w-16 h-3" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-14 h-3" />
-                    <Skeleton className="w-16 h-3" />
+                    <Skeleton className="w-3 h-3" />
+                    <Skeleton className="w-24 h-3" />
                   </div>
                 </div>
               </div>
+
+              {/* Property Details */}
+              <div className="flex justify-between items-center">
+                <Skeleton className="w-16 h-3" />
+                <Skeleton className="w-20 h-3" />
+              </div>
+
+              {/* Financial Summary */}
+              <div className="pt-2 space-y-1.5 border-t border-rule">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="w-12 h-3" />
+                  <Skeleton className="w-20 h-4" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <Skeleton className="w-12 h-3" />
+                  <Skeleton className="w-16 h-3" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <Skeleton className="w-14 h-3" />
+                  <Skeleton className="w-16 h-3" />
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   )

@@ -1,11 +1,26 @@
 // web/src/components/TransactionForm.tsx
-// Use split income/expense categories for the category dropdown
-import React, { useState } from 'react'
-import { FiPlus, FiX } from 'react-icons/fi'
+// The add-transaction form: a passbook line being written. Radix dialog
+// portal, hairline grid fields with navy caption labels, Radix selects,
+// and validation that names the problem and its recovery in stamp-red.
+import { useState } from 'react'
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../transactions'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Label } from './ui/label'
+import { Button } from './ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+
+// Radix forbids the empty string as an item value; the form's "not chosen
+// yet" state maps onto this sentinel and back.
+const UNCHOSEN = '__none__'
 
 type TransactionFormProps = {
   properties: Property[]
@@ -14,6 +29,11 @@ type TransactionFormProps = {
   isOpen: boolean
   onClose: () => void
 }
+
+const fieldLabel =
+  'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
+const fieldInput =
+  'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
 
 export default function TransactionForm({
   properties,
@@ -30,22 +50,29 @@ export default function TransactionForm({
     type: TRANSACTION_TYPE.EXPENSE as Transaction['type'],
     property: selectedProperty !== 'all' ? selectedProperty : '',
   })
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (
-      !formData.description ||
-      !formData.category ||
-      !formData.amount ||
-      !formData.property
-    )
+    const amount = Number.parseFloat(formData.amount)
+    if (!formData.description || !formData.category || !formData.property) {
+      setValidationError(
+        'The line is unfinished: give it a description, a category, and a property.',
+      )
       return
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setValidationError(
+        'The amount is missing or not a number — enter what the entry is worth, then record it.',
+      )
+      return
+    }
 
     onAddTransaction({
       date: formData.date,
       description: formData.description,
       category: formData.category,
-      amount: parseFloat(formData.amount),
+      amount,
       type: formData.type,
       property: formData.property,
     })
@@ -58,10 +85,11 @@ export default function TransactionForm({
       type: TRANSACTION_TYPE.EXPENSE,
       property: selectedProperty !== 'all' ? selectedProperty : '',
     })
+    setValidationError(null)
     onClose()
   }
 
-  // Use the correct category array based on type
+  // The category list follows the entry's type, exactly as before.
   const categoryOptions = Object.values(
     formData.type === TRANSACTION_TYPE.INCOME
       ? INCOME_CATEGORIES
@@ -69,26 +97,21 @@ export default function TransactionForm({
   )
   const activeProperties = properties.filter((p) => p.isActive)
 
-  if (!isOpen) return null
-
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black bg-opacity-50">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-2xl">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Add Transaction
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 hover:bg-gray-100"
-          >
-            <FiX className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="flex space-x-4">
-            <label className="flex items-center">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Write a line into the ledger</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset className="flex gap-5">
+            <legend className="sr-only">Entry type</legend>
+            <label className="flex items-center gap-2 text-sm font-medium text-ink">
               <input
                 type="radio"
                 name="type"
@@ -101,13 +124,11 @@ export default function TransactionForm({
                     category: '',
                   }))
                 }
-                className="text-emerald-500 focus:ring-emerald-500"
+                className="h-4 w-4"
               />
-              <span className="ml-2 font-medium text-emerald-600">
-                {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.INCOME]}
-              </span>
+              {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.INCOME]}
             </label>
-            <label className="flex items-center">
+            <label className="flex items-center gap-2 text-sm font-medium text-ink">
               <input
                 type="radio"
                 name="type"
@@ -120,55 +141,61 @@ export default function TransactionForm({
                     category: '',
                   }))
                 }
-                className="text-red-500 focus:ring-red-500"
+                className="h-4 w-4"
               />
-              <span className="ml-2 font-medium text-red-600">
-                {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.EXPENSE]}
-              </span>
+              {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.EXPENSE]}
             </label>
-          </div>
+          </fieldset>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <Label htmlFor="transaction-property" className={fieldLabel}>
               Property
-            </label>
-            <select
-              value={formData.property}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, property: e.target.value }))
+            </Label>
+            <Select
+              value={formData.property === '' ? UNCHOSEN : formData.property}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  property: value === UNCHOSEN ? '' : value,
+                }))
               }
-              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
             >
-              <option value="">Select property</option>
-              {activeProperties.map((property) => (
-                <option key={property.id} value={property.id}>
-                  {property.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="transaction-property" aria-label="Property">
+                <SelectValue placeholder="Select property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNCHOSEN}>Select property</SelectItem>
+                {activeProperties.map((property) => (
+                  <SelectItem key={property.id} value={property.id}>
+                    {property.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <Label htmlFor="transaction-date" className={fieldLabel}>
               Date
-            </label>
+            </Label>
             <input
+              id="transaction-date"
               type="date"
               value={formData.date}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, date: e.target.value }))
               }
-              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={fieldInput}
               required
             />
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <Label htmlFor="transaction-description" className={fieldLabel}>
               Description
-            </label>
+            </Label>
             <input
+              id="transaction-description"
               type="text"
               value={formData.description}
               onChange={(e) =>
@@ -177,68 +204,81 @@ export default function TransactionForm({
                   description: e.target.value,
                 }))
               }
-              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter description"
+              className={fieldInput}
+              placeholder="What was this entry for"
               required
             />
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <Label htmlFor="transaction-category" className={fieldLabel}>
               Category
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, category: e.target.value }))
+            </Label>
+            <Select
+              value={formData.category === '' ? UNCHOSEN : formData.category}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  category: value === UNCHOSEN ? '' : value,
+                }))
               }
-              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
             >
-              <option value="">Select category</option>
-              {categoryOptions.map((category) => (
-                <option key={category.name} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="transaction-category" aria-label="Category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNCHOSEN}>Select category</SelectItem>
+                {categoryOptions.map((category) => (
+                  <SelectItem key={category.name} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
+            <Label htmlFor="transaction-amount" className={fieldLabel}>
               Amount
-            </label>
+            </Label>
             <input
+              id="transaction-amount"
               type="number"
               step="0.01"
               value={formData.amount}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, amount: e.target.value }))
               }
-              className="px-3 py-2 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`${fieldInput} font-mono tabular-nums`}
               placeholder="0.00"
               required
             />
           </div>
 
-          <div className="flex pt-4 space-x-3">
-            <button
+          {validationError && (
+            <p
+              role="alert"
+              className="border-l-2 border-stamp pl-3 text-sm text-stamp"
+            >
+              {validationError}
+            </p>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <Button
               type="button"
+              variant="outline"
+              className="flex-1 rounded-[2px]"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 rounded-lg border border-gray-300 transition-colors hover:bg-gray-50"
             >
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex flex-1 justify-center items-center px-4 py-2 space-x-2 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span>Add Transaction</span>
-            </button>
+            </Button>
+            <Button type="submit" className="flex-1 rounded-[2px]">
+              Record entry
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

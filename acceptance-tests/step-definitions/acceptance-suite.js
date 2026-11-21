@@ -33,15 +33,6 @@ const ledgerView = require('../pages/ledger-view');
 const HARNESS_DIR = path.join(REPO_ROOT, 'acceptance-tests');
 const SELF_FEATURE_MARKER = 'changes/adopt-acceptance-suite/specs/acceptance-suite/';
 
-// The two redesign-ledger-passbook scenarios that stay red by design until
-// that change lands. While they are red the suite's exit code is non-zero —
-// the documented, expected state; the child-run step asserts the failures
-// are exactly this pair and nothing else.
-const RED_BY_DESIGN = [
-  'The ledger shows a running balance',
-  'The ledger can be sorted by its columns',
-];
-
 async function git(args) {
   return runCommand('git', args, { cwd: REPO_ROOT, timeoutMs: 30_000 });
 }
@@ -156,19 +147,20 @@ Then('every scenario of the effective spec executes with no pending or undefined
     );
   }
 
-  // The only failures are the documented red pair, and the exit code says so.
+  // Nothing fails: the redesign-ledger-passbook pair (running balance,
+  // column sorting) landed and runs green like everything else, so the
+  // single command must exit clean.
   const failed = cases.filter((testCase) => testCase.status === 'FAILED').map((testCase) => testCase.name);
   assert.deepStrictEqual(
-    [...failed].sort(),
-    [...RED_BY_DESIGN].sort(),
-    `the child run must fail on exactly the red-by-design pair (${RED_BY_DESIGN.join(' / ')}) — ` +
-      `those scenarios describe redesign-ledger-passbook behavior that is not implemented yet, and any ` +
-      `other failure is a regression; failures were: ${failed.join(', ')}`
+    failed,
+    [],
+    `the child run must fail on nothing — the redesign-ledger-passbook scenarios ` +
+      `run green since that change landed, and any failure is a regression (failures were: ${failed.join(', ')})`
   );
   assert.strictEqual(
     child.code,
-    failed.length > 0 ? 1 : 0,
-    `the child run's exit code must reflect its failures (got ${child.code})`
+    0,
+    `the child run's exit code must be clean (got ${child.code})`
   );
 });
 
@@ -177,14 +169,15 @@ Then('a run report records what ran', async function () {
   assert.ok(fs.existsSync(reportPath), `the child run must write its report at ${path.relative(REPO_ROOT, reportPath)}`);
   const report = fs.readFileSync(reportPath, 'utf8');
   assert.ok(report.length > 100_000, 'the report must carry the full run, not a stub');
-  // Records what ran: the passing scenarios and the failing pair alike.
+  // Records what ran: the kept web-app scenarios and the redesign's
+  // running-balance scenario alike.
   assert.ok(
     report.includes('View properties from API'),
     'the report must record the executed web-app scenarios'
   );
   assert.ok(
     report.includes('The ledger shows a running balance'),
-    'the report must record the failing scenario too'
+    'the report must record the redesign-ledger-passbook scenarios too'
   );
   const summaryLine = summarizeCases(cases);
   console.log(`[self] the child report records the run — ${summaryLine}`);
@@ -699,21 +692,19 @@ Then('the failure names the missing configuration', async function () {
 // Archive waits for green
 // ---------------------------------------------------------------------------
 
-Given('the effective suite has a failing scenario', async function () {
-  // Today the effective suite fails on exactly the red-by-design pair —
-  // proven by the suite-minus-self child run earlier in this feature. That
-  // is precisely the situation the archive gate must stand against.
+Given('a change whose effective suite runs green', async function () {
+  // The precondition the archive gate waits for, proven by the
+  // suite-minus-self child run earlier in this feature: every scenario of
+  // the effective spec passes, nothing pending or undefined. (The run that
+  // once failed on the redesign-ledger-passbook pair went green when that
+  // change landed — this gate is why it had to.)
   const stash = state.suiteMinusSelf;
   assert.ok(stash, 'the suite-minus-self child run must have executed earlier in this feature');
-  const failed = stash.cases
-    .filter((testCase) => testCase.status === 'FAILED')
-    .map((testCase) => testCase.name)
-    .sort();
+  const failing = stash.cases.filter((testCase) => testCase.status !== 'PASSED');
   assert.deepStrictEqual(
-    failed,
-    [...RED_BY_DESIGN].sort(),
-    `the effective suite’s failing scenarios are the documented red pair — anything else is a ` +
-      `regression (got: ${failed.join(', ')})`
+    failing.map((testCase) => testCase.name),
+    [],
+    'the effective suite must run green — every scenario passes, nothing pending or undefined'
   );
 });
 

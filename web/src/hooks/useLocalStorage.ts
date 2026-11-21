@@ -4,6 +4,7 @@
 // transactions in localStorage; category data is static.
 import { useSyncExternalStore } from 'react'
 import {
+  EMPTY_SNAPSHOT,
   getTransactionsSnapshot,
   parseStoredTransactions,
   subscribeToTransactions,
@@ -14,7 +15,7 @@ export function useLocalStorage() {
   const raw = useSyncExternalStore(
     subscribeToTransactions,
     getTransactionsSnapshot,
-    getTransactionsSnapshot,
+    () => EMPTY_SNAPSHOT,
   )
 
   return {

@@ -1,10 +1,62 @@
-import { FiTrendingUp, FiTrendingDown, FiCalendar } from 'react-icons/fi'
-import { FaPesoSign } from 'react-icons/fa6'
-import { PropertyTypeIcon } from './PropertyTypeIcon'
-import { PROPERTY_TYPE } from '#/lib/domain'
+// web/src/components/Summary.tsx
+// The summary as a printed totals line — dense, tabular, ruled like the
+// totals row of a passbook page (the card shapes are retired). Overview
+// composes the strip with the six-month trend table; the Transactions view
+// reuses the strip alone.
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
-import { summarizeTransactions, monthlyTotals } from '../transactions'
+import { monthlyTotals, summarizeTransactions } from '../transactions'
+import { formatMoney } from '#/lib/format'
+
+type TotalsLineProps = {
+  transactions: Transaction[]
+  scopeLabel: string
+}
+
+export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
+  const {
+    currentMonth: { income, expenses, profit },
+  } = summarizeTransactions(transactions)
+  const monthLabel = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+
+  return (
+    <section
+      aria-label={`Totals for ${monthLabel}`}
+      className="flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-print border-b border-rule py-3.5 pr-3"
+    >
+      <div>
+        <p className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
+          Income
+        </p>
+        <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
+          {formatMoney(income)}
+        </p>
+      </div>
+      <div className="border-l border-rule pl-7">
+        <p className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
+          Expenses
+        </p>
+        <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
+          {formatMoney(expenses)}
+        </p>
+      </div>
+      <div className="border-l border-rule pl-7">
+        <p className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
+          Net
+        </p>
+        <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
+          {formatMoney(profit)}
+        </p>
+      </div>
+      <p className="ml-auto font-mono text-caption font-medium uppercase tracking-[0.1em] text-ink-soft">
+        For {monthLabel} · {scopeLabel}
+      </p>
+    </section>
+  )
+}
 
 type SummaryProps = {
   transactions: Transaction[]
@@ -17,216 +69,60 @@ export default function Summary({
   properties,
   selectedProperty,
 }: SummaryProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(amount)
-  }
+  const scopeLabel =
+    selectedProperty === 'all'
+      ? 'All properties'
+      : (properties.find((p) => p.id === selectedProperty)?.name ??
+        'Unknown Property')
 
-  const getSelectedPropertyName = () => {
-    if (selectedProperty === 'all') return 'All Properties'
-    const property = properties.find((p) => p.id === selectedProperty)
-    return property ? property.name : 'Unknown Property'
-  }
-
-  // Aggregation belongs to the transactions module
-  const {
-    totalIncome,
-    totalExpenses,
-    netProfit,
-    currentMonth: {
-      income: monthlyIncome,
-      expenses: monthlyExpenses,
-      profit: monthlyProfit,
-    },
-  } = summarizeTransactions(transactions)
-
-  const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
-
-  // Monthly trends (last 6 months)
+  // The six-month trend as a small green-ruled table: hairline row rules,
+  // mono tabular figures. No rings, no bars — the numbers in print.
   const sixMonthTrend = monthlyTotals(transactions, 6)
 
   return (
     <div className="space-y-6">
-      {/* Property Header */}
-      <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <PropertyTypeIcon
-              type={
-                selectedProperty === 'all'
-                  ? PROPERTY_TYPE.COMMERCIAL
-                  : properties.find((p) => p.id === selectedProperty)?.type ||
-                    PROPERTY_TYPE.COMMERCIAL
-              }
-              className="w-6 h-6 text-blue-600"
-            />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              {getSelectedPropertyName()}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {selectedProperty === 'all'
-                ? `${
-                    properties.filter((p) => p.isActive).length
-                  } active properties`
-                : 'Property financial overview'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Income</p>
-              <p className="text-2xl font-bold text-emerald-600">
-                {formatCurrency(totalIncome)}
-              </p>
-            </div>
-            <div className="p-3 bg-emerald-100 rounded-xl">
-              <FiTrendingUp className="w-6 h-6 text-emerald-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Expenses
-              </p>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(totalExpenses)}
-              </p>
-            </div>
-            <div className="p-3 bg-red-100 rounded-xl">
-              <FiTrendingDown className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Net Profit</p>
-              <p
-                className={`text-2xl font-bold ${
-                  netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
+      <TotalsLine transactions={transactions} scopeLabel={scopeLabel} />
+      <table className="w-full border-collapse">
+        <caption className="border-b border-print px-3 pb-2.5 text-left font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          Six-month trend
+          <span className="ml-3 font-mono text-[10px] font-medium normal-case tracking-[0.1em] text-ink-faint">
+            income against expenses, by month
+          </span>
+        </caption>
+        <thead>
+          <tr>
+            {['Month', 'Income', 'Expenses', 'Net'].map((label, index) => (
+              <th
+                key={label}
+                scope="col"
+                className={`border-b border-rule px-3 py-2 font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft ${
+                  index > 0 ? 'text-right' : ''
                 }`}
               >
-                {formatCurrency(netProfit)}
-              </p>
-            </div>
-            <div
-              className={`p-3 rounded-xl ${
-                netProfit >= 0 ? 'bg-emerald-100' : 'bg-red-100'
-              }`}
-            >
-              <FaPesoSign
-                className={`w-6 h-6 ${
-                  netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
-                }`}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Profit Margin</p>
-              <p
-                className={`text-2xl font-bold ${
-                  profitMargin >= 0 ? 'text-emerald-600' : 'text-red-600'
-                }`}
-              >
-                {profitMargin.toFixed(1)}%
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <FiCalendar className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Current Month */}
-      <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          Current Month
-        </h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="p-4 text-center bg-emerald-50 rounded-lg">
-            <p className="text-sm font-medium text-emerald-600">Income</p>
-            <p className="text-xl font-bold text-emerald-700">
-              {formatCurrency(monthlyIncome)}
-            </p>
-          </div>
-          <div className="p-4 text-center bg-red-50 rounded-lg">
-            <p className="text-sm font-medium text-red-600">Expenses</p>
-            <p className="text-xl font-bold text-red-700">
-              {formatCurrency(monthlyExpenses)}
-            </p>
-          </div>
-          <div
-            className={`text-center p-4 rounded-lg ${
-              monthlyProfit >= 0 ? 'bg-emerald-50' : 'bg-red-50'
-            }`}
-          >
-            <p
-              className={`text-sm font-medium ${
-                monthlyProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
-              }`}
-            >
-              Net Profit
-            </p>
-            <p
-              className={`text-xl font-bold ${
-                monthlyProfit >= 0 ? 'text-emerald-700' : 'text-red-700'
-              }`}
-            >
-              {formatCurrency(monthlyProfit)}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Monthly Trends */}
-      <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          6-Month Trend
-        </h3>
-        <div className="space-y-4">
-          {sixMonthTrend.map((month, index) => (
-            <div
-              key={index}
-              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-            >
-              <span className="font-medium text-gray-900">{month.month}</span>
-              <div className="flex items-center space-x-4 text-sm">
-                <span className="text-emerald-600">
-                  +{formatCurrency(month.income)}
-                </span>
-                <span className="text-red-600">
-                  -{formatCurrency(month.expenses)}
-                </span>
-                <span
-                  className={`font-semibold ${
-                    month.profit >= 0 ? 'text-emerald-600' : 'text-red-600'
-                  }`}
-                >
-                  {formatCurrency(month.profit)}
-                </span>
-              </div>
-            </div>
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sixMonthTrend.map((month) => (
+            <tr key={month.month}>
+              <td className="border-b border-rule px-3 py-2.5 font-mono text-[12.5px] text-ink-soft">
+                {month.month}
+              </td>
+              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-print tabular-nums">
+                +{formatMoney(month.income)}
+              </td>
+              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger text-ink-soft tabular-nums">
+                {formatMoney(-month.expenses)}
+              </td>
+              <td className="border-b border-rule px-3 py-2.5 text-right font-mono text-ledger font-semibold text-ink tabular-nums">
+                {formatMoney(month.profit)}
+              </td>
+            </tr>
           ))}
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
   )
 }

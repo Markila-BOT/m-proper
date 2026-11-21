@@ -1,60 +1,35 @@
 import { Link } from '@tanstack/react-router'
-import { FiBarChart, FiSettings } from 'react-icons/fi'
-import { VscGraphLine } from 'react-icons/vsc'
-import { TbBuildings } from 'react-icons/tb'
 
 // The URL is the tab state (ADR-0003): every tab is a router Link to its
-// route, and the router's active/inactive props carry today's exact look.
+// route. The rail is green-ruled — the active tab carries ink and a solid
+// print-green underline rule; the rest sit in quieter navy.
 const tabs = [
-  {
-    to: '/overview',
-    label: 'Overview',
-    icon: FiBarChart,
-  },
-  {
-    to: '/transactions',
-    label: 'Transactions',
-    icon: VscGraphLine,
-  },
-  {
-    to: '/properties',
-    label: 'Properties',
-    icon: TbBuildings,
-  },
-  {
-    to: '/reports',
-    label: 'Reports',
-    icon: FiSettings,
-  },
+  { to: '/overview', label: 'Overview' },
+  { to: '/transactions', label: 'Transactions' },
+  { to: '/properties', label: 'Properties' },
+  { to: '/reports', label: 'Reports' },
 ] as const
 
 export default function NavigationTabs() {
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex space-x-8">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-
-            return (
-              <Link
-                key={tab.to}
-                to={tab.to}
-                className="py-4 px-1 border-b-2 font-medium text-sm"
-                activeProps={{
-                  className: 'text-blue-600 border-blue-500',
-                }}
-                inactiveProps={{
-                  className:
-                    'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300',
-                }}
-              >
-                <Icon className="inline mr-2 w-4 h-4" />
-                {tab.label}
-              </Link>
-            )
-          })}
-        </div>
+    <nav aria-label="Sections" className="border-b border-rule bg-paper">
+      <div className="flex gap-7 px-6 lg:px-9">
+        {tabs.map((tab) => (
+          <Link
+            key={tab.to}
+            to={tab.to}
+            className="-mb-px border-b-2 py-2.5 text-sm font-medium"
+            activeProps={{
+              className: 'border-print font-bold text-ink',
+            }}
+            inactiveProps={{
+              className:
+                'border-transparent text-ink-soft transition-colors hover:border-rule hover:text-ink',
+            }}
+          >
+            {tab.label}
+          </Link>
+        ))}
       </div>
     </nav>
   )

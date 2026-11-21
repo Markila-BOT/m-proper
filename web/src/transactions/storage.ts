@@ -9,12 +9,18 @@ import type { Transaction } from '../types/transactions'
 export const STORAGE_KEY = 'landlord-transactions'
 export const STORAGE_EVENT = 'landlord-transactions'
 
+// The SERVER snapshot for useSyncExternalStore: a constant, so the server
+// render and the client's hydration render agree even when localStorage
+// already holds data. The live, localStorage-reading snapshot takes over the
+// moment hydration finishes.
+export const EMPTY_SNAPSHOT = '[]'
+
 export function getTransactionsSnapshot(): string {
-  if (typeof window === 'undefined') return '[]'
+  if (typeof window === 'undefined') return EMPTY_SNAPSHOT
   try {
-    return localStorage.getItem(STORAGE_KEY) ?? '[]'
+    return localStorage.getItem(STORAGE_KEY) ?? EMPTY_SNAPSHOT
   } catch {
-    return '[]'
+    return EMPTY_SNAPSHOT
   }
 }
 
