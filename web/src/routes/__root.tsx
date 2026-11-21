@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   HeadContent,
   Outlet,
@@ -12,6 +13,17 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
+
+import { useLocalStorage, useTransactionFilters, useCSVExport } from '../hooks'
+import {
+  useSelectedProperty,
+  usePropertiesWithStates,
+} from '../hooks/useProperties'
+import { addTransaction } from '../transactions'
+import AppLayout from '../components/AppLayout'
+import AppHeader from '../components/AppHeader'
+import NavigationTabs from '../components/NavigationTabs'
+import TransactionForm from '../components/TransactionForm'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -38,8 +50,69 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   ),
 })
 
+// The routed shell (ADR-0003): the URL picks the view behind the Outlet;
+// the shared chrome — sidebar, header, navigation, the add-transaction
+// modal — composes around it and forwards nothing to the views.
 function RootComponent() {
-  return <Outlet />
+  // Local storage management
+  const { transactions } = useLocalStorage()
+
+  const { selectedProperty } = useSelectedProperty()
+  const { properties } = usePropertiesWithStates()
+
+  // UI state
+  const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  // The shell's slice of the ledger: the selected property's transactions.
+  // The interactive filters belong to the Transactions view (ADR-0003).
+  const { filteredTransactions } = useTransactionFilters(
+    transactions,
+    selectedProperty,
+  )
+
+  // CSV export
+  const { exportToCSV } = useCSVExport()
+
+  // Event handlers — transaction add/delete delegate to the transactions module
+  const handleExport = () => {
+    exportToCSV(filteredTransactions, properties, selectedProperty)
+  }
+
+  const handleAddTransaction = () => {
+    setIsTransactionFormOpen(true)
+  }
+
+  const handleCloseTransactionForm = () => {
+    setIsTransactionFormOpen(false)
+  }
+
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
+  }
+
+  return (
+    <AppLayout
+      isSidebarCollapsed={isSidebarCollapsed}
+      onToggleSidebar={handleToggleSidebar}
+    >
+      <AppHeader
+        onExport={handleExport}
+        onAddTransaction={handleAddTransaction}
+      />
+      <NavigationTabs />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <TransactionForm
+        properties={properties}
+        selectedProperty={selectedProperty}
+        onAddTransaction={addTransaction}
+        isOpen={isTransactionFormOpen}
+        onClose={handleCloseTransactionForm}
+      />
+    </AppLayout>
+  )
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {

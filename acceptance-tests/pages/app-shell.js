@@ -4,9 +4,8 @@
 // the properties sidebar. Routes, tab labels and sidebar structure live
 // here — the step definitions read as intent and hold no selectors.
 //
-// ADR-0003 moves the four tabs to real routes; until that change lands they
-// are buttons, and this page object is the single place to flip when it
-// does.
+// ADR-0003 landed: the four tabs are real routes, so the tab controls are
+// router Links (anchors with hrefs) — the locators below target links.
 
 const { state } = require('../support/harness');
 
@@ -37,12 +36,12 @@ async function waitForShell(page) {
   // navigation tabs render. The sidebar property list is still fetching at
   // this point.
   await page
-    .getByRole('button', { name: TABS.overview, exact: true })
+    .getByRole('link', { name: TABS.overview, exact: true })
     .waitFor({ state: 'visible', timeout: WAIT_MS });
 }
 
 async function openTab(page, tab) {
-  await page.getByRole('button', { name: TABS[tab], exact: true }).click();
+  await page.getByRole('link', { name: TABS[tab], exact: true }).click();
 }
 
 async function waitForSidebarProperties(page) {

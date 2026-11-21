@@ -5,15 +5,15 @@
 
 ## 2. Transactions module (C1 folded in — code zone, one commit)
 
-- [ ] 2.1 Create `web/src/transactions/` as a pure module: storage adapter exporting the `landlord-transactions` key and event name once, `addTransaction`/`removeTransaction` with the id policy, `filterTransactions`, `summarizeTransactions` (totals, current month, six-month trend), `runningBalance`, RFC-4180 `toCSV`, and the category record keyed by name with the fake ids deleted
-- [ ] 2.2 Rewire the four hooks as thin adapters over the module; App's transaction handlers delegate to it
-- [ ] 2.3 Verify the suite stays green (behavior-preserving refactor) and the CSV export survives a description containing a quote
+- [x] 2.1 Create `web/src/transactions/` as a pure module: storage adapter exporting the `landlord-transactions` key and event name once, `addTransaction`/`removeTransaction` with the id policy, `filterTransactions`, `summarizeTransactions` (totals, current month, six-month trend), `runningBalance`, RFC-4180 `toCSV`, and the category record keyed by name with the fake ids deleted
+- [x] 2.2 Rewire the four hooks as thin adapters over the module; App's transaction handlers delegate to it
+- [x] 2.3 Verify the suite stays green (behavior-preserving refactor) and the CSV export survives a description containing a quote
 
 ## 3. File routes and redirect (code zone, one commit)
 
-- [ ] 3.1 Create the four TanStack file routes (`/overview`, `/transactions`, `/properties`, `/reports`) with `/` redirecting to `/overview`
-- [ ] 3.2 Delete the single-route shell, `MainContent`'s forwarding corridor, and the three `TabType` declarations; each view owns its filter state
-- [ ] 3.4 Live smoke: all four routes render, the redirect fires, the back button works
+- [x] 3.1 Create the four TanStack file routes (`/overview`, `/transactions`, `/properties`, `/reports`) with `/` redirecting to `/overview`
+- [x] 3.2 Delete the single-route shell, `MainContent`'s forwarding corridor, and the three `TabType` declarations; each view owns its filter state
+- [x] 3.4 Live smoke: all four routes render, the redirect fires, the back button works
 
 ## 4. Passbook world (code zone, committed in craft-sized commits)
 
