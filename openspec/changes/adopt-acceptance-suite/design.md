@@ -48,6 +48,8 @@ flowchart LR
 
 **6. Zone discipline orders the commits.** One specs-zone commit (fencing + deltas), then code-zone commits (pack files, harness wiring, Playwright, gitignore entries, root script), then one step-definition task per pending step, red to green each, each with its own commit; `tasks.md` updates ride along zone-neutrally.
 
+**7. Five admitted API trues-ups (from the 2026-11-21 architecture re-walk).** The suite's browser scenarios are unreachable behind the hardcoded CORS origin list; the delete-without-id 400 branch is unreachable in routing (the bare path falls to the 404 fallback); negative `units` surfaces as a 500 from the migration's backstop instead of a 400; the committed OpenAPI document contains no response bodies, so the regeneration gate would green-lock an envelope-less snapshot; and `/health` answers "ok" without consulting the database. These are admitted as tasks 3.1–3.5: the suite cannot go green without them, and the `properties` delta carries the units rule the handler will own.
+
 ## Risks / Trade-offs
 
 - [Effective-spec coupling] -> Any other active change's deltas join the run; today the only active change is this one, so the gate is self-contained.

@@ -22,7 +22,15 @@
 - [ ] 2.11 Verify extraction and discovery end to end: dry-run resolves only `.extracted/` paths, nothing under `changes/archive/`
 - [ ] 2.12 Commit the harness (code zone)
 
-## 3. Step definitions — one per pending step; red → green → commit each
+## 3. API trues-ups the suite depends on (code zone, one commit each)
+
+- [ ] 3.1 Add `CORS_ORIGINS` to `Config::from_env` (comma-separated, defaulting to today's allow-list) and thread it into `create_router` — red → green → commit
+- [ ] 3.2 Make delete-without-id reachable: the bare `DELETE /properties` path answers the spec's 400 envelope instead of the 404 fallback — red → green → commit
+- [ ] 3.3 Validate `units` in the create handler (zero or greater) so a negative value answers 400, not the migration's 500 — red → green → commit
+- [ ] 3.4 Teach utoipa to emit the envelope and response bodies, regenerate `api/openapi.json`, and confirm the committed document now contains the `{ success, message, data? }` shapes — red → green → commit
+- [ ] 3.5 Make `/health` reuse `db::health_check` so readiness tells the truth mid-run — red → green → commit
+
+## 4. Step definitions — one per pending step; red → green → commit each
 
 - [ ] 3.1 Given the dependency manifests at their committed state — red → green → commit
 - [ ] 3.2 Manifest scan: every entry a concrete constraint, no dist-tag — red → green → commit
@@ -52,8 +60,8 @@
 - [ ] 3.26 Smoke rows and browser-stored state are removed after the run — red → green → commit
 - [ ] 3.27 A missing database connection is named and nothing runs — red → green → commit
 
-## 4. Completion
+## 5. Completion
 
-- [ ] 4.1 Run the full suite: every scenario passes, zero pending or undefined steps, HTML report generated
-- [ ] 4.2 `openspec validate` non-strict is clean (zero errors); the strict fenced-format warnings stay documented as the known validator tension
-- [ ] 4.3 Confirm the ledger holds no smoke rows after the run and no generated directory appears in `git status`
+- [ ] 5.1 Run the full suite: every scenario passes, zero pending or undefined steps, HTML report generated
+- [ ] 5.2 `openspec validate` non-strict is clean (zero errors); the strict fenced-format warnings stay documented as the known validator tension
+- [ ] 5.3 Confirm the ledger holds no smoke rows after the run and no generated directory appears in `git status`

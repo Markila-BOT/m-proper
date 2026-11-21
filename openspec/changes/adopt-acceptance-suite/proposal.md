@@ -10,6 +10,7 @@ The repo has zero automated verification — no cargo tests, no web test framewo
 - Add Playwright inside `acceptance-tests/` so `web-app`'s five browser scenarios genuinely execute (boot API and web dev server, drive the real UI, seed/clear localStorage) — the pack's page objects are HTTP-and-cheerio by contract and cannot drive browser behavior.
 - Suite invariants: boot the app before the run and shut it down after; run against whatever `DATABASE_URL` is set, creating and deleting only the suite's own smoke rows; a missing required variable — at minimum `DATABASE_URL` — fails preflight with the variable named.
 - Add a root `test:acceptance` script that shells into `acceptance-tests/`.
+- Four narrow API trues-ups that make already-spec'd or suite-blocking behavior real: `CORS_ORIGINS` in config (the harness boots the web app on its own ports; the allow-list is code today), a reachable 400 for delete-without-id (the current branch is unreachable — axum routes the bare path to the 404 fallback), 400 for `units` below zero (today the migration's check surfaces it as a 500), and utoipa-emitted response bodies so the committed OpenAPI document actually contains the `{ success, message, data? }` envelope. `/health` reuses `db::health_check` for honest mid-run readiness. The units rule lands as a `properties` delta scenario.
 - Pin all new dependencies with explicit carets per ADR-0001 (`@cucumber/cucumber`, `glob`, `cheerio`, `gherkin-lint`, Playwright); no version left as a dist-tag.
 - A green effective suite with zero pending/undefined steps becomes the automated-verification gate for sync/archive; work follows zone discipline — one specs-zone commit (the fencing plus this change's two deltas) first, then code-zone harness commits, then one step-definition task per pending scenario, red to green each.
 
@@ -22,12 +23,13 @@ The repo has zero automated verification — no cargo tests, no web test framewo
 ### Modified Capabilities
 
 - `dependency-maintenance` — durable requirements rewritten into automatable form; one-time procedural scenarios dropped as REMOVED entries. Delta spec, fenced, landing in its own main spec at sync.
+- `properties` — the Create property requirement gains a units rule: a property with `units` below zero MUST return HTTP 400 and not persist. Delta spec, fenced; the delete-without-id 400 already stands in the main spec — the trues-up makes the code reach it, no spec change there.
 
 _No deltas for `properties` or `web-app`: they are fenced in place and their spec-level behavior is unchanged._
 
 ## Impact
 
-- Code: `acceptance-tests/` (pack files, runner wiring, Playwright steps and page objects, bootstrap/teardown); a root `test:acceptance` entry; root `.gitignore` gains the generated-directory entries.
+- Code: `acceptance-tests/` (pack files, runner wiring, Playwright steps and page objects, bootstrap/teardown); a root `test:acceptance` entry; root `.gitignore` gains the generated-directory entries; and the four API trues-ups plus the honest `/health` in `api/src/{routes,config}.rs`, with `api/openapi.json` regenerated carrying the envelope.
 - Artifacts: `openspec/specs/{properties,web-app,dependency-maintenance}/spec.md` fenced in place; this change adds the `acceptance-suite` delta spec and the `dependency-maintenance` delta.
 - Dependencies: `@cucumber/cucumber`, `glob`, `cheerio`, `gherkin-lint`, Playwright — explicit carets per ADR-0001, majors reviewed individually, no dist-tags.
 - Verification: this suite becomes the project's only automated verification and the automated gate for sync/archive; git-discipline gates from `AGENTS.md` still apply alongside it. A discovered spec/code mismatch blocks this change's own archive until a follow-up change resolves it — the gate is never silently waived. Adopting spec-as-source as the standing verification mechanism is durable and is recorded as an ADR by this change's adr artifact.
@@ -36,5 +38,5 @@ _No deltas for `properties` or `web-app`: they are fenced in place and their spe
 
 - No product-code refactors: the architecture review's candidates — dead auth twins deletion, formatter/icon dedup, transactions module home, generated wire contract, tab routing — are separate changes; the first two are the NEXT change and will ride this suite.
 - No CI pipeline — the suite is local-first; pipeline wiring is its own change.
-- No changes to the Rust API or the web app's behavior; a mismatch the suite uncovers becomes follow-up work, not a fix smuggled into harness commits.
+- No Rust changes beyond the five admitted trues-ups (CORS env, delete-id 400, units 400, OpenAPI envelope documentation, honest `/health`); any OTHER spec/code mismatch the suite uncovers becomes follow-up work, not a fix smuggled into harness commits.
 - No TypeScript 7 migration; no visual redesign work (that proceeds separately under its own direction contract).

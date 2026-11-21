@@ -1,0 +1,34 @@
+## 1. Prerequisite gates (apply order is pinned)
+
+- [ ] 1.1 Confirm `adopt-acceptance-suite` is applied and its suite runs green — this change's behavioral gate
+- [ ] 1.2 Confirm the C3+C6 change has landed: dead twins deleted, the deduped money formatter and icon map in place (two fraction digits), so the rebuild consumes them instead of re-creating them
+
+## 2. Transactions module (C1 folded in — code zone, one commit)
+
+- [ ] 2.1 Create `web/src/transactions/` as a pure module: storage adapter exporting the `landlord-transactions` key and event name once, `addTransaction`/`removeTransaction` with the id policy, `filterTransactions`, `summarizeTransactions` (totals, current month, six-month trend), `runningBalance`, RFC-4180 `toCSV`, and the category record keyed by name with the fake ids deleted
+- [ ] 2.2 Rewire the four hooks as thin adapters over the module; App's transaction handlers delegate to it
+- [ ] 2.3 Verify the suite stays green (behavior-preserving refactor) and the CSV export survives a description containing a quote
+
+## 3. File routes and redirect (code zone, one commit)
+
+- [ ] 3.1 Create the four TanStack file routes (`/overview`, `/transactions`, `/properties`, `/reports`) with `/` redirecting to `/overview`
+- [ ] 3.2 Delete the single-route shell, `MainContent`'s forwarding corridor, and the three `TabType` declarations; each view owns its filter state
+- [ ] 3.4 Live smoke: all four routes render, the redirect fires, the back button works
+
+## 4. Passbook world (code zone, committed in craft-sized commits)
+
+- [ ] 4.1 Add the passbook tokens to the Tailwind layer: ivory ground, ink-navy, machine-print green hairlines, stamp-red reserved for state marks, print-density tabular numerics
+- [ ] 4.2 Rebuild the ledger table on TanStack Table (`@tanstack/react-table`, explicit caret per ADR-0001): column structure, sortable headers, the running-balance derived column in displayed order
+- [ ] 4.3 Move `TransactionForm` and `FilterControls` onto Radix Select with passbook-styled triggers and portals
+- [ ] 4.4 Shell passbook treatment: header, navigation, ground, and type across all four routes
+- [ ] 4.5 Overview and Transactions at full passbook commitment; Properties and Reports content layouts untouched under the new chrome
+
+## 5. Craft pass and verification
+
+- [ ] 5.1 Read the impeccable craft floor; batch the spacing, border, and padding corrections across the redesigned surfaces (ui-taste: aligned grid, consistent rhythm, deliberate table borders)
+- [ ] 5.2 Responsive sweep; capture `desktop.png` (1440) and `mobile.png` (390) into `.impeccable/review/`
+- [ ] 5.3 Acceptance suite green across web-app's five kept and two added scenarios
+- [ ] 5.4 Run the design detector once over the changed targets; fix what is mechanical
+- [ ] 5.5 Independent finish review against the direction contract and `model-pick.html`; act on its disposition
+- [ ] 5.6 DESIGN.md written from the built world at finish
+- [ ] 5.7 `openspec validate` non-strict clean; every shipping raster carries its provenance
