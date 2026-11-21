@@ -1,10 +1,13 @@
 // web/src/components/Summary.tsx
 // The summary as a printed totals line — dense, tabular, ruled like the
 // totals row of a passbook page (the card shapes are retired). The strip
-// totals the DISPLAYED ledger slice and its label names that scope, so it
-// can never disagree with what the eye audits beneath it; the six-month
-// trend keeps its own labeled semantics. Overview composes the strip with
-// the trend table; the Transactions view reuses the strip alone.
+// totals the slice its caller passes, and its label names what that
+// slice is on the page that renders it — the displayed ledger on
+// Transactions, where the rows beneath audit the claim, or all entries
+// of the selected scope on Overview, which shows no ledger rows to
+// audit; the six-month trend keeps its own labeled semantics. Overview
+// composes the strip with the trend table; the Transactions view reuses
+// the strip alone.
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { monthlyTotals, summarizeTransactions } from '../transactions'
@@ -22,21 +25,49 @@ export function propertyScopeLabel(
   )
 }
 
+// What the strip's figures total on the page that renders it. The
+// Transactions view totals the slice its ledger rows display, so its
+// label claims exactly the audit the eye can run beneath it. The
+// Overview page displays no ledger rows, so its strip claims the honest
+// thing instead — every entry of the selected scope. The figures keep
+// their own semantics either way: the caller passes the slice it
+// totals.
+export type TotalsScope = 'displayed-ledger' | 'all-entries'
+
+const SCOPE_WORDING: Record<TotalsScope, { label: string; aria: string }> = {
+  'displayed-ledger': {
+    label: 'Displayed ledger',
+    aria: 'Totals for the displayed ledger',
+  },
+  'all-entries': {
+    label: 'All entries',
+    aria: 'Totals for all entries',
+  },
+}
+
 type TotalsLineProps = {
   transactions: Transaction[]
   scopeLabel: string
+  scope?: TotalsScope
 }
 
-export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
-  // The strip follows the display: its figures total exactly the slice the
-  // ledger shows beneath it — property selection, search, category, type,
-  // and date range all included — never a calendar month of its own.
+export function TotalsLine({
+  transactions,
+  scopeLabel,
+  scope = 'displayed-ledger',
+}: TotalsLineProps) {
+  // The strip follows its page: its figures total exactly the slice the
+  // caller passes — on Transactions the displayed ledger beneath it
+  // (property selection, search, category, type, and date range all
+  // included), on Overview every entry of the selected scope — never a
+  // calendar month of its own.
   const { totalIncome, totalExpenses, netProfit } =
     summarizeTransactions(transactions)
+  const wording = SCOPE_WORDING[scope]
 
   return (
     <section
-      aria-label={`Totals for the displayed ledger · ${scopeLabel}`}
+      aria-label={`${wording.aria} · ${scopeLabel}`}
       className="flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-print border-b border-rule py-3.5 pr-3"
     >
       <div>
@@ -64,7 +95,7 @@ export function TotalsLine({ transactions, scopeLabel }: TotalsLineProps) {
         </p>
       </div>
       <p className="ml-auto font-mono text-caption font-medium uppercase tracking-[0.1em] text-ink-soft">
-        Displayed ledger · {scopeLabel}
+        {wording.label} · {scopeLabel}
       </p>
     </section>
   )
@@ -86,6 +117,11 @@ export default function Summary({
       ? 'All properties'
       : propertyScopeLabel(selectedProperty, properties)
 
+  // The Overview page displays no ledger rows, so its strip names what it
+  // totals on this page: all entries of the selected scope (ADR-0003 —
+  // the interactive filters, and with them the "displayed ledger"
+  // claim, belong to the Transactions view).
+  //
   // The six-month trend as a small green-ruled table: hairline row rules,
   // mono tabular figures. No rings, no bars — the numbers in print. Like
   // the ledger sheet, the table slides inside its own ruled region when
@@ -94,7 +130,11 @@ export default function Summary({
 
   return (
     <div className="space-y-6">
-      <TotalsLine transactions={transactions} scopeLabel={scopeLabel} />
+      <TotalsLine
+        transactions={transactions}
+        scopeLabel={scopeLabel}
+        scope="all-entries"
+      />
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <caption className="border-b border-print px-3 pb-2.5 text-left font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft">

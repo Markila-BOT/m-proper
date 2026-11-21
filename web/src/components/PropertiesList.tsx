@@ -71,14 +71,21 @@ export default function PropertiesList() {
             >
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
+                  {/* The passbook's narrow-column idiom (the expanded rail
+                      does the same): the name truncates under pressure and
+                      the state marks keep their words — the rail below lg
+                      widens to name its entries, so the card's column is
+                      narrower and the row must give somewhere. */}
+                  <div className="flex min-w-0 flex-1 items-center space-x-2">
                     <PropertyTypeIcon
                       type={property.type}
-                      className="w-5 h-5"
+                      className="flex-shrink-0 w-5 h-5"
                     />
-                    <CardTitle className="text-lg">{property.name}</CardTitle>
+                    <CardTitle className="truncate text-lg">
+                      {property.name}
+                    </CardTitle>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-shrink-0 items-center space-x-2">
                     <div
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         property.isActive

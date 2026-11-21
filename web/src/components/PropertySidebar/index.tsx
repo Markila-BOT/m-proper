@@ -13,6 +13,13 @@ type PropertySidebarProps = {
   onToggleCollapse: () => void
 }
 
+// The caption that names each rail entry below lg — the passbook names
+// every line. Tiny print under the icon, truncated like any narrow
+// printed column; at lg it hides and the desktop rail keeps its hover
+// tooltips and full-width names.
+const railCaptionClass =
+  'w-full truncate text-center font-sans text-caption font-medium lg:hidden'
+
 export default function PropertySidebar({
   isCollapsed,
   onToggleCollapse,
@@ -21,9 +28,12 @@ export default function PropertySidebar({
   const { properties, propertySummaries, isLoading, error } =
     usePropertySidebar()
 
-  // The rail's breakpoint behavior: below lg it ships icon-only (the
-  // tooltips carry the names) so the ledger keeps the width it needs; the
-  // collapse toggle is a desktop control, so it hides with the labels.
+  // The rail's breakpoint behavior: below lg it stays a named index —
+  // each entry prints its name as a tiny caption under its icon (a touch
+  // user cannot hover a tooltip), on a rail just wide enough to carry
+  // that print; at lg the captions hide and the rail is exactly the
+  // desktop control it was — w-16 icon-only with hover tooltips, or the
+  // expanded w-80 list, with the collapse toggle.
   const isDesktop = useIsDesktop()
   const railCollapsed = !isDesktop || isCollapsed
 
@@ -41,7 +51,7 @@ export default function PropertySidebar({
     return (
       <nav
         aria-label="Properties"
-        className="flex flex-col w-16 lg:w-80 bg-paper border-r border-rule"
+        className="flex flex-col w-28 lg:w-80 bg-paper border-r border-rule"
       >
         <div className="hidden lg:block p-6 border-b border-rule">
           <div className="flex justify-between items-center mb-4">
@@ -70,10 +80,11 @@ export default function PropertySidebar({
     return (
       <nav
         aria-label="Properties"
-        className="flex flex-col w-16 bg-paper border-r border-rule"
+        className="flex flex-col w-28 lg:w-16 bg-paper border-r border-rule"
       >
-        {/* The expand control is a desktop control: below lg the rail is
-            icon-only by viewport, so the toggle (and its rule) hide. */}
+        {/* The expand control is a desktop control: below lg the rail
+            keeps its captions by viewport (no toggle needed — the names
+            are already printed), so the toggle (and its rule) hide. */}
         <div className="hidden lg:block p-4 border-b border-rule">
           <button
             onClick={onToggleCollapse}
@@ -86,34 +97,32 @@ export default function PropertySidebar({
         <div className="flex-1 p-2 space-y-2">
           <button
             onClick={() => setSelectedProperty('all')}
-            className={`w-full p-3 rounded-[2px] transition-colors ${
+            className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors ${
               selectedProperty === 'all'
                 ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                 : 'text-ink-soft hover:bg-print-wash'
             }`}
+            aria-label="All Properties"
             title="All Properties"
           >
-            <PropertyTypeIcon
-              type={PROPERTY_TYPE.COMMERCIAL}
-              className="mx-auto w-5 h-5"
-            />
+            <PropertyTypeIcon type={PROPERTY_TYPE.COMMERCIAL} className="w-5 h-5" />
+            <span className={railCaptionClass}>All Properties</span>
           </button>
 
           {properties.map((property) => (
             <button
               key={property.id}
               onClick={() => setSelectedProperty(property.id)}
-              className={`w-full p-3 rounded-[2px] transition-colors ${
+              className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors ${
                 selectedProperty === property.id
                   ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                   : 'text-ink-soft hover:bg-print-wash'
               }`}
+              aria-label={property.name}
               title={property.name}
             >
-              <PropertyTypeIcon
-                type={property.type}
-                className="mx-auto w-5 h-5"
-              />
+              <PropertyTypeIcon type={property.type} className="w-5 h-5" />
+              <span className={railCaptionClass}>{property.name}</span>
             </button>
           ))}
         </div>
@@ -121,11 +130,12 @@ export default function PropertySidebar({
         <div className="p-2 border-t border-rule">
           <PropertyModal>
             <button
-              className="p-3 w-full text-ink-soft rounded-[2px] transition-colors hover:text-print hover:bg-print-wash"
+              className="flex flex-col items-center gap-1 w-full px-1 py-2.5 text-ink-soft rounded-[2px] transition-colors hover:text-print hover:bg-print-wash"
+              aria-label="Add Property"
               title="Add Property"
             >
-              <FiPlus className="mx-auto w-5 h-5" />
-              <span className="sr-only">Add Property</span>
+              <FiPlus className="w-5 h-5" />
+              <span className={railCaptionClass}>Add Property</span>
             </button>
           </PropertyModal>
         </div>

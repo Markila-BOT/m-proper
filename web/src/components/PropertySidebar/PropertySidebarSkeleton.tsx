@@ -11,7 +11,7 @@ export function PropertySidebarSkeleton({
 }: PropertySidebarSkeletonProps) {
   if (isCollapsed) {
     return (
-      <div className="flex flex-col w-16 bg-paper border-r border-rule">
+      <div className="flex flex-col w-28 lg:w-16 bg-paper border-r border-rule">
         <div className="p-4 border-b border-rule">
           <Skeleton className="w-10 h-10" />
         </div>

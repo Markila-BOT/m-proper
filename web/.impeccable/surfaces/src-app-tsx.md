@@ -23,7 +23,7 @@ OWN-WORLD: Machine-print green hairline grid on ivory paper; ink-navy type; stam
 
 STORY: The visitor recognizes bank-record trust before reading a word, enters a transaction like writing a passbook line, and audits the month by running their eye down the balance rail.
 
-FIRST VIEWPORT: Left property rail and top tabs in navy over ivory; a compact summary strip; the transactions table as the page's mass at print density, tabular figures; the running balance column marching down the right edge; one red-stamped OVER BUDGET row as the single state color; "+ Add transaction" as the one primary control.
+FIRST VIEWPORT: Left property rail and top tabs in navy over ivory; a compact summary strip; the transactions table as the page's mass at print density, tabular figures; the running balance column marching down the right edge; stamp-red appears only on state marks — destructive confirms and validation failures, never decoration (the original contract's over-budget row is retired with the OWN-WORLD renegotiation); "+ Add transaction" as the one primary control.
 
 FORM: Bank Passbook — top-ranked grounded candidate (position 1 of 7; assigned index 7 was declined by the user's pick). seed:49000d5b2e15e9df
 
