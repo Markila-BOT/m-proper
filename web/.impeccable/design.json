@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21",
+  "title": "Design System: Landlord Ledger — Bank Passbook",
+  "world": "bank-passbook",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Passbook Paper",
+        "canonical": "#fbf8f1",
+        "tonalRamp": [
+          "oklch(20% 0.015 90)",
+          "oklch(32% 0.02 90)",
+          "oklch(45% 0.02 90)",
+          "oklch(58% 0.018 90)",
+          "oklch(72% 0.015 90)",
+          "oklch(84% 0.012 90)",
+          "oklch(93% 0.008 90)",
+          "oklch(98% 0.005 90)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink Navy",
+        "canonical": "#1b2a41",
+        "tonalRamp": [
+          "oklch(20% 0.03 262)",
+          "oklch(30% 0.045 262)",
+          "oklch(38% 0.05 262)",
+          "oklch(47% 0.05 262)",
+          "oklch(57% 0.045 262)",
+          "oklch(68% 0.035 262)",
+          "oklch(80% 0.02 262)",
+          "oklch(93% 0.008 262)"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "canonical": "rgba(27, 42, 65, 0.72)",
+        "derivation": "ink at 72% alpha — secondary text, labels, quiet rows"
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "rgba(27, 42, 65, 0.66)",
+        "derivation": "ink at 66% alpha — placeholders, the least-important affordances"
+      },
+      "print": {
+        "role": "primary",
+        "displayName": "Machine-Print Green",
+        "canonical": "#2e5e4e",
+        "tonalRamp": [
+          "oklch(18% 0.02 165)",
+          "oklch(28% 0.045 165)",
+          "oklch(38% 0.07 165)",
+          "oklch(48% 0.075 165)",
+          "oklch(58% 0.07 165)",
+          "oklch(70% 0.055 165)",
+          "oklch(83% 0.03 165)",
+          "oklch(95% 0.01 165)"
+        ]
+      },
+      "print-wash": {
+        "role": "primary",
+        "displayName": "Print Wash",
+        "canonical": "rgba(46, 94, 78, 0.06)",
+        "derivation": "print at 6% alpha — the balance rail's ground, rail hover, skeleton tint"
+      },
+      "print-soft": {
+        "role": "primary",
+        "displayName": "Print Soft",
+        "canonical": "#e9f1ea",
+        "derivation": "premixed print tint — the selected rail entry's ground; also the shadcn secondary/muted/accent slot (130 22% 93%)"
+      },
+      "rule": {
+        "role": "primary",
+        "displayName": "Hairline Rule",
+        "canonical": "rgba(46, 94, 78, 0.38)",
+        "derivation": "print at 38% alpha — the 1px hairline on rows, fields, dividers"
+      },
+      "stamp": {
+        "role": "secondary",
+        "displayName": "Stamp Red",
+        "canonical": "#a31621",
+        "tonalRamp": [
+          "oklch(20% 0.05 28)",
+          "oklch(30% 0.11 28)",
+          "oklch(38% 0.15 28)",
+          "oklch(45% 0.16 28)",
+          "oklch(55% 0.15 28)",
+          "oklch(65% 0.12 28)",
+          "oklch(78% 0.07 28)",
+          "oklch(92% 0.02 28)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "The product name and each view's heading. Body-scale bold ink; the world has no display face."
+      },
+      "caption": {
+        "displayName": "Caption Label",
+        "purpose": "The world's micro-label: field labels, table headers, strip labels, tfoot legend. Uppercase; tracking stops at 0.14em (fields), 0.16em (table headers), 0.18em (totals legends and stamp marks)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Form input text, tab labels, quiet controls; weight 600 on controls that act."
+      },
+      "ledger": {
+        "displayName": "Ledger Figures",
+        "purpose": "Every ledger cell — dates, descriptions, categories, amounts, balances. IBM Plex Mono with tabular numerals."
+      },
+      "totals-figure": {
+        "displayName": "Totals Figure",
+        "purpose": "The totals strip's Income / Expenses / Net — the largest figures on any page, still mono and tabular."
+      },
+      "stamp-mark": {
+        "displayName": "Stamp Mark",
+        "purpose": "Validation alert and the rotated delete-confirm question; its 10px sibling carries sort arrows and the trend sublabel."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating-md",
+        "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        "purpose": "The single soft shadow a floating surface is allowed — the Radix Select option list (Tailwind shadow-md)."
+      },
+      {
+        "name": "floating-lg",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "purpose": "The dialog panel (Tailwind shadow-lg), over a 35% ink wash overlay. The page at rest casts nothing."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-print",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Exponential ease-out — the only authored easing."
+      },
+      {
+        "name": "ledger-line-printed",
+        "value": "line-printed 500ms cubic-bezier(0.16, 1, 0.3, 1) both, fade-in 500ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "purpose": "The one authored motion: a row appearing after first paint wipes in left-to-right (clip-path inset(0 100% 0 0) to inset(0 0 0 0)) with a simultaneous fade — the balance figure lands last. First paint is still. Removed entirely under prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "state-transition",
+        "value": "transition-colors 150ms",
+        "purpose": "Hover and focus are color/opacity states, not motion. Skeleton pulse and loading spin are stock utilities, not authored."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "The world's one behavior breakpoint: the rail expands or collapses (captions below, tooltips and toggle above), the header composes into one line, gutters widen to 2.25rem. useIsDesktop mirrors it via matchMedia, SSR-safe."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Used only by the deferred Properties page's card grid; not part of the finished world's behavior."
+      }
+    ],
+    "passbookRules": [
+      {
+        "name": "hairline",
+        "value": "1px",
+        "detail": "border-bottom: 1px solid rgba(46, 94, 78, 0.38) — every row, field edge, and internal divider."
+      },
+      {
+        "name": "totals",
+        "value": "3px double #2e5e4e",
+        "detail": "The accountant's closing line (.rule-totals, border-top only): above 'Balance carried forward' and above the empty page's 'No entries'."
+      },
+      {
+        "name": "row-density",
+        "value": "2.375rem",
+        "detail": "--passbook-row, declared; realized as 0.625rem cell padding plus the 0.8125rem ledger line (~38-39px effective)."
+      },
+      {
+        "name": "control-density",
+        "value": "2.25rem",
+        "detail": "--passbook-control: every field, select trigger, and primary button is h-9."
+      },
+      {
+        "name": "blank-line",
+        "value": "2.5rem (40px)",
+        "detail": "The unfilled printed lines below the last entry — aria-hidden, pointer-events none, capped at fifteen."
+      },
+      {
+        "name": "radius",
+        "value": "2px",
+        "detail": "The world's only corner (rounded-[2px]); the shadcn --radius base is re-pointed to 0.125rem so its lg/md steps collapse to the same 2px."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary control per screen — ink ground, paper text, squared; \"+ Add transaction\" in the header.",
+      "html": "<button class=\"ds-btn-primary\">+ Add transaction</button>",
+      "css": ".ds-btn-primary { background: var(--color-ink, #1b2a41); color: var(--color-paper, #fbf8f1); height: 2.25rem; padding: 0 1rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: opacity 150ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Text Control",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "The export control's idiom — transparent ground, ink-soft text that deepens to ink on hover, always disclosing its scope.",
+      "html": "<button class=\"ds-btn-quiet\">Export CSV · All properties</button>",
+      "css": ".ds-btn-quiet { background: transparent; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); padding: 0.5rem 0.75rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: color 150ms; } .ds-btn-quiet:hover { color: var(--color-ink, #1b2a41); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); }"
+    },
+    {
+      "name": "Passbook Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Hairline print-green border on paper, squared, 2.25rem, with the caption-uppercase label above and the 2px print ring on focus.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-field-desc\">Description</label><input id=\"ds-field-desc\" class=\"ds-field\" type=\"text\" placeholder=\"What was this entry for\">",
+      "css": ".ds-field-label { display: block; margin-bottom: 0.375rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-field { height: 2.25rem; width: 100%; border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-paper, #fbf8f1); color: var(--color-ink, #1b2a41); padding: 0 0.75rem; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; } .ds-field::placeholder { color: var(--color-ink-faint, rgba(27, 42, 65, 0.66)); } .ds-field:focus { outline: none; box-shadow: 0 0 0 1px var(--color-paper, #fbf8f1), 0 0 0 3px hsl(160 34% 35%); }"
+    },
+    {
+      "name": "Select Trigger",
+      "kind": "custom",
+      "refersTo": "select",
+      "description": "A Radix Select trigger — the same hairline field with a print-green chevron; no native select anywhere in the world.",
+      "html": "<button class=\"ds-select-trigger\" aria-haspopup=\"listbox\">Category<svg class=\"ds-select-chevron\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
+      "css": ".ds-select-trigger { display: flex; align-items: center; justify-content: space-between; height: 2.25rem; width: 100%; border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-paper, #fbf8f1); color: var(--color-ink, #1b2a41); padding: 0 0.75rem; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; } .ds-select-chevron { color: var(--color-print, #2e5e4e); flex-shrink: 0; } .ds-select-trigger:focus { outline: none; box-shadow: 0 0 0 1px var(--color-paper, #fbf8f1), 0 0 0 3px hsl(160 34% 35%); }"
+    },
+    {
+      "name": "Navigation Tabs",
+      "kind": "nav",
+      "refersTo": "nav-tab-active",
+      "description": "Router Links in one green-ruled row — active carries ink, bold, and a solid 2px print underline; the row scrolls inside its rule when narrow.",
+      "html": "<nav class=\"ds-nav-tabs\"><a class=\"ds-nav-tab ds-nav-tab-active\" href=\"#\">Transactions</a><a class=\"ds-nav-tab\" href=\"#\">Overview</a><a class=\"ds-nav-tab\" href=\"#\">Properties</a></nav>",
+      "css": ".ds-nav-tabs { display: flex; gap: 1.75rem; overflow-x: auto; padding: 0 1.5rem; border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-paper, #fbf8f1); } .ds-nav-tab { padding: 0.625rem 0; border-bottom: 2px solid transparent; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 500; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); text-decoration: none; transition: color 150ms, border-color 150ms; } .ds-nav-tab:hover { color: var(--color-ink, #1b2a41); border-bottom-color: var(--color-rule, rgba(46, 94, 78, 0.38)); } .ds-nav-tab:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); } .ds-nav-tab-active { color: var(--color-ink, #1b2a41); font-weight: 700; border-bottom-color: var(--color-print, #2e5e4e); }"
+    },
+    {
+      "name": "Ledger Row",
+      "kind": "custom",
+      "refersTo": "ledger-balance-cell",
+      "description": "The signature surface — mono tabular cells on hairline rules, income in print green, the balance rail on its wash, the 3px double totals rule closing the page.",
+      "html": "<table class=\"ds-ledger\"><thead><tr><th class=\"ds-ledger-th\">Date</th><th class=\"ds-ledger-th ds-align-r\">Amount</th><th class=\"ds-ledger-th ds-align-r\">Balance</th></tr></thead><tbody><tr><td class=\"ds-ledger-cell\">Nov 21, 2026</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-income\">+₱25,000.00</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-balance\">₱112,340.00</td></tr></tbody><tfoot><tr><td colspan=\"2\" class=\"ds-ledger-foot\">Balance carried forward · Nov 2026</td><td class=\"ds-ledger-foot ds-align-r ds-ledger-foot-balance\">₱112,340.00</td></tr></tfoot></table>",
+      "css": ".ds-ledger { width: 100%; border-collapse: collapse; background: var(--color-paper, #fbf8f1); } .ds-ledger-th { border-bottom: 1px solid var(--color-print, #2e5e4e); padding: 0 0.75rem 0.625rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; text-align: left; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-align-r { text-align: right; } .ds-ledger-cell { border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); padding: 0.625rem 0.75rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-income { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); color: var(--color-print, #2e5e4e); font-weight: 600; } .ds-ledger-balance { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); color: var(--color-ink, #1b2a41); font-weight: 600; } .ds-ledger-foot { border-top: 3px double var(--color-print, #2e5e4e); padding: 0.875rem 0.75rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-foot-balance { background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 15px; font-weight: 700; text-transform: none; letter-spacing: normal; color: var(--color-ink, #1b2a41); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Stamp Confirm Cluster",
+      "kind": "custom",
+      "refersTo": "stamp-confirm",
+      "description": "The destructive idiom — a rotated stamp-red bordered question beside a stamp-ground Confirm and a hairline Keep on paper.",
+      "html": "<span class=\"ds-stamp-cluster\"><span class=\"ds-stamp-mark\">Delete this entry?</span><button class=\"ds-stamp-btn\">Delete</button><button class=\"ds-keep-btn\">Keep</button></span>",
+      "css": ".ds-stamp-cluster { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); } .ds-stamp-mark { display: inline-block; transform: rotate(-2deg); border: 1.5px solid var(--color-stamp, #a31621); border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-stamp, #a31621); } .ds-stamp-btn { background: var(--color-stamp, #a31621); color: var(--color-paper, #fbf8f1); border: none; border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; transition: opacity 150ms; } .ds-stamp-btn:hover { opacity: 0.9; } .ds-stamp-btn:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); } .ds-keep-btn { background: var(--color-paper, #fbf8f1); border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); transition: color 150ms; } .ds-keep-btn:hover { color: var(--color-ink, #1b2a41); }"
+    },
+    {
+      "name": "Validation Stamp Alert",
+      "kind": "custom",
+      "refersTo": "stamp-mark",
+      "description": "The form's validation state — all-sides stamp border, uppercase mono, naming the problem and its recovery; the generic left-stripe alert is refused.",
+      "html": "<p class=\"ds-stamp-alert\" role=\"alert\">The line is unfinished: give it a description, a category, and a property.</p>",
+      "css": ".ds-stamp-alert { border: 1.5px solid var(--color-stamp, #a31621); border-radius: 2px; background: var(--color-paper, #fbf8f1); padding: 0.625rem 0.75rem; margin: 0; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-stamp, #a31621); }"
+    }
+  ],
+  "records": [
+    {
+      "id": "stamp-red-renegotiation",
+      "date": "2026-11-21",
+      "title": "The stamp-red renegotiation",
+      "body": "The original direction contract carried an over-budget mark in stamp red; it had no trigger — no budget concept exists in the product. No budget scope was added. Stamp-red's standing role is state marks only (destructive confirms, validation failures), never decoration. The over-budget row tint retired with the first-viewport plan; the built ledger's rows carry no such mark."
+    },
+    {
+      "id": "unknown-category-edge",
+      "date": "2026-11-21",
+      "title": "The deferred unknown-category edge",
+      "body": "A transaction already in storage whose category string is not one of the app's category records is unreachable through the app's own form (the form's Category select offers only INCOME_CATEGORIES / EXPENSE_CATEGORIES) and can never be isolated by the ledger's category filter, which lists the same records. In the built code the row itself still renders, printing its raw stored category string in the Category cell and totaling into every summary; what is truly unreachable is its creation and its isolation, not its display. The edge is deferred rather than resolved — no semantics (validation, migration, display treatment) were decided, and this record exists so a future change decides them deliberately instead of inheriting an accident."
+    }
+  ],
+  "narrative": {
+    "northStar": "The Bank Passbook",
+    "overview": "The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.\n\nDepth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.\n\nThe world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs), the Overview and Transactions views, and the shared primitives; the Properties page is a recorded chrome-only deferral — its title row and delete cluster are finished in-world, while its card bodies still carry default-Tailwind grays, blues, and pill badges until their own pass lands.",
+    "keyCharacteristics": [
+      "Ivory paper ground (#fbf8f1), ink-navy type (#1b2a41), machine-print green hairline rules (#2e5e4e), stamp red (#a31621) reserved for state marks.",
+      "IBM Plex Mono with tabular numerals for every date and money figure, at print density (0.8125rem rows, ~2.375rem row rhythm).",
+      "Structure from rules — 1px hairlines everywhere, a 3px double totals rule for closing lines — never from shadows.",
+      "The running balance rail on a print wash down the ledger's right edge, computed over the displayed order.",
+      "One authored motion (the print-in), removed entirely under prefers-reduced-motion.",
+      "2px corners everywhere: squared, printed form fields."
+    ],
+    "rules": [
+      {
+        "name": "The Stamp Rule",
+        "body": "Stamp red is a state mark only: destructive confirms and validation failures, always uppercase mono, always bordered or grounded — never a tint, tint never a decoration. If the red doesn't say \"act on me\" or \"this was rejected,\" it doesn't appear.",
+        "section": "colors"
+      },
+      {
+        "name": "The Owned Browser Chrome Rule",
+        "body": "Selection prints as print green at 22% over paper with ink text; carets and native checkbox/radio accents are print green; links carry ink text over a 1px print underline at 3px offset, turning print green on hover; scrollbars are thin ink (34% alpha) on a transparent track with a paper-framed thumb. The world does not stop at the components.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Numerals Rule",
+        "body": "Every figure — money, dates, counts — is set in IBM Plex Mono with tabular numerals, so columns of pesos align down the page like a printed ledger. Money is formatted by the one formatMoney (₱, exactly two fraction digits everywhere) and dates by the one formatDate (en-US); no surface re-creates a local copy, and the sans face never sets a figure.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "The page never casts shadows; a floating surface may cast one, softly. Hover on a page element changes color, never elevation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Authored Motion",
+        "body": "A row that appears after first paint prints itself onto the page: a left-to-right clip-path wipe plus a fade, 500ms, exponential ease-out, the balance figure landing last. First paint is still. prefers-reduced-motion removes it entirely. Nothing else is authored: hovers transition color/opacity only, and the loading states keep stock pulse and spin rather than inventing motion.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do set every figure in IBM Plex Mono with tabular numerals, formatted through the one formatMoney (₱, two fraction digits always) and the one formatDate.",
+      "Do build structure from the rules: 1px hairlines for rows, fields, and dividers; the 3px double totals rule for closing lines; print underlines for headers and the active tab.",
+      "Do keep the balance on its print wash, computed over the displayed order — the rail is the audit.",
+      "Do name every totals claim honestly: the strip's label and aria-label total exactly the slice its page displays, and say which page semantics they carry (\"Displayed ledger\" vs \"All entries\").",
+      "Do keep stamp red for state marks only — destructive confirms and validation failures — squared, uppercase mono, bordered or grounded.",
+      "Do keep one primary control per screen; everything else is quiet ink.",
+      "Do keep every overflow inside its own ruled region (tables and the tab row scroll; the main column floors at min-w-0) so the paper never leaks at 390px.",
+      "Do honor prefers-reduced-motion by removing the print-in entirely."
+    ],
+    "donts": [
+      "Don't put shadows on the page at rest — only a floating surface gets one, softly.",
+      "Don't invent a budget mark, an over-budget row tint, or any other stamp-red decoration; no budget concept exists in the product (renegotiated 2026-11-21).",
+      "Don't set money in the sans face, drop the fraction digits, or re-create a local formatter.",
+      "Don't round past 2px, and don't introduce pills, rings, or card grids in the finished world.",
+      "Don't replace the ruled empty state with a card or illustration.",
+      "Don't animate anything beyond the print-in; hover and focus are color states.",
+      "Don't spend print green on decoration — it belongs to rules, income, focus, selection, and the rail's selected state.",
+      "Don't finish a new surface by inheriting the deferred Properties page's gray/blue/pill chrome; that page's leftovers are a recorded deferral, not a style."
+    ]
+  }
+}

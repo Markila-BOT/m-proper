@@ -60,3 +60,4 @@ web/.impeccable/mocks/
 # Acceptance suite generated output
 acceptance-tests/.extracted/
 acceptance-tests/reports/
+web/.impeccable/review/
