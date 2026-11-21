@@ -45,7 +45,7 @@
         "role": "neutral",
         "displayName": "Ink Faint",
         "canonical": "rgba(27, 42, 65, 0.66)",
-        "derivation": "ink at 66% alpha — placeholders, the resting delete icons, the trend's sublabel, the least-important affordances"
+        "derivation": "ink at 66% alpha — placeholders, the resting delete icons, the register's type icons, the trend's sublabel, the least-important affordances"
       },
       "print": {
         "role": "primary",
@@ -66,7 +66,7 @@
         "role": "primary",
         "displayName": "Print Wash",
         "canonical": "rgba(46, 94, 78, 0.06)",
-        "derivation": "print at 6% alpha — the balance rail's ground, rail hover, skeleton tint"
+        "derivation": "print at 6% alpha — the balance rail's and the register's Net cell ground, rail hover, skeleton tint"
       },
       "print-soft": {
         "role": "primary",
@@ -99,27 +99,27 @@
     "typographyMeta": {
       "page-title": {
         "displayName": "Page Title",
-        "purpose": "Each route's own heading — the page's one h1; the product name in the header is a styled link home, not a heading. Body-scale bold ink; the world has no display face."
+        "purpose": "Each route's own heading — the page's one h1; the product name in the header is a styled link home, not a heading. Body-scale bold ink; the world has no display face. The Properties register's line names print as h2s beneath the page's h1."
       },
       "caption": {
         "displayName": "Caption Label",
-        "purpose": "The world's micro-label: field labels, table headers, strip labels, tfoot legend. Uppercase; tracking stops at 0.14em (fields), 0.16em (table headers), 0.18em (totals legends and stamp marks)."
+        "purpose": "The world's micro-label: field labels, table headers, strip labels, the tfoot legend, the caveat above the ledger, the Reset control. Uppercase; tracking stops at 0.14em (fields), 0.16em (table headers), 0.18em (totals legends and stamp marks)."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Form input text, tab labels, quiet controls; weight 600 on controls that act."
+        "purpose": "Form input text, tab labels, quiet controls; weight 600 on controls that act — the active tab owns 600, the inactive 500, each state alone."
       },
       "ledger": {
         "displayName": "Ledger Figures",
-        "purpose": "Every ledger cell — dates, descriptions, categories, amounts, balances. IBM Plex Mono with tabular numerals; categories and properties at 12.5px, the rest at the 13px ledger step."
+        "purpose": "Every ledger cell — dates, descriptions, categories, amounts, balances — and the Properties register's figures (Net, Income, Expenses at the 13px step; Units and the type label at 12.5px). IBM Plex Mono with tabular numerals."
       },
       "totals-figure": {
         "displayName": "Totals Figure",
-        "purpose": "The totals strip's Income / Expenses / Net — the largest figures on any page, still mono and tabular."
+        "purpose": "The totals strip's Income / Expenses / Net — the largest figures on any page, still mono and tabular; Income prints green on every surface that carries it."
       },
       "stamp-mark": {
         "displayName": "Stamp Mark",
-        "purpose": "Validation alert, the rotated delete-confirm question, and the export's acknowledgment stamp; the same 11px mono carries the sort arrows, the trend sublabel, and the Properties page's status marks and created-date line — the ramp's caption floor."
+        "purpose": "Validation alert, the rotated delete-confirm question, and the export's acknowledgment stamp; the same 11px mono carries the sort arrows, the trend sublabel (mixed-case at 0.05em tracking), and the register's status marks — the ramp's caption floor."
       }
     },
     "shadows": [
@@ -155,24 +155,19 @@
       {
         "name": "lg",
         "value": "1024px",
-        "purpose": "The world's one behavior breakpoint: the rail expands or collapses (captions below, tooltips and toggle above), the header composes into one line, gutters widen to 2.25rem. useIsDesktop mirrors it via matchMedia, SSR-safe."
+        "purpose": "The world's one behavior breakpoint: the rail expands or collapses (captions below, tooltips and toggle above), the header composes into one line and the masthead's primary returns from its 44px touch height to the 2.25rem control line, gutters widen to 2.25rem. useIsDesktop mirrors it via matchMedia, SSR-safe."
       },
       {
         "name": "sm",
         "value": "640px",
-        "purpose": "The critique pass's mobile-discipline breakpoint (useMediaQuery, SSR-safe): the filters fold behind their 'Filters · N' disclosure, the ledger sheet holds print width (64rem) with a frozen date column, and the destructive confirm pins as a bottom sheet with 44px targets."
-      },
-      {
-        "name": "md",
-        "value": "768px",
-        "purpose": "The Properties page's card grid steps 2-up here and 3-up at lg; no other behavior hangs on it."
+        "purpose": "The mobile-discipline breakpoint, live as state (useMediaQuery, SSR-safe): the filters fold behind their 'Filters · N' disclosure, the ledger sheet holds its 64rem print width with a frozen date column (at sm and up the sheet floors at 55rem instead), the destructive confirm pins as a bottom sheet with 44px targets — gated by the live query, so the sheet is absent from the desktop DOM — and the Undo target grows to 44px."
       }
     ],
     "passbookRules": [
       {
         "name": "hairline",
         "value": "1px",
-        "detail": "border-bottom: 1px solid rgba(46, 94, 78, 0.38) — every row, field edge, and internal divider."
+        "detail": "border-bottom: 1px solid rgba(46, 94, 78, 0.38) — every ledger and register row, field edge, and internal divider."
       },
       {
         "name": "totals",
@@ -186,18 +181,23 @@
       },
       {
         "name": "row-density",
-        "value": "2.375rem",
-        "detail": "--passbook-row, declared; realized as 0.625rem cell padding plus the 0.8125rem ledger line (~38-39px effective, one line — the destructive control lives in the reserved trailing cell, not in the prose)."
+        "value": "2.375rem declared; ≈39.84px realized",
+        "detail": "--passbook-row, declared; realized as 0.625rem cell padding plus the 0.8125rem ledger line and the 1px row rule — one line at print density, held at real widths (1280 and 1440 both); the destructive control lives in the reserved trailing cell, not in the prose."
+      },
+      {
+        "name": "sheet-floor",
+        "value": "55rem at sm and up; 64rem below sm",
+        "detail": "The table-fixed print width: the fixed column budget (Date 7.5rem / Description the fixed-layout remainder / Category 7.5rem / Property 7.5rem / Amount 7.5rem / Balance 8rem / Actions 2.75rem) that holds one-line rows, with long text truncating under pressure and the full text in the title; below sm the wider sheet slides inside its ruled region with the date column frozen at the left edge."
       },
       {
         "name": "control-density",
         "value": "2.25rem",
-        "detail": "--passbook-control: every field, select trigger, and primary button is h-9."
+        "detail": "--passbook-control: every field, select trigger, and primary button is h-9 at lg and up; wherever a thumb owns the surface the touch standard is 44px instead (masthead primary below lg, bottom-sheet confirms, Undo)."
       },
       {
         "name": "blank-line",
         "value": "2.5rem (40px)",
-        "detail": "The unfilled printed lines below the last entry — aria-hidden, pointer-events none, capped at fifteen."
+        "detail": "The unfilled printed lines below the last entry, ruled at the entries' own rhythm — aria-hidden, pointer-events none, capped at fifteen."
       },
       {
         "name": "radius",
@@ -211,9 +211,9 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one primary control per screen — ink ground, paper text, squared; \"+ Add transaction\" in the header.",
+      "description": "The one primary control per screen — ink ground, paper text, squared; \"+ Add transaction\" in the header, 44px high and full-width below lg (the masthead's touch standard), back to the 2.25rem control line at lg.",
       "html": "<button class=\"ds-btn-primary\">+ Add transaction</button>",
-      "css": ".ds-btn-primary { background: var(--color-ink, #1b2a41); color: var(--color-paper, #fbf8f1); height: 2.25rem; padding: 0 1rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: opacity 150ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); outline-offset: 2px; }"
+      "css": ".ds-btn-primary { background: var(--color-ink, #1b2a41); color: var(--color-paper, #fbf8f1); height: 2.25rem; padding: 0 1rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: opacity 150ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); outline-offset: 2px; } @media (max-width: 1023.98px) { .ds-btn-primary { height: 2.75rem; width: 100%; } }"
     },
     {
       "name": "Quiet Text Control",
@@ -243,15 +243,15 @@
       "name": "Navigation Tabs",
       "kind": "nav",
       "refersTo": "nav-tab-active",
-      "description": "Router Links in one green-ruled row — active carries ink, bold, and a solid 2px print underline; the row scrolls inside its rule when narrow.",
+      "description": "Router Links in one green-ruled row — active carries ink at 600 with a solid 2px print underline, inactive ink-soft at 500, each weight owning its state alone; the row scrolls inside its rule when narrow.",
       "html": "<nav class=\"ds-nav-tabs\"><a class=\"ds-nav-tab ds-nav-tab-active\" href=\"#\">Overview</a><a class=\"ds-nav-tab\" href=\"#\">Transactions</a><a class=\"ds-nav-tab\" href=\"#\">Properties</a></nav>",
-      "css": ".ds-nav-tabs { display: flex; gap: 1.75rem; overflow-x: auto; padding: 0 1.5rem; border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-paper, #fbf8f1); } .ds-nav-tab { padding: 0.625rem 0; border-bottom: 2px solid transparent; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 500; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); text-decoration: none; transition: color 150ms, border-color 150ms; } .ds-nav-tab:hover { color: var(--color-ink, #1b2a41); border-bottom-color: var(--color-rule, rgba(46, 94, 78, 0.38)); } .ds-nav-tab:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); } .ds-nav-tab-active { color: var(--color-ink, #1b2a41); font-weight: 700; border-bottom-color: var(--color-print, #2e5e4e); }"
+      "css": ".ds-nav-tabs { display: flex; gap: 1.75rem; overflow-x: auto; padding: 0 1.5rem; border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-paper, #fbf8f1); } .ds-nav-tab { padding: 0.625rem 0; border-bottom: 2px solid transparent; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 500; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); text-decoration: none; transition: color 150ms, border-color 150ms; } .ds-nav-tab:hover { color: var(--color-ink, #1b2a41); border-bottom-color: var(--color-rule, rgba(46, 94, 78, 0.38)); } .ds-nav-tab:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); } .ds-nav-tab-active { color: var(--color-ink, #1b2a41); font-weight: 600; border-bottom-color: var(--color-print, #2e5e4e); }"
     },
     {
       "name": "Ledger Row",
       "kind": "custom",
       "refersTo": "ledger-balance-cell",
-      "description": "The signature surface — mono tabular cells on hairline rules, income in print green; the sheet opens chronological, newest-first freezes the rail with a printed caveat, the delete control hides in a reserved trailing margin cell, and the closing 3px double rule owns its seam on the last row's bottom edge.",
+      "description": "The signature surface — mono tabular cells on hairline rules, income in print green; the sheet is table-fixed with a 55rem floor at sm and up (64rem below sm, date column frozen) holding one-line rows, the rail always accumulates the book (every entry, date ascending) whatever the display and the caveat 'Balance follows the book, not this view' prints whenever the view is not the book's own order, the delete control hides in a reserved trailing margin cell, and the closing 3px double rule owns its seam on the last row's bottom edge.",
       "html": "<table class=\"ds-ledger\"><thead><tr><th class=\"ds-ledger-th\">Date</th><th class=\"ds-ledger-th ds-align-r\">Amount</th><th class=\"ds-ledger-th ds-align-r\">Balance</th><th class=\"ds-ledger-th-sr\">Actions</th></tr></thead><tbody><tr class=\"ds-ledger-row ds-ledger-row-last\"><td class=\"ds-ledger-cell\">Nov 21, 2026</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-income\">+₱25,000.00</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-balance\">₱112,340.00</td><td class=\"ds-ledger-actions\"><button class=\"ds-delete-btn\" type=\"button\" title=\"Delete entry\" aria-label=\"Delete entry\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/></svg></button></td></tr></tbody><tfoot><tr><td colspan=\"2\" class=\"ds-ledger-foot\">Balance carried forward · Nov 2026</td><td class=\"ds-ledger-foot ds-align-r ds-ledger-foot-balance\">₱112,340.00</td><td></td></tr></tfoot></table>",
       "css": ".ds-ledger { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--color-paper, #fbf8f1); } .ds-ledger-th { border-bottom: 1px solid var(--color-print, #2e5e4e); padding: 0 0.75rem 0.625rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; text-align: left; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-align-r { text-align: right; } .ds-ledger-th-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .ds-ledger-cell { border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); padding: 0.625rem 0.75rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-row-last .ds-ledger-cell, .ds-ledger-row-last .ds-ledger-actions { border-bottom: 3px double var(--color-print, #2e5e4e); } .ds-ledger-income { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); color: var(--color-print, #2e5e4e); font-weight: 600; } .ds-ledger-balance { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); color: var(--color-ink, #1b2a41); font-weight: 600; } .ds-ledger-actions { position: relative; width: 2.75rem; border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); } .ds-delete-btn { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; padding: 0; color: var(--color-ink-faint, rgba(27, 42, 65, 0.66)); opacity: 0; transition: color 150ms; cursor: pointer; } .ds-ledger-row:hover .ds-delete-btn { opacity: 1; } .ds-delete-btn:focus-visible { opacity: 1; color: var(--color-stamp, #a31621); outline: 2px solid var(--color-print, #2e5e4e); } .ds-ledger-foot { padding: 0.875rem 0.75rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-foot-balance { background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: normal; color: var(--color-ink, #1b2a41); font-variant-numeric: tabular-nums; }"
     },
@@ -259,7 +259,7 @@
       "name": "Stamp Confirm Cluster",
       "kind": "custom",
       "refersTo": "stamp-confirm",
-      "description": "The destructive idiom — a rotated stamp-red bordered question beside a stamp-ground Delete and a hairline Keep on paper; focus arrives at Keep, Keep or Escape returns it to the row's delete control, and below sm the same question pins as a bottom sheet with 44px targets.",
+      "description": "The destructive idiom — a rotated stamp-red bordered question beside a stamp-ground Delete and a hairline Keep on paper; focus arrives at Keep, Keep or Escape returns it to the row's delete control, and below sm the same question pins as a bottom sheet with 44px targets, gated by the live sm query so the sheet is absent from the desktop DOM.",
       "html": "<span class=\"ds-stamp-cluster\"><span class=\"ds-stamp-mark\">Delete this entry?</span><button class=\"ds-stamp-btn\">Delete</button><button class=\"ds-keep-btn\">Keep</button></span>",
       "css": ".ds-stamp-cluster { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); } .ds-stamp-mark { display: inline-block; transform: rotate(-2deg); border: 1.5px solid var(--color-stamp, #a31621); border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-stamp, #a31621); } .ds-stamp-btn { background: var(--color-stamp, #a31621); color: var(--color-paper, #fbf8f1); border: none; border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; transition: opacity 150ms; } .ds-stamp-btn:hover { opacity: 0.9; } .ds-stamp-btn:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); } .ds-keep-btn { background: var(--color-paper, #fbf8f1); border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); transition: color 150ms; } .ds-keep-btn:hover { color: var(--color-ink, #1b2a41); }"
     },
@@ -267,8 +267,8 @@
       "name": "Validation Stamp Alert",
       "kind": "custom",
       "refersTo": "stamp-mark",
-      "description": "The form's validation state — all-sides stamp border, uppercase mono, naming the problem and its recovery; the generic left-stripe alert is refused.",
-      "html": "<p class=\"ds-stamp-alert\" role=\"alert\">The line is unfinished: give it a description, a category, and a property.</p>",
+      "description": "The form's ONE validation voice — all-sides stamp border, uppercase mono, naming only the actually-missing fields in the list-voice a person uses; no native required bubbles pre-empt it, and the generic left-stripe alert is refused.",
+      "html": "<p class=\"ds-stamp-alert\" role=\"alert\">The line is unfinished: give it a description and a category.</p>",
       "css": ".ds-stamp-alert { border: 1.5px solid var(--color-stamp, #a31621); border-radius: 2px; background: var(--color-paper, #fbf8f1); padding: 0.625rem 0.75rem; margin: 0; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-stamp, #a31621); }"
     },
     {
@@ -288,12 +288,12 @@
       "css": ".ds-undo-wrap { position: fixed; left: 1.5rem; bottom: 1.5rem; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); border-radius: 2px; background: var(--color-paper, #fbf8f1); padding: 0.5rem 0.5rem 0.5rem 1rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); } .ds-undo-label { margin: 0; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-undo-btn { height: 2.75rem; padding: 0 0.75rem; border: none; border-radius: 2px; background: transparent; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; color: var(--color-ink, #1b2a41); transition: color 150ms; cursor: pointer; } .ds-undo-btn:hover { color: var(--color-print, #2e5e4e); } .ds-undo-btn:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); }"
     },
     {
-      "name": "Property Card",
-      "kind": "card",
-      "refersTo": "card",
-      "description": "The one card grid in the world — squared on the re-pointed radius, hairline-ruled, no shadow at rest or on hover (the border deepens to print); the status mark prints squared and bordered, never a pill.",
-      "html": "<div class=\"ds-prop-card\"><div class=\"ds-prop-head\"><span class=\"ds-prop-name\">Maypa Apartments</span><span class=\"ds-prop-mark ds-prop-mark-active\">Active</span></div><p class=\"ds-prop-body\">12 Rizal St, Quezon City</p><p class=\"ds-prop-date\">Created: Nov 21, 2026</p></div>",
-      "css": ".ds-prop-card { border: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); border-radius: 2px; background: var(--color-paper, #fbf8f1); padding: 1.5rem; transition: border-color 150ms; } .ds-prop-card:hover { border-color: var(--color-print, #2e5e4e); } .ds-prop-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; } .ds-prop-name { font-family: var(--font-sans, Manrope, sans-serif); font-size: 1.125rem; font-weight: 500; color: var(--color-ink, #1b2a41); } .ds-prop-mark { border: 1px solid; border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; } .ds-prop-mark-active { border-color: var(--color-print, #2e5e4e); color: var(--color-print, #2e5e4e); } .ds-prop-body { margin: 0.5rem 0 0; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-prop-date { margin: 0.5rem 0 0; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); }"
+      "name": "Properties Register Line",
+      "kind": "custom",
+      "refersTo": "register-net-cell",
+      "description": "The Properties page's ruled register — one line per property on a table-fixed sheet (55rem floor, name column frozen below sm), the card grid retired: the name is an h2 at the 17px print step, Net sits on the print wash behind a left rule (the balance rail's own idiom), Income prints green, Expenses ink-soft, the status mark is squared and bordered, and the delete lives in the reserved trailing margin.",
+      "html": "<table class=\"ds-reg\"><thead><tr><th class=\"ds-reg-th\">Property</th><th class=\"ds-reg-th\">Type</th><th class=\"ds-reg-th ds-reg-r\">Units</th><th class=\"ds-reg-th ds-reg-r\">Net</th><th class=\"ds-reg-th ds-reg-r\">Income</th><th class=\"ds-reg-th ds-reg-r\">Expenses</th><th class=\"ds-reg-th\">Status</th></tr></thead><tbody><tr class=\"ds-reg-row-last\"><td class=\"ds-reg-name\"><h2 class=\"ds-reg-h2\" title=\"Maypa Apartments\">Maypa Apartments</h2></td><td class=\"ds-reg-type\">Residential</td><td class=\"ds-reg-units\">12</td><td class=\"ds-reg-net\">₱112,340.00</td><td class=\"ds-reg-income\">₱125,000.00</td><td class=\"ds-reg-expenses\">₱12,660.00</td><td class=\"ds-reg-status\"><span class=\"ds-reg-mark ds-reg-mark-active\">Active</span></td></tr></tbody></table>",
+      "css": ".ds-reg { width: 100%; min-width: 55rem; border-collapse: separate; border-spacing: 0; background: var(--color-paper, #fbf8f1); table-layout: fixed; } .ds-reg-th { border-bottom: 1px solid var(--color-print, #2e5e4e); padding: 0 0.75rem 0.625rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; text-align: left; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-reg-r { text-align: right; } .ds-reg td { border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); padding: 0.625rem 0.75rem; } .ds-reg-row-last td { border-bottom: 3px double var(--color-print, #2e5e4e); } .ds-reg-h2 { margin: 0; font-family: var(--font-sans, Manrope, sans-serif); font-size: 17px; font-weight: 600; line-height: 1.45; color: var(--color-ink, #1b2a41); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-reg-type { font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 12.5px; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-reg-units { text-align: right; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-reg-net { text-align: right; border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-ink, #1b2a41); } .ds-reg-income { text-align: right; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--color-print, #2e5e4e); } .ds-reg-expenses { text-align: right; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-reg-mark { display: inline-block; border: 1px solid var(--color-print, #2e5e4e); border-radius: 2px; padding: 0.125rem 0.5rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--color-print, #2e5e4e); }"
     }
   ],
   "records": [
@@ -313,17 +313,18 @@
       "id": "contextual-detector-flags",
       "date": "2026-11-21",
       "title": "The two known contextual detector flags",
-      "body": "Two real deviations survive every pass, both in the browser's chrome rather than the world's surfaces, and both are deliberately left alone: the scrollbar thumb's 5px radius (styles.css — the one corner outside the 2px system) and the devtools widget's own panel headings (the TanStack devtools mounted in the root route render h3s that trip the heading-order detector — dev chrome outside the world's landmarks, verified live in the critique pass). Neither is a pattern to extend; this record exists so a future audit recognizes them instead of re-litigating them."
+      "body": "Two real deviations survive every pass, both in the browser's chrome rather than the world's surfaces, and both are deliberately left alone: the scrollbar thumb's 5px radius (styles.css — the one corner outside the 2px system) and the devtools widget's own panel headings (the TanStack devtools mounted in the root route render h3s that trip the heading-order detector — dev chrome outside the world's landmarks, dev-only and stripped from production builds by the devtools vite plugin's remove-devtools-on-build pass, so no shipped page carries them). Neither is a pattern to extend; this record exists so a future audit recognizes them instead of re-litigating them."
     }
   ],
   "narrative": {
     "northStar": "The Bank Passbook",
-    "overview": "The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.\n\nDepth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.\n\nThe world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its passbook pass — ink contrast, squared bordered status marks, a ruled print-wash skeleton, hairline hover rules — and no longer ships default-template chrome. The record tells the truth about itself: the shell's footer names where the data lives on every page, an export lands a stamp acknowledgment, and a delete carries a five-second undo. Two deferrals remain, both recorded, not canonized: the Add-Property modal's native checkbox and pending spinner, and the unlinked Reports placeholder.",
+    "overview": "The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.\n\nDepth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.\n\nThe world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its register pass — the card grid retired wholesale, one ruled line per property answering the product question in money (Net on the print wash first, Income in green, Expenses in ink-soft), the ledger's own trailing-cell delete and stamp confirm. The record tells the truth about itself: the shell's footer names where the data lives on every page, an export lands a stamp acknowledgment, and a delete carries a five-second undo. Two deferrals remain, both recorded, not canonized: the Add-Property modal's native checkbox and pending spinner, and the unlinked Reports placeholder.",
     "keyCharacteristics": [
       "Ivory paper ground (#fbf8f1), ink-navy type (#1b2a41), machine-print green hairline rules (#2e5e4e), stamp red (#a31621) reserved for state marks.",
-      "IBM Plex Mono with tabular numerals for every date and money figure, at print density (0.8125rem rows, ~2.375rem row rhythm).",
+      "IBM Plex Mono with tabular numerals for every date and money figure, at print density (0.8125rem line; one-line rows ≈39.84px, held at real widths).",
       "Structure from rules — 1px hairlines everywhere, a 3px double totals rule for closing lines — never from shadows.",
-      "The running balance rail on a print wash down the ledger's right edge: the sheet opens chronological, and newest-first freezes the rail to the book's printed accumulation beneath a printed caveat.",
+      "The running balance rail on a print wash down the ledger's right edge always accumulates the book (every entry, date ascending) whatever the display; the caveat \"Balance follows the book, not this view\" prints whenever the view is not the book's own order.",
+      "Properties is a ruled register, not a card grid: one line per property, Net on the print wash first, Income in green, Expenses in ink-soft, the delete in the reserved trailing margin.",
       "One authored motion (the print-in), removed entirely under prefers-reduced-motion; a restored line prints back in too.",
       "Honesty signals throughout: the footer's storage note, the export's stamp acknowledgment, the five-second delete undo that restores the original id.",
       "2px corners everywhere: squared, printed form fields."
@@ -341,13 +342,18 @@
       },
       {
         "name": "The Tabular Numerals Rule",
-        "body": "Every figure — money, dates, counts — is set in IBM Plex Mono with tabular numerals, so columns of pesos align down the page like a printed ledger. Money is formatted by the one formatMoney (₱, exactly two fraction digits everywhere) and dates by the one formatDate (en-US); no surface re-creates a local copy, and the sans face never sets a figure — the form's date and amount inputs print in the mono face, a date inside a field no less than a date on the page.",
+        "body": "Every figure — money, dates, counts — is set in IBM Plex Mono with tabular numerals, so columns of pesos align down the page like a printed ledger. Money is formatted by the one formatMoney (₱, exactly two fraction digits everywhere) and dates by the one formatDate (en-US); no surface re-creates a local copy, and the sans face never sets a figure — the form's date and amount inputs print in the mono face with tabular numerals, a date inside a field no less than a date on the page.",
         "section": "typography"
       },
       {
         "name": "The Flat Page Rule",
         "body": "The page never casts shadows; a floating surface may cast one, softly. Hover on a page element changes color, never elevation.",
         "section": "elevation"
+      },
+      {
+        "name": "The Book-Authority Rule",
+        "body": "The running balance is the book's, not the view's: it always accumulates every entry in date-ascending order, whatever slice or sort the page displays, and the caveat names the divergence whenever the display is not the book itself. A rail that recomputed per view would print accounts that never existed.",
+        "section": "components"
       },
       {
         "name": "The One Authored Motion",
@@ -358,20 +364,23 @@
     "dos": [
       "Do set every figure in IBM Plex Mono with tabular numerals, formatted through the one formatMoney (₱, two fraction digits always) and the one formatDate.",
       "Do build structure from the rules: 1px hairlines for rows, fields, and dividers; the 3px double totals rule for closing lines; print underlines for headers and the active tab.",
-      "Do keep the rail truthful: the sheet opens chronological (sorting removal is off), and newest-first freezes the rail to the book's printed accumulation beneath its printed caveat — the rail audits the book, not the sort.",
+      "Do keep the rail on the book: it always accumulates every entry, date ascending, whatever the page displays (sorting removal is off, so the sheet opens chronological), and the caveat \"Balance follows the book, not this view\" prints whenever the display differs — any active filter, any sort that is not date-ascending. No caveat in the book's own order.",
       "Do name every totals claim honestly: the strip's label and aria-label total exactly the slice its page displays, and say which page semantics they carry (\"Displayed ledger\" vs \"All entries\").",
       "Do say where the record lives and what each write did: the footer's storage note on every page, the export's stamp acknowledgment, and the delete's five-second undo restoring the original id.",
       "Do keep every actionable surface on the 2px print outline (or the field ring) on focus-visible — rail, toggle, tabs, disclosure, delete control — never the browser default.",
       "Do keep stamp red for state marks only — destructive confirms and validation failures — squared, uppercase mono, bordered or grounded.",
       "Do keep one primary control per screen; everything else is quiet ink.",
       "Do keep every overflow inside its own ruled region (tables and the tab row scroll; the main column floors at min-w-0) so the paper never leaks at 390px.",
-      "Do honor prefers-reduced-motion by removing the print-in entirely."
+      "Do honor prefers-reduced-motion by removing the print-in entirely.",
+      "Do keep the form's validation to one voice: the authored stamp names only the actually-missing fields, read as a person says them — no native `required` bubbles.",
+      "Do keep every accelerator honest: \"Reset filters\" prints only when there is something to reset and unwinds exactly the counted controls; \"/\" reaches the search field unless the hand is already writing in a field; the dialog's every close path returns focus to the trigger that opened it.",
+      "Do carry the 44px touch standard wherever a thumb owns the surface — the masthead's primary below lg, the form's radios by label padding, the bottom-sheet confirms, the Undo — while the desktop control line stays 2.25rem."
     ],
     "donts": [
       "Don't put shadows on the page at rest — only a floating surface gets one, softly.",
       "Don't invent a budget mark, an over-budget row tint, or any other stamp-red decoration; no budget concept exists in the product (renegotiated 2026-11-21).",
       "Don't set money in the sans face, drop the fraction digits, or re-create a local formatter.",
-      "Don't round past 2px, and don't introduce pills, rings, or card grids beyond the Properties page's own recorded composition.",
+      "Don't round past 2px, and don't introduce pills, rings, or cards — the Properties register retired the world's one card grid; no built surface ships a card.",
       "Don't sew a destructive word into the record: the delete control is an icon in the sheet's reserved trailing margin, revealed on hover, focus, or touch — never a caption link inside the description line.",
       "Don't replace the ruled empty state with a card or illustration.",
       "Don't animate anything beyond the print-in; hover and focus are color states.",
