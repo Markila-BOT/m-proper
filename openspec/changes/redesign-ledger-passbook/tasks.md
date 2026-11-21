@@ -17,11 +17,11 @@
 
 ## 4. Passbook world (code zone, committed in craft-sized commits)
 
-- [ ] 4.1 Add the passbook tokens to the Tailwind layer: ivory ground, ink-navy, machine-print green hairlines, stamp-red reserved for state marks, print-density tabular numerics
-- [ ] 4.2 Rebuild the ledger table on TanStack Table (`@tanstack/react-table`, explicit caret per ADR-0001): column structure, sortable headers, the running-balance derived column in displayed order
-- [ ] 4.3 Move `TransactionForm` and `FilterControls` onto Radix Select with passbook-styled triggers and portals
-- [ ] 4.4 Shell passbook treatment: header, navigation, ground, and type across all four routes
-- [ ] 4.5 Overview and Transactions at full passbook commitment; Properties and Reports content layouts untouched under the new chrome
+- [x] 4.1 Add the passbook tokens to the Tailwind layer: ivory ground, ink-navy, machine-print green hairlines, stamp-red reserved for state marks, print-density tabular numerics
+- [x] 4.2 Rebuild the ledger table on TanStack Table (`@tanstack/react-table`, explicit caret per ADR-0001): column structure, sortable headers, the running-balance derived column in displayed order
+- [x] 4.3 Move `TransactionForm` and `FilterControls` onto Radix Select with passbook-styled triggers and portals
+- [x] 4.4 Shell passbook treatment: header, navigation, ground, and type across all four routes
+- [x] 4.5 Overview and Transactions at full passbook commitment; Properties and Reports content layouts untouched under the new chrome
 
 ## 5. Craft pass and verification
 

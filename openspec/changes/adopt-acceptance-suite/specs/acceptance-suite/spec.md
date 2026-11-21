@@ -95,7 +95,7 @@ A change MUST NOT be archived while the effective suite has a failing, pending, 
 #### Scenario: Archive waits for green
 
 ```gherkin
-Given the effective suite has a failing scenario
+Given a change whose effective suite runs green
 When the landlord considers a change ready to archive
 Then archiving waits until the suite runs green with zero pending steps
 ```
