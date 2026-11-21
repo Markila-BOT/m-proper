@@ -2,7 +2,10 @@
 mod health;
 pub mod properties;
 
-use axum::{Json, Router, http::StatusCode};
+use axum::{
+    Json, Router,
+    http::{HeaderValue, StatusCode},
+};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -20,7 +23,7 @@ pub fn create_router(state: AppState) -> Router {
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
                 .layer(CompressionLayer::new())
-                .layer(cors_layer()),
+                .layer(cors_layer(&state.config.cors_origins)),
         )
         .with_state(state)
 }
@@ -32,16 +35,20 @@ pub async fn not_found() -> (StatusCode, Json<ApiEnvelope<()>>) {
     )
 }
 
-fn cors_layer() -> CorsLayer {
+fn cors_layer(origins: &[String]) -> CorsLayer {
+    let allowed: Vec<HeaderValue> = origins
+        .iter()
+        .filter_map(|origin| match HeaderValue::from_str(origin) {
+            Ok(value) => Some(value),
+            Err(_) => {
+                tracing::warn!("Ignoring invalid CORS origin: {origin}");
+                None
+            }
+        })
+        .collect();
+
     CorsLayer::new()
-        .allow_origin([
-            "http://localhost:3000".parse().unwrap(),
-            "http://localhost:3001".parse().unwrap(),
-            "http://localhost:5173".parse().unwrap(),
-            "http://127.0.0.1:3000".parse().unwrap(),
-            "http://127.0.0.1:3001".parse().unwrap(),
-            "http://127.0.0.1:5173".parse().unwrap(),
-        ])
+        .allow_origin(allowed)
         .allow_methods(Any)
         .allow_headers(Any)
 }

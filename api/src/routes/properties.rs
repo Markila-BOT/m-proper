@@ -14,7 +14,12 @@ use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", get(list_properties).post(create_property))
+        .route(
+            "/",
+            get(list_properties)
+                .post(create_property)
+                .delete(delete_property_without_id),
+        )
         .route("/{id}", delete(delete_property))
 }
 
@@ -56,8 +61,8 @@ impl PropertyRow {
     get,
     path = "/properties",
     responses(
-        (status = 200, description = "Properties fetched successfully"),
-        (status = 500, description = "Internal server error")
+        (status = 200, description = "Properties fetched successfully", body = ApiEnvelope<Vec<Property>>),
+        (status = 500, description = "Internal server error", body = ApiEnvelope<utoipa::TupleUnit>)
     ),
     tag = "properties"
 )]
@@ -91,9 +96,9 @@ pub async fn list_properties(
     path = "/properties",
     request_body = CreatePropertyRequest,
     responses(
-        (status = 201, description = "Property created successfully"),
-        (status = 400, description = "Validation error"),
-        (status = 500, description = "Internal server error")
+        (status = 201, description = "Property created successfully", body = ApiEnvelope<Property>),
+        (status = 400, description = "Validation error", body = ApiEnvelope<utoipa::TupleUnit>),
+        (status = 500, description = "Internal server error", body = ApiEnvelope<utoipa::TupleUnit>)
     ),
     tag = "properties"
 )]
@@ -116,6 +121,12 @@ pub async fn create_property(
                 .into(),
         ));
     };
+
+    if body.units.is_some_and(|units| units < 0) {
+        return Err(AppError::BadRequest(
+            "Invalid units. Units must be zero or greater".into(),
+        ));
+    }
 
     let is_active = body.is_active.unwrap_or(true);
     let units = body.units;
@@ -152,9 +163,10 @@ pub async fn create_property(
         ("id" = Uuid, Path, description = "Property id")
     ),
     responses(
-        (status = 200, description = "Property deleted successfully"),
-        (status = 400, description = "Missing or invalid id"),
-        (status = 500, description = "Internal server error")
+        (status = 200, description = "Property deleted successfully", body = ApiEnvelope<utoipa::TupleUnit>),
+        (status = 400, description = "Missing or invalid id", body = ApiEnvelope<utoipa::TupleUnit>),
+        (status = 404, description = "Property not found", body = ApiEnvelope<utoipa::TupleUnit>),
+        (status = 500, description = "Internal server error", body = ApiEnvelope<utoipa::TupleUnit>)
     ),
     tag = "properties"
 )]
@@ -185,4 +197,20 @@ pub async fn delete_property(
         StatusCode::OK,
         Json(ApiEnvelope::ok_message("Property deleted successfully")),
     ))
+}
+
+/// Delete without a property id: answer the spec's 400 envelope.
+#[utoipa::path(
+    delete,
+    path = "/properties",
+    responses(
+        (status = 400, description = "Missing property id", body = ApiEnvelope<utoipa::TupleUnit>)
+    ),
+    tag = "properties"
+)]
+pub async fn delete_property_without_id() -> (StatusCode, Json<ApiEnvelope<()>>) {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ApiEnvelope::err("Property ID is required")),
+    )
 }

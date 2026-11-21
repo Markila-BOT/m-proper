@@ -9,7 +9,7 @@ mod routes;
 mod state;
 
 use config::Config;
-use models::{CreatePropertyRequest, Property};
+use models::{ApiEnvelope, CreatePropertyRequest, Property};
 use std::net::SocketAddr;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
@@ -20,9 +20,16 @@ use utoipa_swagger_ui::SwaggerUi;
     paths(
         routes::properties::list_properties,
         routes::properties::create_property,
+        routes::properties::delete_property_without_id,
         routes::properties::delete_property,
     ),
-    components(schemas(Property, CreatePropertyRequest)),
+    components(schemas(
+        Property,
+        CreatePropertyRequest,
+        ApiEnvelope::<Vec<Property>>,
+        ApiEnvelope::<Property>,
+        ApiEnvelope::<utoipa::TupleUnit>,
+    )),
     tags((name = "properties", description = "Property management API"))
 )]
 struct ApiDoc;

@@ -1,6 +1,12 @@
-use axum::{Json, Router, routing::get};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::get,
+};
 
-use crate::{models::ApiEnvelope, state::AppState};
+use crate::{db, models::ApiEnvelope, state::AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -12,6 +18,16 @@ async fn root() -> &'static str {
     "m-proper api"
 }
 
-async fn health_check() -> Json<ApiEnvelope<()>> {
-    Json(ApiEnvelope::ok_message("ok"))
+async fn health_check(State(state): State<AppState>) -> Response {
+    match db::health_check(&state.pool).await {
+        Ok(()) => Json(ApiEnvelope::ok_message("ok")).into_response(),
+        Err(error) => {
+            tracing::error!("Database unreachable: {error}");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(ApiEnvelope::err("Database unreachable")),
+            )
+                .into_response()
+        }
+    }
 }
