@@ -32,33 +32,33 @@
 
 ## 4. Step definitions — one per pending step; red → green → commit each
 
-- [ ] 3.1 Given the dependency manifests at their committed state — red → green → commit
-- [ ] 3.2 Manifest scan: every entry a concrete constraint, no dist-tag — red → green → commit
-- [ ] 3.3 Reference scan: each entry referenced; an unreferenced one is named — red → green → commit
-- [ ] 3.4 Lockfile-vs-range comparison: every resolved version satisfies its declared range — red → green → commit
-- [ ] 3.5 Accepted-ADR scan: the policy and every deferred major are discoverable — red → green → commit
-- [ ] 3.6 OpenAPI regeneration compare: regenerated document matches the committed one — red → green → commit
-- [ ] 3.7 Properties round-trip through the running API: create, list, delete; envelope and camelCase intact — red → green → commit
-- [ ] 3.8 API check gate: the API check command completes without errors — red → green → commit
-- [ ] 3.9 Web build gate: client and server builds complete without errors — red → green → commit
-- [ ] 3.10 Client requests the properties list — ordered rows, or an empty array — red → green → commit
-- [ ] 3.11 Valid property POST — persisted, 201, success envelope — red → green → commit
-- [ ] 3.12 Missing required fields POST — 400, nothing persisted — red → green → commit
-- [ ] 3.13 Invalid property type POST — 400, nothing persisted — red → green → commit
-- [ ] 3.14 Delete by id — removed, success envelope — red → green → commit
-- [ ] 3.15 Delete without an id — 400, success false — red → green → commit
-- [ ] 3.16 The user opens the application with the API available — properties display — red → green → commit
-- [ ] 3.17 The user submits a valid new-property form — created through the API, shown in the list — red → green → commit
-- [ ] 3.18 The user deletes a property — removed through the API, gone from the list — red → green → commit
-- [ ] 3.19 The user records a transaction and reloads — still available in the UI — red → green → commit
-- [ ] 3.20 The API base URL is configured — list, create, and delete target that base — red → green → commit
-- [ ] 3.21 The single test command runs the effective spec and leaves a report — red → green → commit
-- [ ] 3.22 An unfenced scenario fails extraction naming the file and line — fixture-based — red → green → commit
-- [ ] 3.23 A superseded rule is not executed and not reported skipped — this change's own delta proves it — red → green → commit
-- [ ] 3.24 The app is alive for the scenarios and shut down after the run — red → green → commit
-- [ ] 3.25 Browser scenarios execute in a real browser; no session remains after — red → green → commit
-- [ ] 3.26 Smoke rows and browser-stored state are removed after the run — red → green → commit
-- [ ] 3.27 A missing database connection is named and nothing runs — red → green → commit
+- [x] 4.1 Given the dependency manifests at their committed state — red → green → commit
+- [x] 4.2 Manifest scan: every entry a concrete constraint, no dist-tag — red → green → commit
+- [x] 4.3 Reference scan: each entry referenced; an unreferenced one is named — red → green → commit
+- [x] 4.4 Lockfile-vs-range comparison: every resolved version satisfies its declared range — red → green → commit
+- [x] 4.5 Accepted-ADR scan: the policy and every deferred major are discoverable — red → green → commit
+- [x] 4.6 OpenAPI regeneration compare: regenerated document matches the committed one — red → green → commit
+- [x] 4.7 Properties round-trip through the running API: create, list, delete; envelope and camelCase intact — red → green → commit
+- [x] 4.8 API check gate: the API check command completes without errors — red → green → commit
+- [x] 4.9 Web build gate: client and server builds complete without errors — red → green → commit
+- [x] 4.10 Client requests the properties list — ordered rows, or an empty array — red → green → commit
+- [x] 4.11 Valid property POST — persisted, 201, success envelope — red → green → commit
+- [x] 4.12 Missing required fields POST — 400, nothing persisted — red → green → commit
+- [x] 4.13 Invalid property type POST — 400, nothing persisted — red → green → commit
+- [x] 4.14 Delete by id — removed, success envelope — red → green → commit
+- [x] 4.15 Delete without an id — 400, success false — red → green → commit
+- [ ] 4.16 The user opens the application with the API available — properties display — red → green → commit
+- [ ] 4.17 The user submits a valid new-property form — created through the API, shown in the list — red → green → commit
+- [ ] 4.18 The user deletes a property — removed through the API, gone from the list — red → green → commit
+- [ ] 4.19 The user records a transaction and reloads — still available in the UI — red → green → commit
+- [ ] 4.20 The API base URL is configured — list, create, and delete target that base — red → green → commit
+- [ ] 4.21 The single test command runs the effective spec and leaves a report — red → green → commit
+- [ ] 4.22 An unfenced scenario fails extraction naming the file and line — fixture-based — red → green → commit
+- [ ] 4.23 A superseded rule is not executed and not reported skipped — this change's own delta proves it — red → green → commit
+- [ ] 4.24 The app is alive for the scenarios and shut down after the run — red → green → commit
+- [ ] 4.25 Browser scenarios execute in a real browser; no session remains after — red → green → commit
+- [ ] 4.26 Smoke rows and browser-stored state are removed after the run — red → green → commit
+- [ ] 4.27 A missing database connection is named and nothing runs — red → green → commit
 
 ## 5. Completion
 
