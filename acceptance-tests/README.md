@@ -14,8 +14,17 @@ pnpm test:acceptance      # or: npm run test:acceptance
 ```
 
 which is exactly `cd acceptance-tests && npm test`. First run in a fresh
-clone needs `npm install` inside `acceptance-tests/` (the harness is an
-independent Node project with its own lockfile).
+clone needs two setup steps inside `acceptance-tests/` (the harness is an
+independent Node project with its own lockfile):
+
+```sh
+npm install                        # harness dependencies
+npx playwright install chromium    # one-time Playwright browser binary
+```
+
+The suite boots on harness-chosen ports (API 3021, web 3022) so it never
+collides with dev servers on the machine's squatted 3000/3001; override with
+`HARNESS_API_PORT` / `HARNESS_WEB_PORT` when needed.
 
 The single test command is the whole workflow: it boots the API and the web
 dev server, runs every effective scenario, writes an HTML report, and shuts
@@ -28,8 +37,11 @@ refuses to run any scenario when no connection is resolvable, naming the
 missing configuration. Use the `postgresql://` URI from the Supabase
 Database settings, not the project `https` URL.
 
-Browser scenarios drive a real Playwright browser, installed with the
-harness when the app-boot wiring lands (see `support/hooks.js`).
+Browser scenarios drive a real Playwright chromium (one browser for the
+whole suite, a fresh page per scenario, closed after the run). The browser
+binary is installed once with `npx playwright install chromium` — without
+it, HTTP scenarios still run and browser steps fail naming the missing
+binary.
 
 ## The effective spec
 

@@ -1,34 +1,34 @@
 ## 1. Specs zone — fencing and deltas (one commit)
 
-- [ ] 1.1 Confirm `stack: javascript` is recorded in `openspec/config.yaml` (already committed; no edit)
-- [ ] 1.2 Fence `openspec/specs/properties/spec.md` — behavior-preserving; bullet scenarios become valid Gherkin steps
-- [ ] 1.3 Fence `openspec/specs/web-app/spec.md` — same rule
-- [ ] 1.4 Fence `openspec/specs/dependency-maintenance/spec.md` — format only; the content rewrite rides this change's delta
-- [ ] 1.5 Re-read both deltas against the fenced mains: MODIFIED requirement and scenario names must match what supersession replaces
-- [ ] 1.6 Commit the specs zone: fencing plus the `acceptance-suite` and `dependency-maintenance` deltas
+- [x] 1.1 Confirm `stack: javascript` is recorded in `openspec/config.yaml` (already committed; no edit)
+- [x] 1.2 Fence `openspec/specs/properties/spec.md` — behavior-preserving; bullet scenarios become valid Gherkin steps
+- [x] 1.3 Fence `openspec/specs/web-app/spec.md` — same rule
+- [x] 1.4 Fence `openspec/specs/dependency-maintenance/spec.md` — format only; the content rewrite rides this change's delta
+- [x] 1.5 Re-read both deltas against the fenced mains: MODIFIED requirement and scenario names must match what supersession replaces
+- [x] 1.6 Commit the specs zone: fencing plus the `acceptance-suite` and `dependency-maintenance` deltas
 
 ## 2. First-time setup — acceptance-tests/ (skip this section if it already exists)
 
-- [ ] 2.1 Create `acceptance-tests/` as an independent Node project: its own `package.json`, devDependencies `@cucumber/cucumber`, `glob`, `cheerio`, `gherkin-lint` at explicit carets
-- [ ] 2.2 Copy the pack files verbatim — `extract-gherkin.cjs`, `cucumber.cjs`, `openspec-effective-paths.cjs`, `.gherkin-lintrc` — destination filenames are load-bearing
-- [ ] 2.3 Wire hooks that boot the API and the web dev server on harness-chosen ports (PORT override, VITE_API_BASE_URL wiring) before the suite and shut both down after
-- [ ] 2.4 Add preflight: fail before any scenario, naming the missing variable, when the database connection is absent
-- [ ] 2.5 Make the single test command always generate an HTML report under `acceptance-tests/reports/`
-- [ ] 2.6 Add the spec-lint command: extract, then `gherkin-lint .extracted`
-- [ ] 2.7 Gitignore `acceptance-tests/.extracted/` and `acceptance-tests/reports/` in the root `.gitignore`
-- [ ] 2.8 Add Playwright at an explicit caret and document its browser-binary install step
-- [ ] 2.9 Add the root `test:acceptance` script
-- [ ] 2.10 Write `acceptance-tests/README.md`: how to run the suite and where the report lands
-- [ ] 2.11 Verify extraction and discovery end to end: dry-run resolves only `.extracted/` paths, nothing under `changes/archive/`
-- [ ] 2.12 Commit the harness (code zone)
+- [x] 2.1 Create `acceptance-tests/` as an independent Node project: its own `package.json`, devDependencies `@cucumber/cucumber`, `glob`, `cheerio`, `gherkin-lint` at explicit carets
+- [x] 2.2 Copy the pack files verbatim — `extract-gherkin.cjs`, `cucumber.cjs`, `openspec-effective-paths.cjs`, `.gherkin-lintrc` — destination filenames are load-bearing
+- [x] 2.3 Wire hooks that boot the API and the web dev server on harness-chosen ports (PORT override, VITE_API_BASE_URL wiring) before the suite and shut both down after
+- [x] 2.4 Add preflight: fail before any scenario, naming the missing variable, when the database connection is absent
+- [x] 2.5 Make the single test command always generate an HTML report under `acceptance-tests/reports/`
+- [x] 2.6 Add the spec-lint command: extract, then `gherkin-lint .extracted`
+- [x] 2.7 Gitignore `acceptance-tests/.extracted/` and `acceptance-tests/reports/` in the root `.gitignore`
+- [x] 2.8 Add Playwright at an explicit caret and document its browser-binary install step
+- [x] 2.9 Add the root `test:acceptance` script
+- [x] 2.10 Write `acceptance-tests/README.md`: how to run the suite and where the report lands
+- [x] 2.11 Verify extraction and discovery end to end: dry-run resolves only `.extracted/` paths, nothing under `changes/archive/`
+- [x] 2.12 Commit the harness (code zone)
 
 ## 3. API trues-ups the suite depends on (code zone, one commit each)
 
-- [ ] 3.1 Add `CORS_ORIGINS` to `Config::from_env` (comma-separated, defaulting to today's allow-list) and thread it into `create_router` — red → green → commit
-- [ ] 3.2 Make delete-without-id reachable: the bare `DELETE /properties` path answers the spec's 400 envelope instead of the 404 fallback — red → green → commit
-- [ ] 3.3 Validate `units` in the create handler (zero or greater) so a negative value answers 400, not the migration's 500 — red → green → commit
-- [ ] 3.4 Teach utoipa to emit the envelope and response bodies, regenerate `api/openapi.json`, and confirm the committed document now contains the `{ success, message, data? }` shapes — red → green → commit
-- [ ] 3.5 Make `/health` reuse `db::health_check` so readiness tells the truth mid-run — red → green → commit
+- [x] 3.1 Add `CORS_ORIGINS` to `Config::from_env` (comma-separated, defaulting to today's allow-list) and thread it into `create_router` — red → green → commit
+- [x] 3.2 Make delete-without-id reachable: the bare `DELETE /properties` path answers the spec's 400 envelope instead of the 404 fallback — red → green → commit
+- [x] 3.3 Validate `units` in the create handler (zero or greater) so a negative value answers 400, not the migration's 500 — red → green → commit
+- [x] 3.4 Teach utoipa to emit the envelope and response bodies, regenerate `api/openapi.json`, and confirm the committed document now contains the `{ success, message, data? }` shapes — red → green → commit
+- [x] 3.5 Make `/health` reuse `db::health_check` so readiness tells the truth mid-run — red → green → commit
 
 ## 4. Step definitions — one per pending step; red → green → commit each
 
