@@ -20,3 +20,24 @@ Score 21/40 (Acceptable). The user's "not appealing" diagnosed: the rail opened 
 ## Deferred (recorded for a future change, not silently dropped)
 
 The form's greeting (Expense default, no memory of the last line), recents/clone/batch entry, entry editing (no undo for a mis-keyed amount beyond delete+retype), the PropertyModal's native checkbox and pending spinner, durability beyond the disclosure footer, and the /reports placeholder route.
+
+---
+
+# Round two — 2026-11-21 (critique 25/40 → this pass)
+
+## Findings that drove it
+
+A2/B2 scored 25/40 (21 prior). Round-one fixes verified as strengths. New P0s from harder measurement: the sheet broke one-line density at real widths (Description 110px at 1280, rows 78-96px) and the rail printed fictional accounts under filters/amount-sorts (only date-desc had its caveat). P1s: dialog close dumped focus to body; no filter reset or accelerators. P2: Properties was the off-world card grid. Detector residue: a 1.23 type step, the /properties h1→h3 gap, one wide-tracked sublabel, four 11px prose lines.
+
+## What landed (user-confirmed: both P0s, rail speaks for the book, full sweep)
+
+- One-line rows hold at 1280 and 1440 (39.84px, real 40-60-char descriptions, the app's own category names); the sheet floors at 55rem; blank ruled lines match the entry rhythm.
+- The rail always audits the book (every entry, date-ascending) with the caveat "Balance follows the book, not this view" whenever the display differs — verified under Type=Expense and Amount-sort; no caveat in the book's own order.
+- Dialog close returns focus to the trigger via Radix's onCloseAutoFocus; Reset filters appears when filters are active; "/" focuses search; Record & new keeps the form open.
+- Properties is a ruled register: one line per property with Income/Expenses/Net verified against the book (P0 +₱74,000; P1 −₱8,230.65; the register's all-properties net equals the rail's book net), squared Active mark, the ledger's delete idiom.
+- Every minor cleared: document.title, active tab 600, validation naming only the actually-missing fields (native bubbles removed — one validation voice), strip Income green, 44px touch targets, the type step 1.31-1.36, /properties h1→h2, sublabel tracking 0.05em, spans not nested headings, the bottom sheet out of the desktop DOM.
+- Suite 31/31 via branch proof; detector: /properties clean except the brief-pinned paper; /transactions and /overview show only the two contextual flags (dev-only headings, committed palette).
+
+## Still deferred (recorded)
+
+The form's Expense-default greeting, recents/clone, entry editing, PropertyModal's native checkbox and pending spinner, durability beyond the footer disclosure, the /reports placeholder.
