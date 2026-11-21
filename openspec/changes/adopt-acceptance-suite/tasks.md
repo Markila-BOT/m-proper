@@ -62,6 +62,6 @@
 
 ## 5. Completion
 
-- [ ] 5.1 Run the full suite: every scenario passes, zero pending or undefined steps, HTML report generated
+- [x] 5.1 Run the full suite: every scenario passes, zero pending or undefined steps, HTML report generated
 - [x] 5.2 `openspec validate` non-strict is clean (zero errors); the strict fenced-format warnings stay documented as the known validator tension
 - [x] 5.3 Confirm the ledger holds no smoke rows after the run and no generated directory appears in `git status`
