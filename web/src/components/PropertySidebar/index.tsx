@@ -60,7 +60,8 @@ export default function PropertySidebar({
             </h2>
             <button
               onClick={onToggleCollapse}
-              className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash"
+              aria-label="Collapse properties"
+              className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
             >
               <FiChevronRight className="w-5 h-5 transform rotate-180" />
             </button>
@@ -88,7 +89,8 @@ export default function PropertySidebar({
         <div className="hidden lg:block p-4 border-b border-rule">
           <button
             onClick={onToggleCollapse}
-            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash"
+            aria-label="Expand properties"
+            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
           >
             <FiChevronRight className="w-5 h-5 transform rotate-180" />
           </button>
@@ -97,7 +99,7 @@ export default function PropertySidebar({
         <div className="flex-1 p-2 space-y-2">
           <button
             onClick={() => setSelectedProperty('all')}
-            className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors ${
+            className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors focus-visible:outline-2 focus-visible:outline-print ${
               selectedProperty === 'all'
                 ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                 : 'text-ink-soft hover:bg-print-wash'
@@ -105,7 +107,10 @@ export default function PropertySidebar({
             aria-label="All Properties"
             title="All Properties"
           >
-            <PropertyTypeIcon type={PROPERTY_TYPE.COMMERCIAL} className="w-5 h-5" />
+            <PropertyTypeIcon
+              type={PROPERTY_TYPE.COMMERCIAL}
+              className="w-5 h-5"
+            />
             <span className={railCaptionClass}>All Properties</span>
           </button>
 
@@ -113,7 +118,7 @@ export default function PropertySidebar({
             <button
               key={property.id}
               onClick={() => setSelectedProperty(property.id)}
-              className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors ${
+              className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors focus-visible:outline-2 focus-visible:outline-print ${
                 selectedProperty === property.id
                   ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                   : 'text-ink-soft hover:bg-print-wash'
@@ -130,7 +135,7 @@ export default function PropertySidebar({
         <div className="p-2 border-t border-rule">
           <PropertyModal>
             <button
-              className="flex flex-col items-center gap-1 w-full px-1 py-2.5 text-ink-soft rounded-[2px] transition-colors hover:text-print hover:bg-print-wash"
+              className="flex flex-col items-center gap-1 w-full px-1 py-2.5 text-ink-soft rounded-[2px] transition-colors hover:text-print hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
               aria-label="Add Property"
               title="Add Property"
             >
@@ -156,7 +161,8 @@ export default function PropertySidebar({
           </h2>
           <button
             onClick={onToggleCollapse}
-            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash"
+            aria-label="Collapse properties"
+            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
           >
             <FiChevronRight className="w-5 h-5 transform rotate-180" />
           </button>
@@ -173,7 +179,7 @@ export default function PropertySidebar({
       <div className="border-b border-rule">
         <button
           onClick={() => setSelectedProperty('all')}
-          className={`w-full px-5 py-3.5 text-left transition-colors ${
+          className={`w-full px-5 py-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-print ${
             selectedProperty === 'all'
               ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
               : 'hover:bg-print-wash'
@@ -214,7 +220,7 @@ export default function PropertySidebar({
             <button
               key={property.id}
               onClick={() => setSelectedProperty(property.id)}
-              className={`w-full px-5 py-3.5 text-left border-b border-rule transition-colors ${
+              className={`w-full px-5 py-3.5 text-left border-b border-rule transition-colors focus-visible:outline-2 focus-visible:outline-print ${
                 isSelected
                   ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
                   : 'hover:bg-print-wash'
@@ -256,7 +262,7 @@ export default function PropertySidebar({
                       {property.units} {property.units === 1 ? 'unit' : 'units'}
                     </span>
                   </div>
-                  <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+                  <span className="font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
                     {property.type}
                   </span>
                 </div>

@@ -36,6 +36,9 @@ const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
 const fieldInput =
   'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
+// The tabular-numerals rule reaches inside the form: the date input
+// prints in the mono face — the sans never sets a figure.
+const fieldDateInput = `${fieldInput} font-mono tabular-nums`
 
 export default function TransactionForm({
   properties,
@@ -126,7 +129,7 @@ export default function TransactionForm({
                     category: '',
                   }))
                 }
-                className="h-4 w-4"
+                className="h-4 w-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-paper"
               />
               {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.INCOME]}
             </label>
@@ -143,7 +146,7 @@ export default function TransactionForm({
                     category: '',
                   }))
                 }
-                className="h-4 w-4"
+                className="h-4 w-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-paper"
               />
               {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.EXPENSE]}
             </label>
@@ -187,7 +190,7 @@ export default function TransactionForm({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, date: e.target.value }))
               }
-              className={fieldInput}
+              className={fieldDateInput}
               required
             />
           </div>
@@ -270,12 +273,12 @@ export default function TransactionForm({
             <Button
               type="button"
               variant="outline"
-              className="flex-1 rounded-[2px]"
+              className="h-9 flex-1 rounded-[2px]"
               onClick={onClose}
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 rounded-[2px]">
+            <Button type="submit" className="h-9 flex-1 rounded-[2px]">
               Record entry
             </Button>
           </div>

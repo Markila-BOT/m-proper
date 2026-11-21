@@ -5,10 +5,15 @@
 // primary control. The data flow is unchanged — export still writes the
 // shell's selected-property slice to CSV; the control now says so.
 //
+// The name is a link home, not a heading: each route's title is the
+// page's one h1, so the landmarks stay clean.
+//
 // Below the lg breakpoint the rule composes as a masthead block: the name,
 // the quiet disclosure control, then the primary control full-width —
 // nothing clips, and the labels keep their words. At lg the rule is one
 // line, exactly the desktop passbook header.
+import { Link } from '@tanstack/react-router'
+
 type AppHeaderProps = {
   exportScopeLabel: string
   onExport: () => void
@@ -23,9 +28,12 @@ export default function AppHeader({
   return (
     <header className="border-b border-rule bg-paper">
       <div className="flex flex-col gap-y-2.5 px-6 py-2.5 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-x-2 lg:px-9 lg:py-0">
-        <h1 className="text-[17px] font-bold tracking-[0.01em] text-ink lg:mr-auto">
+        <Link
+          to="/overview"
+          className="self-start text-[17px] font-bold tracking-[0.01em] text-ink focus-visible:outline-2 focus-visible:outline-print lg:mr-auto"
+        >
           Landlord Ledger
-        </h1>
+        </Link>
 
         <button
           type="button"

@@ -148,11 +148,16 @@ export default function PropertyModal({ children }: PropertyModalProps) {
             <Button
               type="button"
               variant="outline"
+              className="h-9 rounded-[2px]"
               onClick={() => setIsDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createPropertyMutation.isPending}>
+            <Button
+              type="submit"
+              className="h-9 rounded-[2px]"
+              disabled={createPropertyMutation.isPending}
+            >
               {createPropertyMutation.isPending ? (
                 <>
                   <FiLoader className="mr-2 w-4 h-4 animate-spin" />

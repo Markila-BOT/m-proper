@@ -17,3 +17,14 @@ export function addTransaction(
 export function removeTransaction(id: string): void {
   updateStoredTransactions((prev) => prev.filter((t) => t.id !== id))
 }
+
+// The delete undo (5-second window): restores the removed entry with its
+// ORIGINAL id, so the line returns as the very line that left — not as a
+// re-recorded twin. Prepends like addTransaction; the guard keeps a
+// double-undo from duplicating the line.
+export function restoreTransaction(transaction: Transaction): void {
+  updateStoredTransactions((prev) => [
+    transaction,
+    ...prev.filter((t) => t.id !== transaction.id),
+  ])
+}

@@ -7,6 +7,13 @@
 // the missing feature — until that change landed; they now run green
 // against the passbook ledger, and deleting, skipping or weakening them
 // is not an option.
+//
+// The critique refinement pass (tasks 6.1–6.8) re-anchored the sort
+// scenario's final step to the new chronology truth: the ledger opens
+// date-ascending, so one Date click displays newest-first and the rail
+// freezes to the book's printed accumulation (caveat line visible). The
+// step text is unchanged; the rail is still asserted to work after a
+// sort — it now works by auditing the book's order instead of the sort's.
 
 const assert = require('node:assert/strict');
 const { Given, When, Then } = require('@cucumber/cucumber');
@@ -379,14 +386,35 @@ Then('the rows reorder by that column', async function () {
 
 Then('the running balance follows the new displayed order', async function () {
   const page = requirePage(this);
+  // 6.1's truth (critique pass): a real passbook keeps its printed order.
+  // The ledger now opens date-ascending, so this one click flips Date to
+  // newest-first — and the rail freezes to the book's printed
+  // (chronological) accumulation: every row still carries the balance the
+  // printed order owes it, and a caption caveat names the freeze. The rail
+  // stays the audit; it audits the book, not the sort.
   const displayed = await ledgerView.displayedTransactionDescriptions(page);
   const balances = await ledgerView.balanceColumnValues(page);
+  const printed = printedBalanceByDescription(this.ledgerEntries);
   assert.deepStrictEqual(
     balances,
-    runningBalanceInOrder(this.ledgerEntries, displayed),
-    'the running balance must follow the new displayed order after the sort'
+    displayed.map((description) => printed[description]),
+    'the running balance must stay the printed (chronological) accumulation while the rows display newest-first — the rail audits the book, not the sort'
   );
+  await ledgerView.expectBalanceCaveat(page);
 });
+
+// Each row's balance in the book's printed order: entries accumulated
+// date-ascending (stable for equal dates), keyed by description.
+function printedBalanceByDescription(entries) {
+  const chronological = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+  const printed = {};
+  let running = 0;
+  for (const entry of chronological) {
+    running += entry.type === 'income' ? entry.amount : -entry.amount;
+    printed[entry.description] = running;
+  }
+  return printed;
+}
 
 function signedDateOf(entries, description) {
   const entry = entries.find((candidate) => candidate.description === description);

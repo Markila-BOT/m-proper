@@ -83,20 +83,33 @@ async function expectTransactionVisible(page, transaction) {
 // --- the redesign-ledger-passbook features (landed: the passbook ledger) ---
 
 async function balanceColumnValues(page) {
-  // The running balance renders as the ledger's rightmost column — the
-  // header names "Balance" and each entry row's final cell carries its
-  // right-edge figure (the blank printed lines below carry none).
+  // The running balance renders as the ledger's right-edge rail — the
+  // sixth cell of each entry row. The critique pass (6.2) appended a
+  // reserved trailing actions cell after it, so the balance is no longer
+  // the row's final cell; nth(5) is the balance under both the six- and
+  // seven-column row shapes (the blank printed lines below carry none).
   const balanceHeader = page.locator('main').getByText(/balance/i).first();
   await balanceHeader.waitFor({ state: 'visible', timeout: 5000 });
   const rows = entryRows(page);
   const count = await rows.count();
   const values = [];
   for (let i = 0; i < count; i += 1) {
-    const cell = rows.nth(i).locator('td').last();
+    const cell = rows.nth(i).locator('td').nth(5);
     const text = await cell.innerText();
     values.push(Number(text.replace(/[^0-9.-]/g, '')));
   }
   return values;
+}
+
+async function expectBalanceCaveat(page) {
+  // 6.1's truth: while the rows display newest-first, the rail freezes to
+  // the book's printed (chronological) accumulation and a caption caveat
+  // names the freeze. The caveat line prints above the sheet.
+  const caveat = page
+    .locator('main')
+    .getByText(/balance follows the printed order of the book/i);
+  await caveat.waitFor({ state: 'visible', timeout: 5000 });
+  return caveat;
 }
 
 async function sortByColumn(page, column) {
@@ -117,5 +130,6 @@ module.exports = {
   displayedTransactionDescriptions,
   expectTransactionVisible,
   balanceColumnValues,
+  expectBalanceCaveat,
   sortByColumn,
 };

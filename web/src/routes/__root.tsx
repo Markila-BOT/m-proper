@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   HeadContent,
   Outlet,
@@ -25,6 +25,9 @@ import AppLayout from '../components/AppLayout'
 import AppHeader from '../components/AppHeader'
 import NavigationTabs from '../components/NavigationTabs'
 import TransactionForm from '../components/TransactionForm'
+
+// How long the export's stamp acknowledgment stays on the page.
+const EXPORT_ACK_MS = 4000
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -65,6 +68,25 @@ function RootComponent() {
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
+  // The export's acknowledgment: a small stamp lands on the page naming
+  // the slice that was written, then clears itself. A repeat export
+  // within the window re-stamps (the timer resets), so the mark always
+  // tells the truth about the most recent write.
+  const [exportedScope, setExportedScope] = useState<string | null>(null)
+  const exportAckTimer = useRef<number | null>(null)
+  useEffect(() => {
+    if (exportedScope === null) return
+    exportAckTimer.current = window.setTimeout(
+      () => setExportedScope(null),
+      EXPORT_ACK_MS,
+    )
+    return () => {
+      if (exportAckTimer.current !== null) {
+        window.clearTimeout(exportAckTimer.current)
+      }
+    }
+  }, [exportedScope])
+
   // The shell's slice of the ledger: the selected property's transactions.
   // The interactive filters belong to the Transactions view (ADR-0003).
   const { filteredTransactions } = useTransactionFilters(
@@ -86,6 +108,7 @@ function RootComponent() {
   // Event handlers — transaction add/delete delegate to the transactions module
   const handleExport = () => {
     exportToCSV(filteredTransactions, properties, selectedProperty)
+    setExportedScope(exportScopeLabel)
   }
 
   const handleAddTransaction = () => {
@@ -121,6 +144,16 @@ function RootComponent() {
         isOpen={isTransactionFormOpen}
         onClose={handleCloseTransactionForm}
       />
+      {exportedScope !== null && (
+        <div
+          role="status"
+          className="fixed bottom-20 inset-x-4 z-40 flex justify-end sm:inset-x-auto sm:bottom-6 sm:right-6"
+        >
+          <p className="-rotate-2 rounded-[2px] border-[1.5px] border-stamp bg-paper px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-stamp shadow-lg">
+            Exported · {exportedScope}
+          </p>
+        </div>
+      )}
     </AppLayout>
   )
 }

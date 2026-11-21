@@ -197,11 +197,19 @@
   }
 }
 
-/* The printed totals rules, spelled once: a 3px double rule above (the
- * accountant's closing line), a hairline below. Deterministic against
- * Tailwind's all-sides border-color utilities. */
+/* The printed totals rules, spelled once each: a 3px double rule as the
+ * accountant's closing line, on either edge of the seam it closes. The
+ * border-separate ledger sheet draws per-cell borders, so the closing
+ * rule is owned by exactly one side of the seam — rule-totals on a
+ * top edge (the empty page's line), rule-totals-b on the last row's
+ * bottom edge (above the tfoot). Deterministic against Tailwind's
+ * all-sides border-color utilities. */
 .rule-totals {
   border-top: var(--passbook-rule-totals) var(--color-print);
+}
+
+.rule-totals-b {
+  border-bottom: var(--passbook-rule-totals) var(--color-print);
 }
 
 .rule-hairline {

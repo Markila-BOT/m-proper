@@ -14,7 +14,7 @@ export {
   subscribeToTransactions,
 } from './storage'
 
-export { addTransaction, removeTransaction } from './core'
+export { addTransaction, removeTransaction, restoreTransaction } from './core'
 
 export { filterTransactions } from './filter'
 export type { TransactionFilters } from './filter'

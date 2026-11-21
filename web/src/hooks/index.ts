@@ -1,5 +1,6 @@
 export { useLocalStorage } from './useLocalStorage'
 export { useIsDesktop } from './useIsDesktop'
+export { useMediaQuery } from './useMediaQuery'
 export { useTransactionFilters } from './useTransactionFilters'
 export { usePropertySummaries } from './usePropertySummaries'
 export { useCSVExport } from './useCSVExport'

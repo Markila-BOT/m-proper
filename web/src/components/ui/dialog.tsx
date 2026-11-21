@@ -28,7 +28,9 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 // Passbook modal: paper with a hairline rule and the single soft shadow a
 // floating surface is allowed — the page beneath stays legible through the
-// navy wash.
+// navy wash. Below sm the panel keeps paper margins at its sides instead
+// of running edge-to-edge; the close control's icon stays 16px while its
+// padding grows the target to 44px.
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -38,13 +40,13 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[2px] border border-rule bg-paper p-6 text-ink shadow-lg sm:max-w-lg',
+        'fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-2.5rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[2px] border border-rule bg-paper p-6 text-ink shadow-lg sm:max-w-lg',
         className,
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-[2px] text-ink-soft opacity-70 ring-offset-paper transition-opacity hover:opacity-100 hover:text-ink focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+      <DialogPrimitive.Close className="absolute right-2 top-2 flex rounded-[2px] p-3.5 text-ink-soft opacity-70 ring-offset-paper transition-opacity hover:opacity-100 hover:text-ink focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <Cross2Icon className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
