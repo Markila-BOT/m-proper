@@ -24,13 +24,16 @@ export default function NavigationTabs() {
           <Link
             key={tab.to}
             to={tab.to}
-            className="-mb-px border-b-2 py-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-print"
+            // No font weight on the base: the active tab's documented 600
+            // and the inactive 500 each own their state alone, so no two
+            // weight utilities ever compete on one element.
+            className="-mb-px border-b-2 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-print"
             activeProps={{
-              className: 'border-print font-bold text-ink',
+              className: 'border-print font-semibold text-ink',
             }}
             inactiveProps={{
               className:
-                'border-transparent text-ink-soft transition-colors hover:border-rule hover:text-ink',
+                'border-transparent font-medium text-ink-soft transition-colors hover:border-rule hover:text-ink',
             }}
           >
             {tab.label}

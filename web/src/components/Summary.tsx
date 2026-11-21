@@ -74,7 +74,9 @@ export function TotalsLine({
         <p className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
           Income
         </p>
-        <p className="mt-1 font-mono text-[21px] font-semibold text-ink tabular-nums">
+        {/* Income prints green on every surface that carries it — the
+            ledger's amounts, the trend's income column, and this strip. */}
+        <p className="mt-1 font-mono text-[21px] font-semibold text-print tabular-nums">
           {formatMoney(totalIncome)}
         </p>
       </div>
@@ -145,7 +147,9 @@ export default function Summary({
         <table className="w-full border-collapse">
           <caption className="border-b border-print px-3 pb-2.5 text-left font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft">
             Six-month trend
-            <span className="ml-3 font-mono text-[11px] font-medium normal-case tracking-[0.1em] text-ink-faint">
+            {/* Mixed-case print keeps a tight tracking (≤0.06em) — wide
+                letterspacing belongs to the uppercase caption voice. */}
+            <span className="ml-3 font-mono text-[11px] font-medium normal-case tracking-[0.05em] text-ink-faint">
               income against expenses, by month
             </span>
           </caption>

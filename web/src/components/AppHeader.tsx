@@ -13,17 +13,22 @@
 // nothing clips, and the labels keep their words. At lg the rule is one
 // line, exactly the desktop passbook header.
 import { Link } from '@tanstack/react-router'
+import type { Ref } from 'react'
 
 type AppHeaderProps = {
   exportScopeLabel: string
   onExport: () => void
   onAddTransaction: () => void
+  // The dialog's focus-return target (7.3): the trigger keeps the ref the
+  // root's close handler focuses.
+  addTriggerRef: Ref<HTMLButtonElement>
 }
 
 export default function AppHeader({
   exportScopeLabel,
   onExport,
   onAddTransaction,
+  addTriggerRef,
 }: AppHeaderProps) {
   return (
     <header className="border-b border-rule bg-paper">
@@ -43,10 +48,15 @@ export default function AppHeader({
           Export CSV · {exportScopeLabel}
         </button>
 
+        {/* The one primary control. Below lg the masthead stacks it
+            full-width, and a thumb reaches for it — so it carries the
+            sheet's 44px touch standard there (height, not icon growth);
+            at lg it returns to the 36px control line. */}
         <button
+          ref={addTriggerRef}
           type="button"
           onClick={onAddTransaction}
-          className="h-9 w-full rounded-[2px] bg-ink px-4 text-sm font-semibold text-paper transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print lg:w-auto"
+          className="h-11 w-full rounded-[2px] bg-ink px-4 text-sm font-semibold text-paper transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print lg:h-9 lg:w-auto"
         >
           + Add transaction
         </button>

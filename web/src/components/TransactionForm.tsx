@@ -3,8 +3,12 @@
 // portal, hairline grid fields with navy caption labels, Radix selects,
 // and validation that names the problem and its recovery as a stamp —
 // bordered on all sides, uppercase mono, stamp-red ink on paper (the
-// craft floor's generic left-stripe alert is refused).
-import { useState } from 'react'
+// craft floor's generic left-stripe alert is refused). The stamp names
+// only the fields the line is actually missing. Two ways to record:
+// "Record entry" closes the sheet, "Record & new" records and re-opens
+// the form clean for the next line — focus stays inside for the batch.
+import { useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
@@ -30,6 +34,12 @@ type TransactionFormProps = {
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void
   isOpen: boolean
   onClose: () => void
+  // Where focus lands when the dialog closes: the "+ Add transaction"
+  // trigger's ref. Every close path — Record, Escape, Cancel, the close
+  // control, an outside click — funnels through the dialog's
+  // close-auto-focus hook, which is the one seam that fires after the
+  // focus trap is gone.
+  returnFocusRef?: RefObject<HTMLButtonElement | null>
 }
 
 const fieldLabel =
@@ -40,37 +50,72 @@ const fieldInput =
 // prints in the mono face — the sans never sets a figure.
 const fieldDateInput = `${fieldInput} font-mono tabular-nums`
 
-export default function TransactionForm({
-  properties,
-  selectedProperty,
-  onAddTransaction,
-  isOpen,
-  onClose,
-}: TransactionFormProps) {
-  const [formData, setFormData] = useState({
+// The blank line the form re-opens as after a record: today's date, the
+// expense type, the shell's property scope.
+function blankFormData(selectedProperty: string) {
+  return {
     date: new Date().toISOString().split('T')[0],
     description: '',
     category: '',
     amount: '',
     type: TRANSACTION_TYPE.EXPENSE as Transaction['type'],
     property: selectedProperty !== 'all' ? selectedProperty : '',
-  })
+  }
+}
+
+export default function TransactionForm({
+  properties,
+  selectedProperty,
+  onAddTransaction,
+  isOpen,
+  onClose,
+  returnFocusRef,
+}: TransactionFormProps) {
+  const [formData, setFormData] = useState(() =>
+    blankFormData(selectedProperty),
+  )
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const amount = Number.parseFloat(formData.amount)
-    if (!formData.description || !formData.category || !formData.property) {
+  // Where "Record & new" leaves the hand for the next line: the
+  // description is where the writing starts.
+  const descriptionRef = useRef<HTMLInputElement>(null)
+
+  // The stamp names only what is actually missing — a line half-written
+  // is told which halves, never scolded for fields it already carries.
+  // It is the form's one validation voice: no native `required`
+  // attributes pre-empt it with the browser's own bubble.
+  const missingFields = [
+    !formData.description && 'a description',
+    !formData.category && 'a category',
+    !formData.property && 'a property',
+    !formData.date && 'a date',
+  ].filter((entry): entry is string => entry !== false)
+
+  // "a description and a category" / "a description, a category, and a
+  // property" — the list reads as a person says it.
+  const englishList = (items: string[]): string =>
+    items.length === 1
+      ? items[0]
+      : items.length === 2
+        ? `${items[0]} and ${items[1]}`
+        : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`
+
+  // Records one line and re-opens the form clean. Returns whether the
+  // line recorded; the two submit paths differ only in what happens
+  // next — Record closes the dialog, Record & new keeps it open.
+  const record = (): boolean => {
+    if (missingFields.length > 0) {
       setValidationError(
-        'The line is unfinished: give it a description, a category, and a property.',
+        `The line is unfinished: give it ${englishList(missingFields)}.`,
       )
-      return
+      return false
     }
+    const amount = Number.parseFloat(formData.amount)
     if (!Number.isFinite(amount) || amount <= 0) {
       setValidationError(
         'The amount is missing or not a number — enter what the entry is worth, then record it.',
       )
-      return
+      return false
     }
 
     onAddTransaction({
@@ -82,16 +127,21 @@ export default function TransactionForm({
       property: formData.property,
     })
 
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      category: '',
-      amount: '',
-      type: TRANSACTION_TYPE.EXPENSE,
-      property: selectedProperty !== 'all' ? selectedProperty : '',
-    })
+    setFormData(blankFormData(selectedProperty))
     setValidationError(null)
-    onClose()
+    return true
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (record()) onClose()
+  }
+
+  // The batch-entry path: record the line, keep the dialog open with a
+  // clean form, and the hand stays inside — the next line begins at the
+  // description.
+  const handleRecordAndNew = () => {
+    if (record()) descriptionRef.current?.focus()
   }
 
   // The category list follows the entry's type, exactly as before.
@@ -109,14 +159,29 @@ export default function TransactionForm({
         if (!open) onClose()
       }}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        onCloseAutoFocus={(event) => {
+          // Radix's designed seam for the close: its own default returns
+          // focus to the dialog's trigger ref, which this controlled
+          // dialog has none of — so focus would fall to the body. The
+          // trigger that opens the sheet is the honest target; taking
+          // the event's default here keeps the return after the focus
+          // trap is gone.
+          event.preventDefault()
+          returnFocusRef?.current?.focus()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Write a line into the ledger</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <fieldset className="flex gap-5">
             <legend className="sr-only">Entry type</legend>
-            <label className="flex items-center gap-2 text-sm font-medium text-ink">
+            {/* The radios carry the sheet's 44px touch standard: the label
+                is the target and its padding grows the reach — the mark
+                itself stays 16px. */}
+            <label className="flex items-center gap-2 py-3 text-sm font-medium text-ink">
               <input
                 type="radio"
                 name="type"
@@ -133,7 +198,7 @@ export default function TransactionForm({
               />
               {TRANSACTION_TYPE_LABELS[TRANSACTION_TYPE.INCOME]}
             </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-ink">
+            <label className="flex items-center gap-2 py-3 text-sm font-medium text-ink">
               <input
                 type="radio"
                 name="type"
@@ -191,7 +256,6 @@ export default function TransactionForm({
                 setFormData((prev) => ({ ...prev, date: e.target.value }))
               }
               className={fieldDateInput}
-              required
             />
           </div>
 
@@ -201,6 +265,7 @@ export default function TransactionForm({
             </Label>
             <input
               id="transaction-description"
+              ref={descriptionRef}
               type="text"
               value={formData.description}
               onChange={(e) =>
@@ -211,7 +276,6 @@ export default function TransactionForm({
               }
               className={fieldInput}
               placeholder="What was this entry for"
-              required
             />
           </div>
 
@@ -256,7 +320,6 @@ export default function TransactionForm({
               }
               className={`${fieldInput} font-mono tabular-nums`}
               placeholder="0.00"
-              required
             />
           </div>
 
@@ -277,6 +340,16 @@ export default function TransactionForm({
               onClick={onClose}
             >
               Cancel
+            </Button>
+            {/* The batch-entry secondary: records the line and keeps the
+                sheet open, clean, for the next one. */}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 flex-1 rounded-[2px]"
+              onClick={handleRecordAndNew}
+            >
+              Record & new
             </Button>
             <Button type="submit" className="h-9 flex-1 rounded-[2px]">
               Record entry

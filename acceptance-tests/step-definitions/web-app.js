@@ -386,12 +386,11 @@ Then('the rows reorder by that column', async function () {
 
 Then('the running balance follows the new displayed order', async function () {
   const page = requirePage(this);
-  // 6.1's truth (critique pass): a real passbook keeps its printed order.
-  // The ledger now opens date-ascending, so this one click flips Date to
-  // newest-first — and the rail freezes to the book's printed
-  // (chronological) accumulation: every row still carries the balance the
-  // printed order owes it, and a caption caveat names the freeze. The rail
-  // stays the audit; it audits the book, not the sort.
+  // Critique round two's truth: the rail audits the BOOK, not the sort —
+  // every entry, date ascending, whatever the rows display. This one
+  // click flips Date to newest-first, and each row still carries the
+  // balance the book's printed (chronological) accumulation owes it, with
+  // the caption caveat naming the divergence. The rail stays the audit.
   const displayed = await ledgerView.displayedTransactionDescriptions(page);
   const balances = await ledgerView.balanceColumnValues(page);
   const printed = printedBalanceByDescription(this.ledgerEntries);

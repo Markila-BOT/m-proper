@@ -39,6 +39,28 @@ function TransactionsView() {
     filteredTransactions,
   } = useTransactionFilters(transactions, selectedProperty)
 
+  // The "/" accelerator: one keystroke reaches the ledger's search field
+  // from anywhere on the page — unless the hand is already writing in a
+  // field, where "/" is the visitor's own character to keep.
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== '/') return
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      ) {
+        return
+      }
+      event.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   // The delete's honest recovery: the removed line can come back within
   // the undo window, restored with its original id — the very line that
   // left, not a re-recorded twin. Focus lands on the page title (the
@@ -86,7 +108,7 @@ function TransactionsView() {
         >
           Transactions
         </h1>
-        <p className="font-mono text-caption text-ink-soft">
+        <p className="font-mono text-caption font-semibold text-ink-soft">
           {filteredTransactions.length}{' '}
           {filteredTransactions.length === 1 ? 'entry' : 'entries'}
         </p>
@@ -105,9 +127,11 @@ function TransactionsView() {
         selectedProperty={selectedProperty}
         showPropertyFilter={selectedProperty === 'all'}
         onPropertyChange={setSelectedProperty}
+        searchInputRef={searchInputRef}
       />
       <TransactionList
         transactions={filteredTransactions}
+        bookTransactions={transactions}
         properties={properties}
         onDeleteTransaction={handleDeleteTransaction}
       />

@@ -10,6 +10,13 @@
 // running-balance rail as the rightmost column and sortable column
 // headers. The readers below target that table; this file stays the one
 // place to adjust when the app's row structure changes again.
+//
+// Critique round two: the sheet prints one line per row at a fixed column
+// budget (table-fixed) — descriptions keep their inner span (readable in
+// full even where the cell truncates) and the balance remains the sixth
+// cell; the rail now audits the BOOK (every entry, date ascending)
+// whatever the view displays, and its caveat reads "Balance follows the
+// book, not this view".
 
 const shell = require('./app-shell');
 
@@ -102,12 +109,14 @@ async function balanceColumnValues(page) {
 }
 
 async function expectBalanceCaveat(page) {
-  // 6.1's truth: while the rows display newest-first, the rail freezes to
-  // the book's printed (chronological) accumulation and a caption caveat
-  // names the freeze. The caveat line prints above the sheet.
+  // 7.2's truth: the rail always accumulates the book's chronological
+  // order — it audits the book, not the display — and the caption caveat
+  // prints whenever the display is not the book's own order: any active
+  // filter, any sort that is not date-ascending. The caveat line prints
+  // above the sheet.
   const caveat = page
     .locator('main')
-    .getByText(/balance follows the printed order of the book/i);
+    .getByText(/balance follows the book, not this view/i);
   await caveat.waitFor({ state: 'visible', timeout: 5000 });
   return caveat;
 }

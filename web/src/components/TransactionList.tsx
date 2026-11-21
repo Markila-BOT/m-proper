@@ -4,17 +4,25 @@
 // module's runningBalance. A real passbook opens at its oldest unfilled
 // line, so the default sort is date ascending and the "none" state is
 // unreachable (enableSortingRemoval: false) — the sheet never silently
-// falls back to storage order, which records newest-first. Newest-first
-// stays an explicit choice: while it is active the rail freezes to the
-// book's printed (chronological) accumulation — every row keeps the
-// balance the printed order owes it — and a caption caveat names the
-// freeze, because the rail audits the book, not the sort.
+// falls back to storage order, which records newest-first.
 //
-// Below the last entry the page carries its blank printed lines —
-// aria-hidden ruled rows with the balance column's print wash, no text
-// and no pointer — the unfilled remainder of a sparse page. Below sm the
-// sheet composes for a narrow window: the date column freezes at the
-// left edge and the rest of the print slides inside its ruled region.
+// The rail speaks for the book, not the view: whatever order or slice the
+// rows display, the balance printed on each line is the one the BOOK's own
+// chronological accumulation owes it — every entry, date ascending, filters
+// and sorts notwithstanding. A caption caveat names the divergence
+// whenever the display is not the book's own order — any active filter,
+// any sort that is not date-ascending — because a rail that recomputed
+// itself per view would print accounts that never existed. The totals
+// strip above keeps its own displayed-slice claim; the tfoot below keeps
+// the carried-forward of what the page displays.
+//
+// The sheet is a printed page of fixed column budget (table-fixed): the
+// description keeps the reading width, Category and Property print as
+// narrow columns that truncate under pressure (title carries the full
+// text), and a row is one line at print density at every width — the
+// table holds its minimum print width and slides inside its ruled region
+// when the window is narrower, as it does below sm with the date column
+// frozen at the left edge.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiTrash2 } from 'react-icons/fi'
 import {
@@ -66,21 +74,26 @@ const frozenDateCell =
   'max-sm:sticky max-sm:left-0 max-sm:z-10 max-sm:bg-paper max-sm:border-r max-sm:border-r-rule'
 
 type TransactionListProps = {
+  // The slice the page displays — the property scope plus the view's
+  // interactive filters.
   transactions: Transaction[]
+  // The whole record, every entry the browser holds: the book the rail
+  // audits regardless of what the page displays.
+  bookTransactions: Transaction[]
   properties: Property[]
   onDeleteTransaction: (id: string) => void
 }
 
 export default function TransactionList({
   transactions,
+  bookTransactions,
   properties,
   onDeleteTransaction,
 }: TransactionListProps) {
   // The ledger opens chronological — the passbook's own order. Sorting
   // removal is off, so the display order is always an explicit sort:
-  // ascending (the rail marches down the page), newest-first (the rail
-  // freezes and the caveat prints), or another column's order (the rail
-  // audits whatever is displayed).
+  // ascending (the book's own order), or another choice — under which the
+  // rail still audits the book and the caveat names the divergence.
   const [sorting, setSorting] = useState<SortingState>(() => [
     { id: 'date', desc: false },
   ])
@@ -88,7 +101,9 @@ export default function TransactionList({
 
   // The destructive confirm composes two ways: an inline stamp cluster
   // anchored to the row at sm and up, a bottom sheet with 44px targets
-  // below it. The live breakpoint decides which Keep receives focus.
+  // below it. The live breakpoint decides which one is in the DOM at all
+  // — the sheet never sits display:none in a desktop page — and which
+  // Keep receives focus.
   const isWide = useMediaQuery('(min-width: 640px)')
 
   // The unfilled printed lines: enough ruled rows to carry the page to
@@ -119,10 +134,7 @@ export default function TransactionList({
   // The ledger's columns. `balance` carries no accessor: it is a derived
   // measurement, not a field, and it is never a sort key. The trailing
   // `actions` cell is the page's margin — the reserved place where the
-  // hand reaches for a line, holding nothing at rest. Its 2.75rem comes
-  // from the two wide prose columns (Category and Property each give up
-  // width), so the description column keeps the reading width it always
-  // had and rows hold their one-line print density.
+  // hand reaches for a line, holding nothing at rest.
   const columns = useMemo<ColumnDef<typeof features, Transaction, unknown>[]>(
     () => [
       { id: 'date', accessorKey: 'date', meta: { label: 'Date' } },
@@ -173,25 +185,30 @@ export default function TransactionList({
   })
 
   const displayedRows = table.getRowModel().rows
-  const isDateDesc =
-    sorting.length === 1 && sorting[0].id === 'date' && sorting[0].desc
+  const isDateAsc =
+    sorting.length === 1 && sorting[0].id === 'date' && !sorting[0].desc
 
-  // The rail: when the display is the book's own order the balance
-  // accumulates down the page as read; when the rows display newest-first
-  // the rail freezes — computed over date-ascending regardless of
-  // display, so each row prints the balance the book's printed order
-  // owes it.
+  // Does the page display the book itself — every entry, no filter taking
+  // a line away? The displayed slice is always a subset of the book, so
+  // equal cardinality means equal sets.
+  const isBookSlice = transactions.length === bookTransactions.length
+
+  // The rail: the book's own accumulation, always — every entry in the
+  // record, date ascending, stable for equal dates. Each displayed row
+  // prints the balance the book owes it whatever order the rows sit in,
+  // so a filtered or re-sorted page can never invent an account that
+  // never existed.
   const balanceById = useMemo(() => {
-    const railRows = isDateDesc
-      ? [...transactions].sort((a, b) => a.date.localeCompare(b.date))
-      : displayedRows.map((row) => row.original)
-    const railBalances = runningBalance(railRows)
+    const bookRows = [...bookTransactions].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    )
+    const railBalances = runningBalance(bookRows)
     const map = new Map<string, number>()
-    for (let i = 0; i < railRows.length; i += 1) {
-      map.set(railRows[i].id, railBalances[i])
+    for (let i = 0; i < bookRows.length; i += 1) {
+      map.set(bookRows[i].id, railBalances[i])
     }
     return map
-  }, [isDateDesc, transactions, displayedRows])
+  }, [bookTransactions])
 
   // The one authored motion moment: a newly recorded line prints itself
   // onto the page. On first paint the page simply is the record; only rows
@@ -252,9 +269,11 @@ export default function TransactionList({
   }
 
   // The empty page returns above, so at least one row is displayed here.
-  // "Carried forward" is the book's closing claim: the latest date the
-  // page shows, whatever order the rows sit in, with the net of every
-  // displayed entry beneath the 3px double rule.
+  // "Carried forward" is the page's closing claim, and it claims what the
+  // page displays: the latest date of the displayed rows, whatever order
+  // they sit in, with the net of every displayed entry beneath the 3px
+  // double rule. (The rail's book-claim lives above; the strip's
+  // displayed-slice claim lives higher still.)
   const carriedForwardDate = Math.max(
     ...displayedRows.map((row) => +new Date(row.original.date)),
   )
@@ -281,16 +300,24 @@ export default function TransactionList({
 
   return (
     <div>
-      {isDateDesc && (
+      {/* The caveat: one line, caption-voiced, printed whenever the
+          display is not the book's own order — a filter took lines away,
+          or the sort is not date-ascending. The rail keeps auditing the
+          book either way; the caveat is the honesty that says so. */}
+      {(!isBookSlice || !isDateAsc) && (
         <p className="pb-2 font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
-          Newest first — balance follows the printed order of the book
+          Balance follows the book, not this view
         </p>
       )}
       <div className="overflow-x-auto">
-        {/* Below sm the sheet holds its print width and slides inside this
-            ruled region — the frozen date column pins at the left edge —
-            rather than crushing its columns to the narrow window. */}
-        <table className="w-full max-sm:min-w-[64rem] border-separate border-spacing-0">
+        {/* The printed page: fixed column budget, one-line rows. At sm and
+            up the sheet floors at its 55rem print width — wide enough that
+            Category and Property print their words and the description
+            keeps a reading column — and the ruled region slides it when
+            the window is narrower. Below sm the composition is the
+            verified mobile one: the 64rem sheet slides with the date
+            column frozen at the left edge. */}
+        <table className="w-full table-fixed min-w-[55rem] max-sm:min-w-[64rem] border-separate border-spacing-0">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
@@ -299,6 +326,18 @@ export default function TransactionList({
                   const sorted = header.column.getIsSorted()
                   const canSort = header.column.getCanSort()
                   const align = meta?.align ?? 'left'
+                  const width =
+                    header.id === 'date'
+                      ? 'w-[7.5rem]'
+                      : header.id === 'category' || header.id === 'property'
+                        ? 'w-[7.5rem]'
+                        : header.id === 'amount'
+                          ? 'w-[7.5rem]'
+                          : header.id === 'balance'
+                            ? 'w-[8rem]'
+                            : header.id === 'actions'
+                              ? 'w-[2.75rem]'
+                              : ''
 
                   return (
                     <th
@@ -313,7 +352,7 @@ export default function TransactionList({
                       }
                       className={`border-b border-print px-3 pb-2.5 font-sans text-caption font-semibold uppercase tracking-[0.16em] text-ink-soft${
                         align === 'right' ? ' text-right' : ''
-                      }${
+                      }${width ? ` ${width}` : ''}${
                         header.id === 'date'
                           ? ` max-sm:sticky max-sm:left-0 max-sm:z-30 max-sm:bg-paper max-sm:border-r max-sm:border-r-rule`
                           : ''
@@ -356,6 +395,8 @@ export default function TransactionList({
               const isLastBeforeTfoot =
                 index === lastEntryIndex && blankLineCount === 0
               const bottom = rowBottom(isLastBeforeTfoot)
+              const propertyName =
+                propertyNames.get(transaction.property) ?? 'Unknown Property'
 
               return (
                 <tr
@@ -369,24 +410,30 @@ export default function TransactionList({
                   >
                     {formatDate(transaction.date)}
                   </td>
+                  {/* The reading column: it takes the width the fixed
+                      budget leaves, truncates under pressure, and the
+                      title carries the whole line — a wrapped description
+                      would break the page's one-line rhythm. */}
                   <td
-                    className={`px-3 py-2.5 font-mono text-ledger font-medium text-ink ${bottom}`}
+                    title={transaction.description}
+                    className={`truncate px-3 py-2.5 font-mono text-ledger font-medium text-ink ${bottom}`}
                   >
                     <span>{transaction.description}</span>
                   </td>
                   <td
-                    className={`w-[10rem] px-3 py-2.5 font-mono text-[12.5px] text-ink-soft ${bottom}`}
+                    title={transaction.category}
+                    className={`w-[7.5rem] truncate px-3 py-2.5 font-mono text-[12.5px] text-ink-soft ${bottom}`}
                   >
                     {transaction.category}
                   </td>
                   <td
-                    className={`w-[13rem] px-3 py-2.5 font-mono text-[12.5px] text-ink-soft ${bottom}`}
+                    title={propertyName}
+                    className={`w-[7.5rem] truncate px-3 py-2.5 font-mono text-[12.5px] text-ink-soft ${bottom}`}
                   >
-                    {propertyNames.get(transaction.property) ??
-                      'Unknown Property'}
+                    {propertyName}
                   </td>
                   <td
-                    className={`w-[8.75rem] border-l border-rule px-3 py-2.5 text-right font-mono text-ledger font-semibold tabular-nums ${
+                    className={`w-[7.5rem] border-l border-rule px-3 py-2.5 text-right font-mono text-ledger font-semibold tabular-nums ${
                       isIncome ? 'text-print' : 'text-ink'
                     } ${bottom}`}
                   >
@@ -395,7 +442,7 @@ export default function TransactionList({
                       : formatMoney(-transaction.amount)}
                   </td>
                   <td
-                    className={`w-[9.5rem] border-l border-rule bg-print-wash px-3 py-2.5 text-right font-mono text-ledger font-semibold text-ink tabular-nums ${bottom}`}
+                    className={`w-[8rem] border-l border-rule bg-print-wash px-3 py-2.5 text-right font-mono text-ledger font-semibold text-ink tabular-nums ${bottom}`}
                   >
                     {formatMoney(balanceById.get(transaction.id) ?? 0)}
                   </td>
@@ -423,7 +470,7 @@ export default function TransactionList({
                         the row's right edge — paper ground, hairline rule,
                         the one soft shadow a floating surface is allowed —
                         and focus arrives at its Keep. */}
-                    {isConfirming && (
+                    {isConfirming && isWide && (
                       <div
                         role="group"
                         aria-label="Delete this entry?"
@@ -461,9 +508,10 @@ export default function TransactionList({
           {/* The passbook's unfilled printed lines: hairline row rules and
               the balance column's print wash, nothing written on them.
               aria-hidden and transparent to the pointer — they are paper,
-              not content. The date-side cell freezes like the entries
-              above it, so the frozen column holds its ground over the
-              blank remainder too. */}
+              not content — and ruled at the entries' own line height so
+              the blank remainder carries the page's rhythm. The date-side
+              cell freezes like the entries above it, so the frozen column
+              holds its ground over the blank remainder too. */}
           {blankLineCount > 0 && (
             <tbody aria-hidden="true" className="pointer-events-none">
               {Array.from({ length: blankLineCount }, (_, index) => {
@@ -500,10 +548,12 @@ export default function TransactionList({
         </table>
       </div>
       {/* Below sm the destructive confirm is a bottom sheet: the stamp
-          question, then Keep and Delete as full-width 44px targets —
-          the thumb's zone, not the row's far edge. It renders outside the
-          scrolling sheet so it pins to the window. */}
-      {confirmingTransaction !== null && (
+          question, then Keep and Delete as full-width 44px targets — the
+          thumb's zone, not the row's far edge. It renders outside the
+          scrolling sheet so it pins to the window, and only below sm: at
+          sm and up the inline cluster is the confirm, and this sheet is
+          not in the desktop DOM at all. */}
+      {confirmingTransaction !== null && !isWide && (
         <div
           role="group"
           aria-label="Delete this entry?"

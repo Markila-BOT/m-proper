@@ -41,7 +41,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
       },
-      { title: 'm-proper' },
+      // The browser tab names the product, not the repo.
+      { title: 'Landlord Ledger' },
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
@@ -67,6 +68,13 @@ function RootComponent() {
   // UI state
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  // Focus discipline for the add-transaction dialog: the "+ Add
+  // transaction" trigger is where focus returns when the dialog closes —
+  // Record, Escape, Cancel, the close control, every path. The dialog
+  // itself owns the return through Radix's close-auto-focus hook (which
+  // fires once the focus trap is gone); the root hands it the trigger.
+  const addTriggerRef = useRef<HTMLButtonElement>(null)
 
   // The export's acknowledgment: a small stamp lands on the page naming
   // the slice that was written, then clears itself. A repeat export
@@ -116,6 +124,8 @@ function RootComponent() {
   }
 
   const handleCloseTransactionForm = () => {
+    // The dialog's close-auto-focus hook returns focus to the trigger
+    // (see TransactionForm) — this handler only closes.
     setIsTransactionFormOpen(false)
   }
 
@@ -132,6 +142,7 @@ function RootComponent() {
         exportScopeLabel={exportScopeLabel}
         onExport={handleExport}
         onAddTransaction={handleAddTransaction}
+        addTriggerRef={addTriggerRef}
       />
       <NavigationTabs />
       <main className="flex-1">
@@ -143,6 +154,7 @@ function RootComponent() {
         onAddTransaction={addTransaction}
         isOpen={isTransactionFormOpen}
         onClose={handleCloseTransactionForm}
+        returnFocusRef={addTriggerRef}
       />
       {exportedScope !== null && (
         <div

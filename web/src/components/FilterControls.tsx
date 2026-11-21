@@ -2,7 +2,9 @@
 // The ledger's filters row — the passbook form idiom: caption labels in
 // navy, hairline print-green fields on ivory, Radix Selects (no raw
 // <select>). The "all" filter states translate to Radix's non-empty
-// sentinel at this boundary; the view keeps its '' contract.
+// sentinel at this boundary; the view keeps its '' contract. A caption-
+// voiced Reset control prints at the row's end whenever any filter is
+// active, and unwinds every counted control in one action.
 //
 // Below sm the row folds behind a disclosure control that names how many
 // filters are active ("Filters · 2") — the narrow window opens onto the
@@ -10,6 +12,7 @@
 // the server paints it collapsed below sm and expanded at sm and up, no
 // hydration flash.
 import { useState } from 'react'
+import type { Ref } from 'react'
 import type { Property } from '../types/properties'
 import { FiChevronDown } from 'react-icons/fi'
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
@@ -39,6 +42,9 @@ type FilterControlsProps = {
   selectedProperty: string
   showPropertyFilter: boolean
   onPropertyChange: (value: string) => void
+  // The "/" accelerator's target (7.4): the view owns the keydown, this
+  // row owns the field it reaches.
+  searchInputRef?: Ref<HTMLInputElement>
 }
 
 const fieldLabel =
@@ -63,6 +69,7 @@ export default function FilterControls({
   selectedProperty,
   showPropertyFilter,
   onPropertyChange,
+  searchInputRef,
 }: FilterControlsProps) {
   // The disclosure's honest count: every control inside the folded row
   // that is not at its default. The property scope counts only while its
@@ -76,6 +83,17 @@ export default function FilterControls({
     dateRange.start !== '',
     dateRange.end !== '',
   ].filter(Boolean).length
+
+  // One action unwinds every active control — the escape hatch from a
+  // six-field apparatus. It clears exactly what the count counts, so the
+  // control never claims more than it does.
+  const resetFilters = () => {
+    onSearchChange('')
+    onCategoryChange('')
+    onTypeChange('')
+    if (showPropertyFilter) onPropertyChange('all')
+    onDateRangeChange({ start: '', end: '' })
+  }
 
   return (
     <div>
@@ -105,6 +123,7 @@ export default function FilterControls({
           </label>
           <input
             id="ledger-search"
+            ref={searchInputRef}
             type="text"
             placeholder="Description or category"
             value={searchTerm}
@@ -213,6 +232,19 @@ export default function FilterControls({
             className={fieldDateInput}
           />
         </div>
+
+        {/* The reset control prints only when there is something to reset,
+            in the row's own caption voice — one action, every counted
+            filter back to its default. */}
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="pb-2.5 font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
+          >
+            Reset filters
+          </button>
+        )}
       </div>
     </div>
   )

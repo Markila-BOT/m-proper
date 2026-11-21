@@ -195,15 +195,19 @@ export default function PropertySidebar({
               }
             />
             <div className="flex-1">
-              <h3
-                className={`text-sm ${
+              {/* A span, not a heading: entry names never nest an h3
+                  inside a button — heading-mode navigation stays the
+                  page's own, and the rail's visual hierarchy is
+                  untouched. */}
+              <span
+                className={`block text-sm ${
                   selectedProperty === 'all'
                     ? 'font-bold text-ink'
                     : 'font-medium text-ink'
                 }`}
               >
                 All Properties
-              </h3>
+              </span>
               <p className="text-xs text-ink-soft">View combined data</p>
             </div>
           </div>
@@ -238,15 +242,19 @@ export default function PropertySidebar({
                     }
                   />
                   <div className="flex-1 min-w-0">
-                    <h3
-                      className={`truncate ${
+                    {/* A span at the 16px step the entry name always
+                        printed (an h3's default): same size, same weight
+                        per state — the heading simply stops living inside
+                        a button. */}
+                    <span
+                      className={`block truncate text-base ${
                         isSelected
                           ? 'font-bold text-ink'
                           : 'font-medium text-ink'
                       }`}
                     >
                       {property.name}
-                    </h3>
+                    </span>
                     <div className="flex items-center space-x-1 text-xs text-ink-soft">
                       <FiMapPin className="w-3 h-3" />
                       <span className="truncate">{property.address}</span>
