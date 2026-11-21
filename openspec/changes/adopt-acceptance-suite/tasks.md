@@ -47,18 +47,18 @@
 - [x] 4.13 Invalid property type POST — 400, nothing persisted — red → green → commit
 - [x] 4.14 Delete by id — removed, success envelope — red → green → commit
 - [x] 4.15 Delete without an id — 400, success false — red → green → commit
-- [ ] 4.16 The user opens the application with the API available — properties display — red → green → commit
-- [ ] 4.17 The user submits a valid new-property form — created through the API, shown in the list — red → green → commit
-- [ ] 4.18 The user deletes a property — removed through the API, gone from the list — red → green → commit
-- [ ] 4.19 The user records a transaction and reloads — still available in the UI — red → green → commit
-- [ ] 4.20 The API base URL is configured — list, create, and delete target that base — red → green → commit
-- [ ] 4.21 The single test command runs the effective spec and leaves a report — red → green → commit
-- [ ] 4.22 An unfenced scenario fails extraction naming the file and line — fixture-based — red → green → commit
-- [ ] 4.23 A superseded rule is not executed and not reported skipped — this change's own delta proves it — red → green → commit
-- [ ] 4.24 The app is alive for the scenarios and shut down after the run — red → green → commit
-- [ ] 4.25 Browser scenarios execute in a real browser; no session remains after — red → green → commit
-- [ ] 4.26 Smoke rows and browser-stored state are removed after the run — red → green → commit
-- [ ] 4.27 A missing database connection is named and nothing runs — red → green → commit
+- [x] 4.16 The user opens the application with the API available — properties display — red → green → commit
+- [x] 4.17 The user submits a valid new-property form — created through the API, shown in the list — red → green → commit
+- [x] 4.18 The user deletes a property — removed through the API, gone from the list — red → green → commit
+- [x] 4.19 The user records a transaction and reloads — still available in the UI — red → green → commit
+- [x] 4.20 The API base URL is configured — list, create, and delete target that base — red → green → commit
+- [x] 4.21 The single test command runs the effective spec and leaves a report — red → green → commit
+- [x] 4.22 An unfenced scenario fails extraction naming the file and line — fixture-based — red → green → commit
+- [x] 4.23 A superseded rule is not executed and not reported skipped — this change's own delta proves it — red → green → commit
+- [x] 4.24 The app is alive for the scenarios and shut down after the run — red → green → commit
+- [x] 4.25 Browser scenarios execute in a real browser; no session remains after — red → green → commit
+- [x] 4.26 Smoke rows and browser-stored state are removed after the run — red → green → commit
+- [x] 4.27 A missing database connection is named and nothing runs — red → green → commit
 
 ## 5. Completion
 

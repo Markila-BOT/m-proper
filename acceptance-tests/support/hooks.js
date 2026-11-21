@@ -15,9 +15,8 @@
 // process 'exit' handler SIGKILLs the groups even if the runner crashes, so
 // nothing the harness booted can outlive the run.
 
-const fs = require('node:fs');
 const path = require('node:path');
-const { BeforeAll, Before, After, AfterAll } = require('@cucumber/cucumber');
+const { BeforeAll, Before, After, AfterAll, setDefaultTimeout } = require('@cucumber/cucumber');
 const {
   REPO_ROOT,
   state,
@@ -26,31 +25,22 @@ const {
   stopAllSpawnedProcesses,
   waitForApiHealth,
   waitForTcpPort,
+  probeTcpPort,
+  runPostTeardownChecks,
   tailOf,
 } = require('./harness');
+const { assertDatabaseConnection } = require('./preflight');
+const { removeScenarioSmokeRows, clearScenarioBrowserState } = require('./cleanup');
 const api = require('./api-client');
 
-// Resolves the database connection the API scenarios need: the DATABASE_URL
-// environment variable when set, otherwise the DATABASE_URL line of api/.env.
-// The resolved value is treated as a secret: it is never printed or logged.
-function resolveDatabaseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-
-  const envPath = path.resolve(__dirname, '..', '..', 'api', '.env');
-  if (fs.existsSync(envPath)) {
-    const envFile = fs.readFileSync(envPath, 'utf8');
-    for (const rawLine of envFile.split(/\r?\n/)) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith('#')) continue;
-      const eq = line.indexOf('=');
-      if (eq === -1) continue;
-      const key = line.slice(0, eq).trim();
-      const value = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      if (key === 'DATABASE_URL' && value) return value;
-    }
-  }
-  return null;
-}
+// Cucumber's default step timeout is 5000ms, which browser flows and the
+// suite's own child runs exceed. Every wait inside the harness carries its
+// own, much tighter bound (page-object waits, runCommand timeouts, fetch
+// aborts), so this outer guard is raised once, here — it exists only so a
+// step can never be killed while its own bounded work is still in flight.
+// The suite-minus-self child run caps itself at 20 minutes inside
+// runCommand, comfortably below this guard.
+setDefaultTimeout(25 * 60_000);
 
 // Deletes any smoke probe rows left behind by the run (best effort; the
 // per-scenario After hook already removed the recorded ones).
@@ -68,21 +58,24 @@ async function sweepProbeProperties() {
 
 BeforeAll(async function () {
   // --- 1. Database preflight: fail before any boot if absent ---
-  const databaseUrl = resolveDatabaseUrl();
-  if (!databaseUrl) {
-    throw new Error(
-      'Acceptance suite preflight: no database connection is configured. ' +
-        'Set DATABASE_URL to a postgresql:// URI (Supabase Database settings, ' +
-        'not the project https URL), or put DATABASE_URL in api/.env. ' +
-        'The suite refuses to run any scenario without it.'
-    );
-  }
+  // Resolves DATABASE_URL from the environment, otherwise from api/.env;
+  // the resolved value is a secret and is never printed. support/preflight.js
+  // is the same gate the suite's missing-connection scenario spawns as a
+  // child process.
+  const databaseUrl = assertDatabaseConnection();
   // Expose the resolved connection to the app-boot phase. Never log it.
   process.env.DATABASE_URL = databaseUrl;
   state.databaseUrl = databaseUrl;
 
   state.apiBaseUrl = `http://localhost:${state.apiPort}`;
   state.webBaseUrl = `http://localhost:${state.webPort}`;
+
+  // The apps are not running before the suite starts: record that both
+  // harness ports were free, then boot from scratch. The lifecycle scenario
+  // ("The app is alive for the scenarios and gone after") asserts this
+  // recorded fact.
+  state.portsFreeBeforeBoot =
+    !(await probeTcpPort(state.apiPort)) && !(await probeTcpPort(state.webPort));
 
   try {
     // --- 2. Boot the API on a harness-chosen port ---
@@ -143,23 +136,26 @@ BeforeAll(async function () {
 });
 
 Before(async function () {
-  // Per-scenario fixtures: a fresh browser page keeps scenarios isolated
-  // from each other; HTTP state lives on the (fresh) World.
+  // Per-scenario fixtures: a fresh browser page (a fresh context, so
+  // browser storage starts empty) keeps scenarios isolated from each
+  // other; HTTP state lives on the (fresh) World.
   if (state.browser) {
     this.page = await state.browser.newPage();
   }
 });
 
 After(async function () {
-  // Per-scenario cleanup: close the page, then remove this scenario's smoke
-  // rows so the ledger is left as found even when an assertion failed.
+  // Per-scenario cleanup: clear the browser-stored state this scenario
+  // seeded, close the page, then remove this scenario's smoke rows so the
+  // ledger is left as found even when an assertion failed. These are the
+  // same helpers the suite's "leaves no trace" scenario invokes to prove
+  // the mechanism.
+  await clearScenarioBrowserState(this);
   if (this.page) {
     await this.page.close().catch(() => {});
     this.page = null;
   }
-  for (const id of this.createdPropertyIds) {
-    await api.deletePropertyById(id).catch(() => {});
-  }
+  await removeScenarioSmokeRows(this);
 });
 
 AfterAll(async function () {
@@ -178,4 +174,7 @@ AfterAll(async function () {
   state.browser = null;
   await stopAllSpawnedProcesses();
   console.error('[harness] both processes stopped; nothing left listening on the harness ports');
+  // Registered post-teardown checks ("gone after the run" contracts): each
+  // prints PASS, or prints FAIL and marks the run's exit code non-zero.
+  await runPostTeardownChecks();
 });

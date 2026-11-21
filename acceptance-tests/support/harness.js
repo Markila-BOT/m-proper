@@ -45,6 +45,8 @@ const state = {
   browser: null, // one Playwright chromium for the whole suite
   browserLaunchError: null,
   spawned: [], // [{ child, label }] — everything the harness booted
+  portsFreeBeforeBoot: false, // BeforeAll records that both ports were free pre-boot
+  suiteMinusSelf: null, // parsed results of the self-check child run, for the later self-scenarios
 };
 
 function logDir() {
@@ -206,11 +208,14 @@ async function waitForTcpPort(port, timeoutMs, label) {
   await waitFor(() => probeTcpPort(port), { timeoutMs, intervalMs: 300, label });
 }
 
-// Runs a command to completion (used by the check/build gate steps).
-// Captures output; never throws on non-zero exit — the caller asserts.
-function runCommand(command, args, { cwd, timeoutMs }) {
+// Runs a command to completion (used by the check/build gate steps and the
+// suite's own self-check child runs). Captures output; never throws on
+// non-zero exit — the caller asserts. `env` defaults to this process's
+// environment; the self-check scenarios override it (offset ports, stripped
+// DATABASE_URL).
+function runCommand(command, args, { cwd, timeoutMs, env = process.env }) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(command, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     let finished = false;
@@ -253,6 +258,39 @@ function tailOf(text, maxChars = 4000) {
   return flat.length <= maxChars ? flat : `…${flat.slice(-maxChars)}`;
 }
 
+// --- registered post-teardown checks ---
+//
+// A scenario can register a check that must hold AFTER AfterAll has stopped
+// everything the harness booted — the "gone after the run" contracts. A
+// check cannot redden its own scenario (teardown happens after the last
+// one), so the harness runs them at the very end of AfterAll instead: each
+// PASS prints, each FAIL prints and marks the run's exit code non-zero, so
+// a leak is never silent. This complements the synchronous process 'exit'
+// SIGKILL handler above, which stays the crash backstop.
+const postTeardownChecks = [];
+
+function registerPostTeardownCheck({ label, check }) {
+  postTeardownChecks.push({ label, check });
+}
+
+async function runPostTeardownChecks() {
+  for (const { label, check } of postTeardownChecks) {
+    try {
+      const ok = await check();
+      if (ok) {
+        console.error(`[harness] PASS (after teardown): ${label}`);
+      } else {
+        process.exitCode = 1;
+        console.error(`[harness] FAIL (after teardown): ${label}`);
+      }
+    } catch (error) {
+      process.exitCode = 1;
+      console.error(`[harness] FAIL (after teardown): ${label} — ${tailOf(error.message, 300)}`);
+    }
+  }
+  postTeardownChecks.length = 0;
+}
+
 module.exports = {
   REPO_ROOT,
   RUN_STAMP,
@@ -269,5 +307,7 @@ module.exports = {
   probeTcpPort,
   waitForTcpPort,
   runCommand,
+  registerPostTeardownCheck,
+  runPostTeardownChecks,
   tailOf,
 };

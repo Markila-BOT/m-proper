@@ -85,6 +85,74 @@ Every run writes `acceptance-tests/reports/cucumber-report.html`. The
 `reports/` directory is generated output too — open the report in a
 browser after the run; it is not committed.
 
+## The suite verifies itself
+
+The effective spec includes the acceptance-suite capability — scenarios
+that describe the harness itself. Three of them spawn child processes:
+
+- **The suite-minus-self child run** (`suite-minus-self.cjs`): the scenario
+  "One command runs every committed behavior" re-runs the whole effective
+  spec *minus the acceptance-suite feature itself* as a child
+  `npx cucumber-js --config suite-minus-self.cjs`. cucumber-js merges CLI
+  paths into the profile's paths instead of replacing them, so the
+  exclusion lives in that second config file — the feature-list mechanism.
+  The child boots its own API and web dev server on offset ports
+  (`HARNESS_API_PORT`/`HARNESS_WEB_PORT`/`HARNESS_OPENAPI_PORT`, +10), so it
+  cannot collide with the parent run, and writes its own report to
+  `reports/suite-minus-self-report.html`. The later self-scenarios ("The
+  ledger's browser scenarios run for real", "Archive waits for green") read
+  that child run's parsed results.
+- **The discovery dry run** (`suite-discovery.cjs`): "Superseded rules never
+  reach the runner" dry-runs the full effective spec with a message-only
+  formatter — never the default html report, which the parent run owns
+  while the child runs.
+- **The preflight gate** (`support/preflight.js`): "A missing database
+  connection is named" spawns the suite's own pre-boot gate as a standalone
+  child with no `DATABASE_URL` and a nonexistent `.env` fallback; it exits 1
+  naming the missing configuration before anything boots. It runs
+  standalone too: `node support/preflight.js [envFileOverride]`.
+
+**Runtime cost**: the suite-minus-self child run repeats every check-gate
+scenario (cargo check, web build, OpenAPI regeneration) with its own app
+boot, so a full `npm test` costs roughly twice a non-self-verifying run.
+Measured warm (all caches hot, remote Supabase database): ~67s total, of
+which the child run was ~32s — about 1.9× the ~35s the parent's own
+scenarios take.
+
+## Red by design
+
+The effective spec includes redesign-ledger-passbook's two new ledger
+scenarios — the running balance and the column sorting. The web app does
+not implement them yet, so those two scenarios fail every run, with failure
+messages that name the missing feature, and `npm test` exits non-zero. That
+red is the change's work list, documented and expected: the suite goes
+green — and its exit code drops to 0 — only when the redesign lands. Do not
+delete, skip, or weaken those scenarios to make the suite pass. The child
+run's step asserts the failures are exactly this pair and nothing else, so
+any other failure is reported as a regression.
+
+## Post-run verification
+
+The harness proves its own cleanup:
+
+- After every scenario the After hook clears the browser storage it seeded
+  and deletes its smoke rows through the API; AfterAll sweeps any leftover
+  probe rows through the still-running API before shutting down.
+- The scenario "The app is alive for the scenarios and gone after" records
+  that both harness ports were free before boot and registers a
+  post-teardown check; after AfterAll stops both apps, the harness prints
+  `[harness] PASS (after teardown): after teardown both harness ports are
+  closed (…)`. A FAIL prints and marks the run's exit code non-zero.
+- The suite-minus-self child run checks its own ports the same way through
+  its own AfterAll; the parent verifies the child's ports are closed.
+
+To verify by hand after a run (nothing should answer):
+
+```sh
+lsof -ti :3021 ; lsof -ti :3022   # no pids
+curl -s http://localhost:3021/health   # connection refused
+```
+
 ## Runner files are pack files
 
 `extract-gherkin.cjs`, `cucumber.cjs`, `openspec-effective-paths.cjs`, and
@@ -92,3 +160,7 @@ browser after the run; it is not committed.
 skill pack. Their destination filenames are load-bearing (`cucumber.cjs`
 is discovered by name; the extractor is required by `cucumber.cjs`) — do not
 rename or modify them; improvements belong in the pack, not here.
+
+`suite-minus-self.cjs` and `suite-discovery.cjs` are not pack files: they
+are this harness's own child-run configurations (same extraction and
+composition, different paths and output files), maintained here.
