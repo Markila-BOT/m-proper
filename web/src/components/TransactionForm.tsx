@@ -5,7 +5,7 @@ import { FiPlus, FiX } from 'react-icons/fi'
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/categories'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../transactions'
 
 type TransactionFormProps = {
   properties: Property[]
@@ -62,10 +62,11 @@ export default function TransactionForm({
   }
 
   // Use the correct category array based on type
-  const categoryOptions =
+  const categoryOptions = Object.values(
     formData.type === TRANSACTION_TYPE.INCOME
       ? INCOME_CATEGORIES
-      : EXPENSE_CATEGORIES
+      : EXPENSE_CATEGORIES,
+  )
   const activeProperties = properties.filter((p) => p.isActive)
 
   if (!isOpen) return null
@@ -196,7 +197,7 @@ export default function TransactionForm({
             >
               <option value="">Select category</option>
               {categoryOptions.map((category) => (
-                <option key={category.id} value={category.name}>
+                <option key={category.name} value={category.name}>
                   {category.name}
                 </option>
               ))}

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import type { Transaction } from './types/transactions'
 import { useLocalStorage, useTransactionFilters, useCSVExport } from './hooks'
 import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from './hooks/useProperties'
+import { addTransaction, removeTransaction } from './transactions'
 import AppLayout from './components/AppLayout'
 import AppHeader from './components/AppHeader'
 import MainContent from './components/MainContent'
@@ -15,7 +15,7 @@ type TabType = 'overview' | 'transactions' | 'reports' | 'properties'
 
 function App() {
   // Local storage management
-  const { transactions, setTransactions } = useLocalStorage()
+  const { transactions } = useLocalStorage()
 
   const { selectedProperty } = useSelectedProperty()
   const { properties } = usePropertiesWithStates()
@@ -41,19 +41,7 @@ function App() {
   // CSV export
   const { exportToCSV } = useCSVExport()
 
-  // Event handlers
-  const addTransaction = (transactionData: Omit<Transaction, 'id'>) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: Date.now().toString(),
-    }
-    setTransactions((prev) => [newTransaction, ...prev])
-  }
-
-  const deleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id))
-  }
-
+  // Event handlers — transaction add/delete delegate to the transactions module
   const handleExport = () => {
     exportToCSV(filteredTransactions, properties, selectedProperty)
   }
@@ -83,7 +71,7 @@ function App() {
       <MainContent
         activeTab={activeTab}
         filteredTransactions={filteredTransactions}
-        onDeleteTransaction={deleteTransaction}
+        onDeleteTransaction={removeTransaction}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedCategory={selectedCategory}

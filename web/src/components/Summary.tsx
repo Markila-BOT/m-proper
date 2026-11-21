@@ -1,9 +1,10 @@
 import { FiTrendingUp, FiTrendingDown, FiCalendar } from 'react-icons/fi'
 import { FaPesoSign } from 'react-icons/fa6'
 import { PropertyTypeIcon } from './PropertyTypeIcon'
-import { PROPERTY_TYPE, TRANSACTION_TYPE } from '#/lib/domain'
-import type { Transaction, MonthlyTotal } from '../types/transactions'
+import { PROPERTY_TYPE } from '#/lib/domain'
+import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
+import { summarizeTransactions, monthlyTotals } from '../transactions'
 
 type SummaryProps = {
   transactions: Transaction[]
@@ -29,62 +30,22 @@ export default function Summary({
     return property ? property.name : 'Unknown Property'
   }
 
-  // Calculate totals
-  const totalIncome = transactions
-    .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
-    .reduce((sum, t) => sum + t.amount, 0)
+  // Aggregation belongs to the transactions module
+  const {
+    totalIncome,
+    totalExpenses,
+    netProfit,
+    currentMonth: {
+      income: monthlyIncome,
+      expenses: monthlyExpenses,
+      profit: monthlyProfit,
+    },
+  } = summarizeTransactions(transactions)
 
-  const totalExpenses = transactions
-    .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const netProfit = totalIncome - totalExpenses
   const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0
 
-  // Calculate current month totals
-  const currentMonth = new Date().toISOString().slice(0, 7)
-  const currentMonthTransactions = transactions.filter((t) =>
-    t.date.startsWith(currentMonth),
-  )
-
-  const monthlyIncome = currentMonthTransactions
-    .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const monthlyExpenses = currentMonthTransactions
-    .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const monthlyProfit = monthlyIncome - monthlyExpenses
-
-  // Get monthly trends (last 6 months)
-  const monthlyTotals: MonthlyTotal[] = []
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date()
-    date.setMonth(date.getMonth() - i)
-    const monthKey = date.toISOString().slice(0, 7)
-    const monthTransactions = transactions.filter((t) =>
-      t.date.startsWith(monthKey),
-    )
-
-    const income = monthTransactions
-      .filter((t) => t.type === TRANSACTION_TYPE.INCOME)
-      .reduce((sum, t) => sum + t.amount, 0)
-
-    const expenses = monthTransactions
-      .filter((t) => t.type === TRANSACTION_TYPE.EXPENSE)
-      .reduce((sum, t) => sum + t.amount, 0)
-
-    monthlyTotals.push({
-      month: date.toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric',
-      }),
-      income,
-      expenses,
-      profit: income - expenses,
-    })
-  }
+  // Monthly trends (last 6 months)
+  const sixMonthTrend = monthlyTotals(transactions, 6)
 
   return (
     <div className="space-y-6">
@@ -241,7 +202,7 @@ export default function Summary({
           6-Month Trend
         </h3>
         <div className="space-y-4">
-          {monthlyTotals.map((month, index) => (
+          {sixMonthTrend.map((month, index) => (
             <div
               key={index}
               className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"

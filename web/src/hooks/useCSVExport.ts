@@ -1,5 +1,6 @@
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
+import { toCSV } from '../transactions'
 
 export function useCSVExport() {
   const exportToCSV = (
@@ -7,28 +8,9 @@ export function useCSVExport() {
     properties: Property[],
     selectedProperty: string,
   ) => {
-    const headers = [
-      'Date',
-      'Description',
-      'Category',
-      'Type',
-      'Amount',
-      'Property',
-    ]
-    const csvContent = [
-      headers.join(','),
-      ...filteredTransactions.map((t) => {
-        const property = properties.find((p) => p.id === t.property)
-        return [
-          t.date,
-          `"${t.description}"`,
-          `"${t.category}"`,
-          t.type,
-          t.amount,
-          `"${property ? property.name : 'Unknown Property'}"`,
-        ].join(',')
-      }),
-    ].join('\n')
+    // The transactions module owns the row building (RFC-4180 quoting);
+    // the browser dance stays here.
+    const csvContent = toCSV(filteredTransactions, properties)
 
     const blob = new Blob([csvContent], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
