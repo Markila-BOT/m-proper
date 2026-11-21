@@ -32,3 +32,14 @@
 - [x] 5.5 Independent finish review against the direction contract and `model-pick.html`; act on its disposition
 - [x] 5.6 DESIGN.md written from the built world at finish
 - [x] 5.7 `openspec validate` non-strict clean; every shipping raster carries its provenance
+
+## 6. Critique refinement pass (2026-11-21, scope user-confirmed: full sweep, chronology forced)
+
+- [ ] 6.1 P0: the ledger opens chronological (default sort date ascending); descending stays an explicit sort whose rail freezes to chronological accumulation with a visible caveat line; "carried forward" labels from the max displayed date
+- [ ] 6.2 P0: delete moves to a trailing hover/focus-revealed icon cell (title "Delete entry", keyboard reachable), rows return to one line at print density
+- [ ] 6.3 Reports leaves the nav until it exists; Properties gets its recorded passbook pass (2.4:1 grays, pills, blue spinner, hover shadows gone)
+- [ ] 6.4 Focus discipline: print-green visible focus on rail buttons, the collapse toggle (labeled), and every delete control; the destructive confirm receives focus and announces itself
+- [ ] 6.5 Mobile: filters collapse behind an active-count disclosure; the ledger composes for a narrow window (frozen date column or stacked rows with a trailing balance caption); the destructive confirm becomes a bottom sheet with 44px targets below sm
+- [ ] 6.6 Honesty signals: a quiet footer status line ("Recorded in this browser · CSV is your backup"), an export acknowledgment, a 5-second delete undo, empty months omitted from the trend
+- [ ] 6.7 Mechanical minors: strip top-edge cascade (solid print rule), tabular dates inside form inputs, dialog buttons at the 36px control height, stamp border 1.5px, one h1 per page, 44px dialog close target, caption/cell sizes on the documented ramp
+- [ ] 6.8 Suite stays 31/31 with the new default order (page objects adjusted where order-dependent); detector re-run over the changed targets with the fixable findings cleared
