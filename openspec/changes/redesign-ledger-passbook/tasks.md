@@ -1,7 +1,7 @@
 ## 1. Prerequisite gates (apply order is pinned)
 
-- [ ] 1.1 Confirm `adopt-acceptance-suite` is applied and its suite runs green — this change's behavioral gate
-- [ ] 1.2 Confirm the C3+C6 change has landed: dead twins deleted, the deduped money formatter and icon map in place (two fraction digits), so the rebuild consumes them instead of re-creating them
+- [x] 1.1 Confirm `adopt-acceptance-suite` is applied and its suite runs green — this change's behavioral gate
+- [x] 1.2 C6 folds into this change (user decision, 2026-11-21): the deduped money formatter (two fraction digits), shared date formatter, and single icon map land inside the craft pass; C3 (Rust dead twins), the dead-surface sweep, and the recorded follow-ups stay as their own later change
 
 ## 2. Transactions module (C1 folded in — code zone, one commit)
 

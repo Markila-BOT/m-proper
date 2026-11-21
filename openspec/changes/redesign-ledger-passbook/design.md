@@ -46,7 +46,7 @@ flowchart LR
 
 **4. Radix Select everywhere.** `TransactionForm` and `FilterControls` — the complete set of raw selects — move onto the existing `ui/select.tsx`; the passbook hairline grid styles the triggers and portals.
 
-**5. The deduped formatter is consumed, not re-created.** The C3+C6 change lands first and settles money formatting (two fraction digits everywhere) and the icon map; the rebuilt surfaces import them. This change does not reopen the fraction-digit policy.
+**5. The deduped formatter lands inside this change (C6 folded by user decision).** One shared `formatMoney` (two fraction digits everywhere — the sidebar's zero-digit variant is retired deliberately), one `formatDate`, and one icon map (`PropertyTypeIcon` everywhere, deleting the sidebar's private copy). The rebuilt surfaces import them; nothing re-creates a local copy. C3 and the dead-surface sweep stay a separate later change.
 
 **6. Verification is the suite plus the code-led pipeline.** The acceptance suite executes the five kept web-app scenarios and the two added ones; URL addressability gets a manual live smoke across the four routes and the redirect. The impeccable code-led pipeline (craft floor, batched screenshots at 1440×900 and 390×844, the design detector, the independent finish reviewer, DESIGN.md at finish) governs craft; `model-pick.html` rides as the critique reference.
 
