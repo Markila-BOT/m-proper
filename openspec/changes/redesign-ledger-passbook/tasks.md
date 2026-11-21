@@ -43,3 +43,13 @@
 - [x] 6.6 Honesty signals: a quiet footer status line ("Recorded in this browser · CSV is your backup"), an export acknowledgment, a 5-second delete undo, empty months omitted from the trend
 - [x] 6.7 Mechanical minors: strip top-edge cascade (solid print rule), tabular dates inside form inputs, dialog buttons at the 36px control height, stamp border 1.5px, one h1 per page, 44px dialog close target, caption/cell sizes on the documented ramp
 - [x] 6.8 Suite stays 31/31 with the new default order (page objects adjusted where order-dependent); detector re-run over the changed targets with the fixable findings cleared
+
+## 7. Critique round two (2026-11-21, user-confirmed: both P0s, rail speaks for the book, full sweep)
+
+- [ ] 7.1 P0: the sheet keeps one-line print density at real widths — Description gets a floor, Category/Property flex and truncate (or the sheet takes a fixed print width at all viewports, as mobile already does); blank ruled lines agree with the entry rhythm
+- [ ] 7.2 P0: the rail always accumulates the book's chronological order (it audits the book, not the display); the caveat prints whenever the display isn't the book's own order — any filter, any sort; the strip keeps the displayed-slice claim
+- [ ] 7.3 P1: dialog close returns focus to the "+ Add transaction" trigger (both Record and Escape paths)
+- [ ] 7.4 P1: a Reset control appears when filters are active; "/" focuses search; a "Record & new" secondary keeps the form open
+- [ ] 7.5 P2: Properties becomes a ruled register — one line per property with Net/Income/Expenses tabular columns, the squared Active mark, product-question copy in the passbook voice
+- [ ] 7.6 Minors: document.title is the product name; active tab renders the documented bold; validation copy names only the actually-missing fields; strip Income in print green; count caption weight 600; touch targets 44px (radios, masthead primary); the four Created lines off the tiny-text rule; the h3-to-body type step ≥1.25; /properties heading hierarchy fixed (h1 → h2 cards); the wide-tracked mixed-case sublabel tightened; rail entries stop nesting h3 inside buttons; the mobile bottom sheet not in the desktop DOM
+- [ ] 7.7 Suite stays 31/31 and the detector's fixable residue clears
