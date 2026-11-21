@@ -14,7 +14,8 @@
     "build": "pnpm run build:api && pnpm run build:web",
     "build:api": "cd api && cargo build --release",
     "build:web": "pnpm --filter web build",
-    "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts"
+    "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts",
+    "test:acceptance": "cd acceptance-tests && npm test"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"

@@ -56,3 +56,7 @@ bun.lock
 
 # Impeccable working mocks
 web/.impeccable/mocks/
+
+# Acceptance suite generated output
+acceptance-tests/.extracted/
+acceptance-tests/reports/
