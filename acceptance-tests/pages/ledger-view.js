@@ -132,6 +132,23 @@ async function sortByColumn(page, column) {
   await header.click();
 }
 
+// --- the totals strip's unreachable state (surface-api-unreachable-state) ---
+
+function totalsStrip(page) {
+  // The strip is the one section inside the view's main region — the
+  // ledger sheet and its apparatus are tables and divs, never sections.
+  return page.locator('main').locator('section').first();
+}
+
+async function expectUnreachableStripState(page) {
+  // The strip's mount of the shared state: the scope-note slot carries
+  // the state line while the figures stay unwritten — the step reads the
+  // region's text to prove no zeroed figure printed beside it.
+  const state = totalsStrip(page).locator('[data-unreachable="properties"]');
+  await state.waitFor({ state: 'visible', timeout: WAIT_MS });
+  return state;
+}
+
 module.exports = {
   open,
   seedTransactions,
@@ -142,4 +159,6 @@ module.exports = {
   balanceColumnValues,
   expectBalanceCaveat,
   sortByColumn,
+  totalsStrip,
+  expectUnreachableStripState,
 };

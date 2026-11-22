@@ -8,6 +8,11 @@ export const useProperties = () => {
   return useQuery({
     queryKey: queryKeys.properties.all,
     queryFn: propertiesApi.getAll,
+    // One quick retry covers a dev-server restart blip; the unreachable
+    // state lands within ~1s instead of the default three-attempt window,
+    // so the page says what happened instead of sitting on the silent
+    // zero. This query only — no retry-policy redesign.
+    retry: 1,
   })
 }
 

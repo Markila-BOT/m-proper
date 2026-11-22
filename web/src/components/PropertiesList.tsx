@@ -18,6 +18,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage'
 import { usePropertySummaries } from '../hooks/usePropertySummaries'
 import { FiAlertCircle, FiTrash2 } from 'react-icons/fi'
 import { PropertyTypeIcon } from './PropertyTypeIcon'
+import { UnreachableState } from './UnreachableState'
 import { Skeleton } from './ui/skeleton'
 import { PROPERTY_TYPE_LABELS } from '#/lib/domain'
 import type { Property } from '#/lib/domain'
@@ -133,11 +134,21 @@ export default function PropertiesList() {
   }
 
   if (error) {
+    // The register's mount of the one shared unreachable state: the page
+    // keeps its landmarks (the title, the product question) and the state
+    // prints on the ruled idiom where the sheet would — no register
+    // lines, no zeroed totals row, beneath a line that says the figures
+    // cannot be verified.
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="flex items-center space-x-2 text-stamp">
-          <FiAlertCircle className="w-5 h-5" />
-          <span>Error loading properties: {error.message}</span>
+      <div className="space-y-5 px-6 py-6 lg:px-9">
+        <header>
+          <h1 className="text-[17px] font-bold text-ink">Properties</h1>
+          <p className="mt-2 text-sm text-ink-soft">
+            What is each property making me? The register answers line by line.
+          </p>
+        </header>
+        <div className="rule-totals rule-hairline py-4">
+          <UnreachableState />
         </div>
       </div>
     )

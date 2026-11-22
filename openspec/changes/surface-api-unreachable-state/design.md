@@ -37,7 +37,7 @@ flowchart LR
 ## Risks / Trade-offs
 
 - [The state renders during any real outage, not just dev mistakes] -> That is the point; the copy names recovery, and DESIGN.md records the state as explained for any future parity pass.
-- [A second active web-app delta (the redesign change) joins the suite] -> Both deltas ride the effective run; no rule-name collision (it MODIFIES the three existing requirements; this ADDS one); its suite-minus-self child run grows 29 → 30 and any failure there is this change's to fix before either archives.
+- [A second active web-app delta (the redesign change) joins the suite] -> Both deltas ride the effective run; no rule-name collision (it MODIFIES the three existing requirements; this ADDS one); its suite-minus-self child run grows 23 → 24 and any failure there is this change's to fix before either archives.
 - [Suppressing strip figures changes a rendered surface] -> The parity note in the proposal covers it; audits never reach the unreachable path (API always up in harness runs).
 
 ## Migration Plan
@@ -45,7 +45,7 @@ flowchart LR
 1. Specs zone: this change's delta (committed with the artifacts).
 2. Code zone: the shared state component + its three mount points + `retry: 1` on the query; the scenario's feature text needs no harness change.
 3. Steps: the unreachable scenario's step definitions (dead base URL, marker assertions at three locations).
-4. Full suite green at 32 scenarios; the redesign change's suite-minus-self run green at 30.
+4. Full suite green at 32 scenarios; the redesign change's suite-minus-self run green at 24.
 
 ## Open Questions
 

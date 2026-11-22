@@ -10,7 +10,28 @@ export type ApiEnvelope<T = unknown> = {
   data?: T
 }
 
+// A dev/test affordance, not a product feature: the base URL can be
+// overridden at runtime from the page's own storage, ahead of the baked
+// env value, so a test load can point one page at a dead port without a
+// second build or boot. Nothing in the product writes this key; the
+// acceptance suite's unreachable scenario does (change:
+// surface-api-unreachable-state).
+const API_BASE_URL_OVERRIDE_KEY = 'landlord-api-base-url-override'
+
 function getApiBaseUrl(): string {
+  // The override wins only in the browser, where storage exists — the
+  // server render keeps the baked base. Storage can be unavailable
+  // (private mode); the baked base still stands then.
+  if (typeof window !== 'undefined') {
+    try {
+      const override = window.localStorage.getItem(API_BASE_URL_OVERRIDE_KEY)
+      if (override && override.trim()) {
+        return override.trim()
+      }
+    } catch {
+      /* no storage — fall through to the baked base */
+    }
+  }
   return (
     import.meta.env.VITE_API_BASE_URL ??
     import.meta.env.API_BASE_URL ??

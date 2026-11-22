@@ -5,6 +5,7 @@ import { useIsDesktop } from '../../hooks/useIsDesktop'
 import { PropertySidebarSkeleton } from './PropertySidebarSkeleton'
 import PropertyModal from '../PropertyModal'
 import { PropertyTypeIcon } from '../PropertyTypeIcon'
+import { UnreachableState } from '../UnreachableState'
 import { formatMoney } from '../../lib/format'
 import { PROPERTY_TYPE } from '#/lib/domain'
 
@@ -48,6 +49,9 @@ export default function PropertySidebar({
 
   // Show error state
   if (error) {
+    // The rail's mount of the one shared unreachable state: where the
+    // entry index would print, the state names what happened — no empty
+    // list pretending the ledger is merely blank.
     return (
       <nav
         aria-label="Properties"
@@ -68,10 +72,7 @@ export default function PropertySidebar({
           </div>
         </div>
         <div className="flex-1 p-4 lg:p-6">
-          <div className="text-center text-stamp">
-            <p>Error loading properties</p>
-            <p className="mt-2 text-sm text-ink-soft">{error.message}</p>
-          </div>
+          <UnreachableState />
         </div>
       </nav>
     )

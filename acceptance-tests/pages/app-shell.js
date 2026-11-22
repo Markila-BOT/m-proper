@@ -68,6 +68,45 @@ async function expectSidebarPropertyAbsent(page, name) {
   await entry.waitFor({ state: 'detached', timeout: WAIT_MS });
 }
 
+// --- the shared unreachable state (surface-api-unreachable-state) ---
+
+// The app's runtime base-URL override key (web/src/lib/api-client.ts): a
+// dev/test affordance the api-client honors ahead of the baked env base.
+// Nothing in the product writes it; the unreachable scenario's page load
+// does, so the suite never needs a second harness boot to point one page
+// at a dead port.
+const API_BASE_URL_OVERRIDE_KEY = 'landlord-api-base-url-override';
+
+async function openWithApiBaseUrl(page, baseUrl) {
+  // A scenario-local page load with the base URL pointed where the
+  // scenario needs it: the override is written before any app code runs,
+  // so the page's very first property fetch targets the given base.
+  await page.addInitScript(
+    ({ key, value }) => window.localStorage.setItem(key, value),
+    { key: API_BASE_URL_OVERRIDE_KEY, value: baseUrl }
+  );
+  await open(page);
+}
+
+async function clearApiBaseUrlOverride(page) {
+  // The After-hook cleanup: the override never outlives its scenario.
+  await page.evaluate(
+    (key) => window.localStorage.removeItem(key),
+    API_BASE_URL_OVERRIDE_KEY
+  );
+}
+
+async function expectUnreachableRailState(page) {
+  // The shared state's rail mount: the nav that carries the entry list
+  // carries the state line where the entries would print. The step asserts
+  // the marker and role; the copy stays the app's own.
+  const state = page
+    .locator('nav[aria-label="Properties"]')
+    .locator('[data-unreachable="properties"]');
+  await state.waitFor({ state: 'visible', timeout: WAIT_MS });
+  return state;
+}
+
 module.exports = {
   open,
   reload,
@@ -76,4 +115,7 @@ module.exports = {
   waitForSidebarProperties,
   expectSidebarProperty,
   expectSidebarPropertyAbsent,
+  openWithApiBaseUrl,
+  clearApiBaseUrlOverride,
+  expectUnreachableRailState,
 };

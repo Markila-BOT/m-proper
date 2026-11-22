@@ -18,7 +18,7 @@
 const assert = require('node:assert/strict');
 const { Given, When, Then } = require('@cucumber/cucumber');
 
-const { state } = require('../support/harness');
+const { state, waitFor, probeTcpPort } = require('../support/harness');
 const { requirePage } = require('../pages/browser');
 const shell = require('../pages/app-shell');
 const propertiesView = require('../pages/properties-view');
@@ -420,3 +420,120 @@ function signedDateOf(entries, description) {
   assert.ok(entry, `the displayed row "${description}" must be one of the recorded transactions`);
   return entry.date;
 }
+
+// --- The unreachable state speaks where the silent zero used to ---
+//
+// surface-api-unreachable-state: the harness boots exactly as every other
+// scenario (API up, web up), but this page's base URL points at an
+// unbound port before any app code runs — the runtime override seam the
+// api-client honors ahead of its baked env. The fetch rejects on contact;
+// the one shared state the three silent-zero surfaces carry is asserted
+// structurally (the marker, the role), never on prose.
+
+// The design's dead base: a port nothing may answer on.
+const DEAD_API_BASE_URL = 'http://localhost:9';
+
+Given('the web application is open and the properties API is unreachable', async function () {
+  // The dead base must actually be dead, or the scenario proves the wrong
+  // thing: nothing may answer on the port the page is about to target.
+  const deadPort = Number(new URL(DEAD_API_BASE_URL).port);
+  const answers = await probeTcpPort(deadPort);
+  assert.strictEqual(
+    answers,
+    false,
+    `the scenario's dead base ${DEAD_API_BASE_URL} must answer nothing — something is listening on port ${deadPort}`
+  );
+
+  const page = requirePage(this);
+  this.deadApiBaseUrl = DEAD_API_BASE_URL;
+  // The rejection must be an observable fact, not an assumption: record
+  // every request the page sends and every one that fails.
+  this.pageRequests = [];
+  this.failedPageRequests = [];
+  page.on('request', (request) => {
+    this.pageRequests.push({ method: request.method(), url: request.url() });
+  });
+  page.on('requestfailed', (request) => {
+    this.failedPageRequests.push({ url: request.url() });
+  });
+  await shell.openWithApiBaseUrl(page, DEAD_API_BASE_URL);
+});
+
+When('the properties fetch rejects', async function () {
+  const dead = this.deadApiBaseUrl;
+  // The properties fetch, rejected on contact with the dead base — the
+  // fact the shared state keys on. The query retries once; the first
+  // failure is already the proof.
+  await waitFor(
+    () => this.failedPageRequests.some((request) => request.url === `${dead}/properties`),
+    { timeoutMs: 15_000, intervalMs: 250, label: `a properties fetch rejected against ${dead}` }
+  );
+  const targeted = this.pageRequests.filter((request) => request.url.startsWith(dead));
+  assert.ok(
+    targeted.length > 0,
+    `the page must have sent its property requests at the dead base ${dead}`
+  );
+  console.log(
+    `[web-app] the properties fetch rejected against ${dead} (${targeted.length} request(s) targeted it)`
+  );
+});
+
+Then('the shared unreachable state appears at the property rail', async function () {
+  const page = requirePage(this);
+  const state = await shell.expectUnreachableRailState(page);
+  assert.strictEqual(
+    await state.getAttribute('role'),
+    'status',
+    'the shared state must announce itself as a status to assistive technology'
+  );
+});
+
+Then('the same state appears at the properties register', async function () {
+  const page = requirePage(this);
+  await propertiesView.open(page);
+  const state = await propertiesView.expectUnreachableRegisterState(page);
+  assert.strictEqual(
+    await state.getAttribute('role'),
+    'status',
+    "the register's state must announce itself as a status to assistive technology"
+  );
+});
+
+Then('the same state appears at the totals strip', async function () {
+  const page = requirePage(this);
+  await ledgerView.open(page);
+  const state = await ledgerView.expectUnreachableStripState(page);
+  assert.strictEqual(
+    await state.getAttribute('role'),
+    'status',
+    "the strip's state must announce itself as a status to assistive technology"
+  );
+});
+
+Then('the state names the problem and the recovery', async function () {
+  const page = requirePage(this);
+  // Never exact strings: the state names the problem (the unreachable
+  // connection) and the recovery (what to do), in the app's own words.
+  const state = await shell.expectUnreachableRailState(page);
+  const line = (await state.innerText()).trim();
+  assert.match(
+    line,
+    /unreachab/i,
+    'the state must name the problem — the unreachable connection'
+  );
+  assert.match(line, /reload/i, 'the state must name the recovery');
+});
+
+Then("the empty ledger's zeroed figures do not render as though the ledger were merely empty", async function () {
+  const page = requirePage(this);
+  // While the state shows, the strip's figures stay unwritten: printing
+  // ₱0.00 beside a line that says the figures cannot be verified is the
+  // exact lie this scenario forbids. The strip region carries the state
+  // and no money figure at all.
+  await ledgerView.expectUnreachableStripState(page);
+  const stripText = await ledgerView.totalsStrip(page).innerText();
+  assert.ok(
+    !stripText.includes('₱'),
+    `the strip must not print money figures while the state shows, but printed: "${stripText.trim()}"`
+  );
+});

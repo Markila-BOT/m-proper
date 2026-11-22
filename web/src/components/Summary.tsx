@@ -11,6 +11,8 @@
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { monthlyTotals, summarizeTransactions } from '../transactions'
+import { useProperties } from '../hooks/useProperties'
+import { UnreachableState } from './UnreachableState'
 import { formatMoney } from '#/lib/format'
 
 // The scope every "displayed ledger" surface names: the selected
@@ -56,6 +58,21 @@ export function TotalsLine({
   scopeLabel,
   scope = 'displayed-ledger',
 }: TotalsLineProps) {
+  // The strip shares the properties query the rail and register read: when
+  // that fetch cannot be verified, the scope-note slot carries the one
+  // shared unreachable state and the figures stay unwritten — printing
+  // ₱0.00 beside a line that says the figures cannot be verified is the
+  // exact lie the state exists to remove.
+  const { error } = useProperties()
+
+  if (error) {
+    return (
+      <section className="flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-t-print border-b border-b-rule py-3.5 pr-3">
+        <UnreachableState className="ml-auto" />
+      </section>
+    )
+  }
+
   // The strip follows its page: its figures total exactly the slice the
   // caller passes — on Transactions the displayed ledger beneath it
   // (property selection, search, category, type, and date range all

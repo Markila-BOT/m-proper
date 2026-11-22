@@ -62,6 +62,17 @@ async function deleteProperty(page, name) {
   await card.waitFor({ state: 'detached', timeout: WAIT_MS });
 }
 
+// --- the shared unreachable state (surface-api-unreachable-state) ---
+
+async function expectUnreachableRegisterState(page) {
+  // The register's mount of the shared state: on the Properties route the
+  // register is the only state carrier inside main (the totals strip
+  // lives on the other routes), so the marker there is the register's.
+  const state = page.locator('main').locator('[data-unreachable="properties"]');
+  await state.waitFor({ state: 'visible', timeout: WAIT_MS });
+  return state;
+}
+
 module.exports = {
   open,
   propertyCard,
@@ -69,4 +80,5 @@ module.exports = {
   expectPropertyAbsent,
   propertyNames,
   deleteProperty,
+  expectUnreachableRegisterState,
 };
