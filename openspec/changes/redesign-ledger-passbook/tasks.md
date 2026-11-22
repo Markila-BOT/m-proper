@@ -61,3 +61,8 @@
 - [x] 8.3 Minors: the count caption reads "N of M entries" when filtered; a keyboard skip link jumps to the ledger; sort targets 44px; the caveat names WHY the view diverges (filtered vs sorted); Properties' second primary demoted to quiet; one targeted stale-store reproduction attempt (fix if reproduced, record if not)
 - [x] 8.4 Suite stays 31/31; the detector's clean state holds
 - Queued (recorded, unpicked this round): the reading-column rebalance (description truncation at 1280), Unknown-Property denormalization + property-delete line warning, the undo snackbar re-pin + permanent-deletion status + edit path, the filtered-empty "No matches" wiring
+
+## 9. sr-only positioning leak (2026-11-22, found by the verdict-round subagent's close-out, live-proven)
+
+- [ ] 9.1 Make every sliding ruled region its own positioning context (`relative` on the `overflow-x-auto` wrappers: the register's sheet, its skeleton, and the ledger's sheet) so the sr-only Actions header spans stop climbing to the viewport and inflating the page's scrollable area — verified at 390 with rows present and transactions seeded (register and ledger both scrollWidth 390/390)
+- [ ] 9.2 Suite stays 32/32 with the fix
