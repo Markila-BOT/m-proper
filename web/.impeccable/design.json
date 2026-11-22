@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-21",
+  "generatedAt": "2026-11-22",
   "title": "Design System: Landlord Ledger — Bank Passbook",
   "world": "bank-passbook",
   "extensions": {
@@ -103,7 +103,7 @@
       },
       "caption": {
         "displayName": "Caption Label",
-        "purpose": "The world's micro-label: field labels, table headers, strip labels, the tfoot legend, the caveat above the ledger, the Reset control. Uppercase; tracking stops at 0.14em (fields), 0.16em (table headers), 0.18em (totals legends and stamp marks)."
+        "purpose": "The world's micro-label: field labels, table headers, strip labels, the tfoot legend, the caveat above the ledger (which names why the view differs — filtered, sorted, or both), the Reset control. Uppercase; tracking stops at 0.14em (fields), 0.16em (table headers), 0.18em (totals legends and stamp marks)."
       },
       "body": {
         "displayName": "Body",
@@ -200,6 +200,11 @@
         "detail": "The unfilled printed lines below the last entry, ruled at the entries' own rhythm — aria-hidden, pointer-events none, capped at fifteen."
       },
       {
+        "name": "mount-gate",
+        "value": "post-mount paint",
+        "detail": "The server snapshot is '[]' by design: the blank ruled lines compute after mount (server and client paint identically), and the empty page's 'No entries' is gated the same way — the region stays quiet through the hydration window so the first honest paint is silent and the ruled line belongs to the live snapshot alone."
+      },
+      {
         "name": "radius",
         "value": "2px",
         "detail": "The world's only corner (rounded-[2px]); the shadcn --radius base is re-pointed to 0.125rem so its lg/md steps collapse to the same 2px."
@@ -211,7 +216,7 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one primary control per screen — ink ground, paper text, squared; \"+ Add transaction\" in the header, 44px high and full-width below lg (the masthead's touch standard), back to the 2.25rem control line at lg.",
+      "description": "The one ink primary per screen — the masthead's: ink ground, paper text, squared; \"+ Add transaction\" in the header, 44px high and full-width below lg (the masthead's touch standard), back to the 2.25rem control line at lg. The rail's \"Add Property\" has stepped down to a quiet outline, so the masthead keeps the screen's one ink primary.",
       "html": "<button class=\"ds-btn-primary\">+ Add transaction</button>",
       "css": ".ds-btn-primary { background: var(--color-ink, #1b2a41); color: var(--color-paper, #fbf8f1); height: 2.25rem; padding: 0 1rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: opacity 150ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); outline-offset: 2px; } @media (max-width: 1023.98px) { .ds-btn-primary { height: 2.75rem; width: 100%; } }"
     },
@@ -219,8 +224,8 @@
       "name": "Quiet Text Control",
       "kind": "button",
       "refersTo": "button-quiet",
-      "description": "The export control's idiom — transparent ground, ink-soft text that deepens to ink on hover, always disclosing its scope.",
-      "html": "<button class=\"ds-btn-quiet\">Export CSV · All properties</button>",
+      "description": "The export control's idiom — transparent ground, ink-soft text that deepens to ink on hover, always disclosing the slice it writes: \"Export CSV · All entries\" at rest, \"Export CSV · Displayed ledger\" whenever anything narrows (the shell reads the ledger filter store — no prop corridor).",
+      "html": "<button class=\"ds-btn-quiet\">Export CSV · All entries</button>",
       "css": ".ds-btn-quiet { background: transparent; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); padding: 0.5rem 0.75rem; border: none; border-radius: 2px; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.875rem; font-weight: 600; transition: color 150ms; } .ds-btn-quiet:hover { color: var(--color-ink, #1b2a41); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--color-print, #2e5e4e); }"
     },
     {
@@ -251,7 +256,7 @@
       "name": "Ledger Row",
       "kind": "custom",
       "refersTo": "ledger-balance-cell",
-      "description": "The signature surface — mono tabular cells on hairline rules, income in print green; the sheet is table-fixed with a 55rem floor at sm and up (64rem below sm, date column frozen) holding one-line rows, the rail always accumulates the book (every entry, date ascending) whatever the display and the caveat 'Balance follows the book, not this view' prints whenever the view is not the book's own order, the delete control hides in a reserved trailing margin cell, and the closing 3px double rule owns its seam on the last row's bottom edge.",
+      "description": "The signature surface — mono tabular cells on hairline rules, income in print green; the sheet is table-fixed with a 55rem floor at sm and up (64rem below sm, date column frozen) holding one-line rows, the rail always accumulates the book (every entry, date ascending) whatever the display and the caveat 'Balance follows the book' prints whenever the view is not the book's own order, naming why (this view is filtered, sorted newest first, or both), the delete control hides in a reserved trailing margin cell, and the closing 3px double rule owns its seam on the last row's bottom edge.",
       "html": "<table class=\"ds-ledger\"><thead><tr><th class=\"ds-ledger-th\">Date</th><th class=\"ds-ledger-th ds-align-r\">Amount</th><th class=\"ds-ledger-th ds-align-r\">Balance</th><th class=\"ds-ledger-th-sr\">Actions</th></tr></thead><tbody><tr class=\"ds-ledger-row ds-ledger-row-last\"><td class=\"ds-ledger-cell\">Nov 21, 2026</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-income\">+₱25,000.00</td><td class=\"ds-ledger-cell ds-align-r ds-ledger-balance\">₱112,340.00</td><td class=\"ds-ledger-actions\"><button class=\"ds-delete-btn\" type=\"button\" title=\"Delete entry\" aria-label=\"Delete entry\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/></svg></button></td></tr></tbody><tfoot><tr><td colspan=\"2\" class=\"ds-ledger-foot\">Balance carried forward · Nov 2026</td><td class=\"ds-ledger-foot ds-align-r ds-ledger-foot-balance\">₱112,340.00</td><td></td></tr></tfoot></table>",
       "css": ".ds-ledger { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--color-paper, #fbf8f1); } .ds-ledger-th { border-bottom: 1px solid var(--color-print, #2e5e4e); padding: 0 0.75rem 0.625rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; text-align: left; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-align-r { text-align: right; } .ds-ledger-th-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .ds-ledger-cell { border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); padding: 0.625rem 0.75rem; font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-row-last .ds-ledger-cell, .ds-ledger-row-last .ds-ledger-actions { border-bottom: 3px double var(--color-print, #2e5e4e); } .ds-ledger-income { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); color: var(--color-print, #2e5e4e); font-weight: 600; } .ds-ledger-balance { border-left: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); color: var(--color-ink, #1b2a41); font-weight: 600; } .ds-ledger-actions { position: relative; width: 2.75rem; border-bottom: 1px solid var(--color-rule, rgba(46, 94, 78, 0.38)); } .ds-delete-btn { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; padding: 0; color: var(--color-ink-faint, rgba(27, 42, 65, 0.66)); opacity: 0; transition: color 150ms; cursor: pointer; } .ds-ledger-row:hover .ds-delete-btn { opacity: 1; } .ds-delete-btn:focus-visible { opacity: 1; color: var(--color-stamp, #a31621); outline: 2px solid var(--color-print, #2e5e4e); } .ds-ledger-foot { padding: 0.875rem 0.75rem; font-family: var(--font-sans, Manrope, sans-serif); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-ink-soft, rgba(27, 42, 65, 0.72)); } .ds-ledger-foot-balance { background: var(--color-print-wash, rgba(46, 94, 78, 0.06)); font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: normal; color: var(--color-ink, #1b2a41); font-variant-numeric: tabular-nums; }"
     },
@@ -275,8 +280,8 @@
       "name": "Export Stamp",
       "kind": "custom",
       "refersTo": "stamp-mark",
-      "description": "The export's acknowledgment — a rotated stamp lands at the bottom right naming the written slice (role=status), clearing after four seconds; a repeat export within the window re-stamps.",
-      "html": "<div role=\"status\" class=\"ds-export-stamp-wrap\"><p class=\"ds-export-stamp\">Exported · All properties</p></div>",
+      "description": "The export's acknowledgment — a rotated stamp lands at the bottom right naming the written slice (role=status): \"Exported · All entries\" at rest, \"Exported · Displayed ledger\" whenever anything narrows, clearing after four seconds; a repeat export within the window re-stamps, and the CSV's filename names the slice too (all-entries / displayed-ledger, the date stamped from local parts).",
+      "html": "<div role=\"status\" class=\"ds-export-stamp-wrap\"><p class=\"ds-export-stamp\">Exported · Displayed ledger</p></div>",
       "css": ".ds-export-stamp-wrap { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 40; display: flex; justify-content: flex-end; } .ds-export-stamp { transform: rotate(-2deg); border: 1.5px solid var(--color-stamp, #a31621); border-radius: 2px; background: var(--color-paper, #fbf8f1); padding: 0.375rem 0.75rem; margin: 0; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-family: var(--font-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-stamp, #a31621); }"
     },
     {
@@ -314,19 +319,26 @@
       "date": "2026-11-21",
       "title": "The two known contextual detector flags",
       "body": "Two real deviations survive every pass, both in the browser's chrome rather than the world's surfaces, and both are deliberately left alone: the scrollbar thumb's 5px radius (styles.css — the one corner outside the 2px system) and the devtools widget's own panel headings (the TanStack devtools mounted in the root route render h3s that trip the heading-order detector — dev chrome outside the world's landmarks, dev-only and stripped from production builds by the devtools vite plugin's remove-devtools-on-build pass, so no shipped page carries them). Neither is a pattern to extend; this record exists so a future audit recognizes them instead of re-litigating them."
+    },
+    {
+      "id": "round-three-queued-ledger",
+      "date": "2026-11-22",
+      "title": "The round-three queued ledger",
+      "body": "The third pass's picked fronts are closed in the build; four remain queued in the change's task ledger (§8), recorded as queued work, not canonized: the reading-column rebalance (description truncation at 1280), Unknown-Property denormalization + a property-delete line warning, the undo snackbar re-pin + a permanent-deletion status + the entry-editing path, and the filtered-empty \"No matches\" wiring. Code-verified context for two of them: the ledger's Property cell prints an \"Unknown Property\" fallback for a stored id with no property record, and a filter that empties the sheet still meets the scoped \"No entries\" line."
     }
   ],
   "narrative": {
     "northStar": "The Bank Passbook",
-    "overview": "The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.\n\nDepth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.\n\nThe world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its register pass — the card grid retired wholesale, one ruled line per property answering the product question in money (Net on the print wash first, Income in green, Expenses in ink-soft), the ledger's own trailing-cell delete and stamp confirm. The record tells the truth about itself: the shell's footer names where the data lives on every page, an export lands a stamp acknowledgment, and a delete carries a five-second undo. Two deferrals remain, both recorded, not canonized: the Add-Property modal's native checkbox and pending spinner, and the unlinked Reports placeholder.",
+    "overview": "The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.\n\nDepth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.\n\nThe world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its register pass — the card grid retired wholesale, one ruled line per property answering the product question in money (Net on the print wash first, Income in green, Expenses in ink-soft), the ledger's own trailing-cell delete and stamp confirm — and the third pass tightened the record's own truths: every user-visible date now derives from local parts (The Local-Date Rule), the export writes the displayed slice and says so on its control, its stamp, and its filename, and the empty page's paint is mount-gated so the first honest paint is silent. The record tells the truth about itself: the shell's footer names where the data lives on every page, the export's stamp names the slice that was written, and a delete carries a five-second undo. Two deferrals remain, both recorded, not canonized: the Add-Property modal's native checkbox and pending spinner, and the unlinked Reports placeholder; round three's unpicked fronts are queued in the change's records, not canonized here.",
     "keyCharacteristics": [
       "Ivory paper ground (#fbf8f1), ink-navy type (#1b2a41), machine-print green hairline rules (#2e5e4e), stamp red (#a31621) reserved for state marks.",
       "IBM Plex Mono with tabular numerals for every date and money figure, at print density (0.8125rem line; one-line rows ≈39.84px, held at real widths).",
+      "Every user-visible date tells the local truth: a stored date is a calendar name, never a UTC instant, and the one format module owns every derivation (The Local-Date Rule, verified under TZ=Asia/Manila and TZ=America/New_York).",
       "Structure from rules — 1px hairlines everywhere, a 3px double totals rule for closing lines — never from shadows.",
-      "The running balance rail on a print wash down the ledger's right edge always accumulates the book (every entry, date ascending) whatever the display; the caveat \"Balance follows the book, not this view\" prints whenever the view is not the book's own order.",
+      "The running balance rail on a print wash down the ledger's right edge always accumulates the book (every entry, date ascending) whatever the display; the caveat \"Balance follows the book\" prints whenever the view is not the book's own order and names why — \"this view is filtered\", \"sorted newest first\", or both.",
       "Properties is a ruled register, not a card grid: one line per property, Net on the print wash first, Income in green, Expenses in ink-soft, the delete in the reserved trailing margin.",
       "One authored motion (the print-in), removed entirely under prefers-reduced-motion; a restored line prints back in too.",
-      "Honesty signals throughout: the footer's storage note, the export's stamp acknowledgment, the five-second delete undo that restores the original id.",
+      "Honesty signals throughout: the footer's storage note, the export's stamp acknowledgment naming the slice it wrote (all entries at rest, the displayed ledger whenever anything narrows), the five-second delete undo that restores the original id.",
       "2px corners everywhere: squared, printed form fields."
     ],
     "rules": [
@@ -346,13 +358,18 @@
         "section": "typography"
       },
       {
+        "name": "The Local-Date Rule",
+        "body": "Every user-visible date derives from local parts, and localDateString/localMonthKey in src/lib/format.ts are the one source of date truth. A stored date is a calendar string ('YYYY-MM-DD') — the name of a day on the page, not a UTC instant — so formatDate parses the string's own parts and never hands it to the bare ISO constructor (which reads UTC midnight and prints the day before everywhere west of UTC). The form's blank line and the export's filename stamp write localDateString; the current-month check and the trend buckets compare a stored string's own prefix against localMonthKey, each bucket month derived from local parts with the day pinned to the 1st, so a 31st can never skip a bucket; the carried-forward label reads the stored string's parts the same way. No surface reaches for toISOString, whose UTC day is yesterday's page for most of a UTC+8 morning. Verified under TZ=Asia/Manila and TZ=America/New_York.",
+        "section": "typography"
+      },
+      {
         "name": "The Flat Page Rule",
         "body": "The page never casts shadows; a floating surface may cast one, softly. Hover on a page element changes color, never elevation.",
         "section": "elevation"
       },
       {
         "name": "The Book-Authority Rule",
-        "body": "The running balance is the book's, not the view's: it always accumulates every entry in date-ascending order, whatever slice or sort the page displays, and the caveat names the divergence whenever the display is not the book itself. A rail that recomputed per view would print accounts that never existed.",
+        "body": "The running balance is the book's, not the view's: it always accumulates every entry in date-ascending order, whatever slice or sort the page displays, and the caveat names the divergence — and why (\"this view is filtered\", \"sorted newest first\", or both) — whenever the display is not the book itself. A rail that recomputed per view would print accounts that never existed.",
         "section": "components"
       },
       {
@@ -363,23 +380,27 @@
     ],
     "dos": [
       "Do set every figure in IBM Plex Mono with tabular numerals, formatted through the one formatMoney (₱, two fraction digits always) and the one formatDate.",
+      "Do tell the local truth in every date: a stored string is a calendar name, not a UTC instant — parse its parts (formatDate), write local parts (localDateString), bucket by parts with the day pinned to the 1st (localMonthKey), and never reach for toISOString or the bare ISO constructor on a stored string (The Local-Date Rule).",
       "Do build structure from the rules: 1px hairlines for rows, fields, and dividers; the 3px double totals rule for closing lines; print underlines for headers and the active tab.",
-      "Do keep the rail on the book: it always accumulates every entry, date ascending, whatever the page displays (sorting removal is off, so the sheet opens chronological), and the caveat \"Balance follows the book, not this view\" prints whenever the display differs — any active filter, any sort that is not date-ascending. No caveat in the book's own order.",
+      "Do keep the rail on the book: it always accumulates every entry, date ascending, whatever the page displays (sorting removal is off, so the sheet opens chronological), and the caveat \"Balance follows the book\" prints whenever the display differs — any active filter, any sort that is not date-ascending — naming why: \"this view is filtered\", \"sorted newest first\", or both. No caveat in the book's own order.",
       "Do name every totals claim honestly: the strip's label and aria-label total exactly the slice its page displays, and say which page semantics they carry (\"Displayed ledger\" vs \"All entries\").",
+      "Do write the displayed slice and say so: the export control reads \"Export CSV · All entries\" at rest and \"Export CSV · Displayed ledger\" whenever anything narrows, the stamp and the CSV's filename name the same slice, at rest the displayed slice IS the book (the footer's backup promise holds exactly), and the Transactions header's count caption names what filters hide — \"N of M entries\" against the property scope's total, the plain count at rest; Overview keeps totaling the pure scope, never the ledger's filters.",
       "Do say where the record lives and what each write did: the footer's storage note on every page, the export's stamp acknowledgment, and the delete's five-second undo restoring the original id.",
       "Do keep every actionable surface on the 2px print outline (or the field ring) on focus-visible — rail, toggle, tabs, disclosure, delete control — never the browser default.",
       "Do keep stamp red for state marks only — destructive confirms and validation failures — squared, uppercase mono, bordered or grounded.",
-      "Do keep one primary control per screen; everything else is quiet ink.",
+      "Do keep one ink primary per screen — the masthead's \"+ Add transaction\"; the rail's \"Add Property\" is a quiet outline, and everything else is quiet ink.",
       "Do keep every overflow inside its own ruled region (tables and the tab row scroll; the main column floors at min-w-0) so the paper never leaks at 390px.",
       "Do honor prefers-reduced-motion by removing the print-in entirely.",
       "Do keep the form's validation to one voice: the authored stamp names only the actually-missing fields, read as a person says them — no native `required` bubbles.",
       "Do keep every accelerator honest: \"Reset filters\" prints only when there is something to reset and unwinds exactly the counted controls; \"/\" reaches the search field unless the hand is already writing in a field; the dialog's every close path returns focus to the trigger that opened it.",
-      "Do carry the 44px touch standard wherever a thumb owns the surface — the masthead's primary below lg, the form's radios by label padding, the bottom-sheet confirms, the Undo — while the desktop control line stays 2.25rem."
+      "Do carry the 44px touch standard wherever a thumb owns the surface — the masthead's primary below lg, the form's radios by label padding, the ledger's sort headers grown by padding (the caption type never grows to fake it), the bottom-sheet confirms, the Undo — while the desktop control line stays 2.25rem.",
+      "Do keep the skip link the document's first Tab stop — quiet until it holds focus, then the printed ink stamp at the page's corner, landing on #main-content."
     ],
     "donts": [
       "Don't put shadows on the page at rest — only a floating surface gets one, softly.",
       "Don't invent a budget mark, an over-budget row tint, or any other stamp-red decoration; no budget concept exists in the product (renegotiated 2026-11-21).",
       "Don't set money in the sans face, drop the fraction digits, or re-create a local formatter.",
+      "Don't reach for toISOString or hand a stored date to the bare ISO constructor — the stored string is a calendar name, not a UTC instant (The Local-Date Rule).",
       "Don't round past 2px, and don't introduce pills, rings, or cards — the Properties register retired the world's one card grid; no built surface ships a card.",
       "Don't sew a destructive word into the record: the delete control is an icon in the sheet's reserved trailing margin, revealed on hover, focus, or touch — never a caption link inside the description line.",
       "Don't replace the ruled empty state with a card or illustration.",
