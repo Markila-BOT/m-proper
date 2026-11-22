@@ -188,8 +188,10 @@ async function waitForApiHealth(baseUrl, timeoutMs) {
 }
 
 // TCP-connect probe: the vite dev server is ready when its port accepts
-// connections (it prints "ready in" just before that).
-function probeTcpPort(port, timeoutMs = 2000) {
+// connections (it prints "ready in" just before that). Vite binds "localhost",
+// which resolves to either family — probe both 127.0.0.1 and ::1 so a
+// ready server is never invisible to a single-family probe.
+function probeTcpAddress(port, host, timeoutMs) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     const done = (ok) => {
@@ -200,8 +202,15 @@ function probeTcpPort(port, timeoutMs = 2000) {
     socket.once('connect', () => done(true));
     socket.once('timeout', () => done(false));
     socket.once('error', () => done(false));
-    socket.connect(port, '127.0.0.1');
+    socket.connect(port, host);
   });
+}
+
+async function probeTcpPort(port, timeoutMs = 2000) {
+  return (
+    (await probeTcpAddress(port, '127.0.0.1', timeoutMs / 2)) ||
+    (await probeTcpAddress(port, '::1', timeoutMs / 2))
+  );
 }
 
 async function waitForTcpPort(port, timeoutMs, label) {
