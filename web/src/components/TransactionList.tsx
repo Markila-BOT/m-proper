@@ -349,7 +349,7 @@ export default function TransactionList({
           Balance follows the book · {caveatWhy.join(' · ')}
         </p>
       )}
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         {/* The printed page: fixed column budget, one-line rows. At sm and
             up the sheet floors at its 55rem print width — wide enough that
             Category and Property print their words and the description

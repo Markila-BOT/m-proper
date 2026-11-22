@@ -64,5 +64,5 @@
 
 ## 9. sr-only positioning leak (2026-11-22, found by the verdict-round subagent's close-out, live-proven)
 
-- [ ] 9.1 Make every sliding ruled region its own positioning context (`relative` on the `overflow-x-auto` wrappers: the register's sheet, its skeleton, and the ledger's sheet) so the sr-only Actions header spans stop climbing to the viewport and inflating the page's scrollable area — verified at 390 with rows present and transactions seeded (register and ledger both scrollWidth 390/390)
-- [ ] 9.2 Suite stays 32/32 with the fix
+- [x] 9.1 Make every sliding ruled region its own positioning context (`relative` on the `overflow-x-auto` wrappers: the register's sheet, its skeleton, and the ledger's sheet) so the sr-only Actions header spans stop climbing to the viewport and inflating the page's scrollable area — verified at 390 with rows present and transactions seeded (register and ledger both scrollWidth 390/390)
+- [x] 9.2 Suite stays 32/32 with the fix

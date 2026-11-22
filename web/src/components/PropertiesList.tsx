@@ -109,7 +109,7 @@ export default function PropertiesList() {
             What is each property making me? The register answers line by line.
           </p>
         </header>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <div className="w-full min-w-[55rem]">
             {[0, 1, 2].map((index) => (
               <div
@@ -189,7 +189,7 @@ export default function PropertiesList() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           {/* The printed sheet: fixed column budget, one ruled line per
               property, the money in tabular mono. Below sm the name
               column freezes at the left edge and the print slides inside
