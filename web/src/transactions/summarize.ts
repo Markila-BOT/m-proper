@@ -3,9 +3,13 @@
 // figures, the six-month trend, and the running balance.
 //
 // Month bucketing preserves Summary.tsx's exact boundaries: each month is
-// `new Date()` with setMonth(getMonth() - i), keyed by toISOString().slice(0, 7),
-// matched with date.startsWith, and labeled with toLocaleDateString('en-US').
+// the local calendar month i months back (day pinned to the 1st, so a 31st
+// can never roll a subtraction into the next month), keyed by its own
+// local parts (localMonthKey — never toISOString, whose UTC month lags a
+// UTC+8 month's first hours), matched with date.startsWith, and labeled
+// with toLocaleDateString('en-US').
 import { TRANSACTION_TYPE } from '../lib/domain'
+import { localMonthKey } from '../lib/format'
 import type { Transaction, MonthlyTotal } from '../types/transactions'
 
 export type TransactionSummary = {
@@ -34,7 +38,9 @@ export function summarizeTransactions(
   const totalIncome = sumAmounts(transactions, TRANSACTION_TYPE.INCOME)
   const totalExpenses = sumAmounts(transactions, TRANSACTION_TYPE.EXPENSE)
 
-  const currentMonthKey = new Date().toISOString().slice(0, 7)
+  // The month the local clock sits in, as a stored string's own bucket
+  // key — a stored 'YYYY-MM-DD' belongs to it by its own prefix.
+  const currentMonthKey = localMonthKey()
   const currentMonthTransactions = transactions.filter((t) =>
     t.date.startsWith(currentMonthKey),
   )
@@ -61,10 +67,12 @@ export function monthlyTotals(
   months = 6,
 ): MonthlyTotal[] {
   const totals: MonthlyTotal[] = []
+  // The local clock's own position, read once: every bucket derives from
+  // these local parts, with the day pinned to the 1st.
+  const now = new Date()
   for (let i = months - 1; i >= 0; i--) {
-    const date = new Date()
-    date.setMonth(date.getMonth() - i)
-    const monthKey = date.toISOString().slice(0, 7)
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const monthKey = localMonthKey(monthDate)
     const monthTransactions = transactions.filter((t) =>
       t.date.startsWith(monthKey),
     )
@@ -73,7 +81,7 @@ export function monthlyTotals(
     const expenses = sumAmounts(monthTransactions, TRANSACTION_TYPE.EXPENSE)
 
     totals.push({
-      month: date.toLocaleDateString('en-US', {
+      month: monthDate.toLocaleDateString('en-US', {
         month: 'short',
         year: 'numeric',
       }),

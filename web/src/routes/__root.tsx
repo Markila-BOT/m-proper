@@ -15,12 +15,12 @@ import appCss from '../styles.css?url'
 import type { QueryClient } from '@tanstack/react-query'
 
 import { useLocalStorage, useTransactionFilters, useCSVExport } from '../hooks'
+import type { ExportSliceLabel } from '../hooks/useCSVExport'
 import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from '../hooks/useProperties'
 import { addTransaction } from '../transactions'
-import { propertyScopeLabel } from '../components/Summary'
 import AppLayout from '../components/AppLayout'
 import AppHeader from '../components/AppHeader'
 import NavigationTabs from '../components/NavigationTabs'
@@ -95,8 +95,10 @@ function RootComponent() {
     }
   }, [exportedScope])
 
-  // The shell's slice of the ledger: the selected property's transactions.
-  // The interactive filters belong to the Transactions view (ADR-0003).
+  // The shell's slice of the ledger: the DISPLAYED slice — the same rows
+  // the Transactions page shows, its selected-property scope plus the
+  // active filters (which live in the ledger filter store, so the shell
+  // reads them without a corridor of props — ADR-0003 stands).
   const { filteredTransactions } = useTransactionFilters(
     transactions,
     selectedProperty,
@@ -105,17 +107,20 @@ function RootComponent() {
   // CSV export
   const { exportToCSV } = useCSVExport()
 
-  // The export control's disclosed scope: the shell's selected-property
-  // slice — the same slice handleExport writes. The data flow is
-  // unchanged; the control names it.
-  const exportScopeLabel =
-    selectedProperty === 'all'
-      ? 'All properties'
-      : propertyScopeLabel(selectedProperty, properties)
+  // The export control's honest name for what it writes. The displayed
+  // slice is always a subset of the book, so equal cardinality means
+  // equal sets: at rest the display IS the book and the control says so
+  // — the footer's backup promise holds exactly. Anything narrower — a
+  // property scope, a filter — is the displayed ledger, and the control
+  // says that instead.
+  const displayedIsBook = filteredTransactions.length === transactions.length
+  const exportScopeLabel: ExportSliceLabel = displayedIsBook
+    ? 'All entries'
+    : 'Displayed ledger'
 
   // Event handlers — transaction add/delete delegate to the transactions module
   const handleExport = () => {
-    exportToCSV(filteredTransactions, properties, selectedProperty)
+    exportToCSV(filteredTransactions, properties, exportScopeLabel)
     setExportedScope(exportScopeLabel)
   }
 
@@ -145,7 +150,14 @@ function RootComponent() {
         addTriggerRef={addTriggerRef}
       />
       <NavigationTabs />
-      <main className="flex-1">
+      {/* The skip link's landing ground (AppLayout owns the link itself):
+          the routed page's own region, focusable so the jump is real. The
+          outline stays quiet — the region is a destination, not a control. */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 focus-visible:outline-none"
+      >
         <Outlet />
       </main>
       <TransactionForm

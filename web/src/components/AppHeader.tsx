@@ -1,9 +1,10 @@
 // web/src/components/AppHeader.tsx
 // The passbook shell's top rule: the product's name set with quiet
-// confidence in ink, the export control disclosing the scope it writes
-// (the selected-property slice), and "+ Add transaction" as the one
-// primary control. The data flow is unchanged — export still writes the
-// shell's selected-property slice to CSV; the control now says so.
+// confidence in ink, the export control disclosing the slice it writes
+// (the displayed ledger while filters narrow it, all entries at rest),
+// and "+ Add transaction" as the one primary control. The data flow is
+// one store deep — export writes the displayed slice the Transactions
+// page shows, and the control now says so.
 //
 // The name is a link home, not a heading: each route's title is the
 // page's one h1, so the landmarks stay clean.

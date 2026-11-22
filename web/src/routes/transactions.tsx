@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useLocalStorage, useTransactionFilters } from '../hooks'
 import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from '../hooks/useProperties'
-import { removeTransaction, restoreTransaction } from '../transactions'
+import {
+  filterTransactions,
+  removeTransaction,
+  restoreTransaction,
+} from '../transactions'
 import type { Transaction } from '../types/transactions'
 import FilterControls from '../components/FilterControls'
 import TransactionList from '../components/TransactionList'
@@ -98,6 +102,21 @@ function TransactionsView() {
       ? 'All properties'
       : propertyScopeLabel(selectedProperty, properties)
 
+  // The count caption's two truths: the scoped total (every entry of the
+  // selected property's scope, filters notwithstanding) and the displayed
+  // count. A filter that hides lines is named — "N of M entries" — while
+  // at rest the display IS the scope and the plain count keeps its words.
+  const scopedTransactions = useMemo(
+    () => filterTransactions(transactions, { selectedProperty }),
+    [transactions, selectedProperty],
+  )
+  const countCaption =
+    filteredTransactions.length < scopedTransactions.length
+      ? `${filteredTransactions.length} of ${scopedTransactions.length} entries`
+      : `${scopedTransactions.length} ${
+          scopedTransactions.length === 1 ? 'entry' : 'entries'
+        }`
+
   return (
     <div className="space-y-5 px-6 py-6 lg:px-9">
       <header className="flex items-baseline justify-between gap-4">
@@ -109,8 +128,7 @@ function TransactionsView() {
           Transactions
         </h1>
         <p className="font-mono text-caption font-semibold text-ink-soft">
-          {filteredTransactions.length}{' '}
-          {filteredTransactions.length === 1 ? 'entry' : 'entries'}
+          {countCaption}
         </p>
       </header>
       <TotalsLine transactions={filteredTransactions} scopeLabel={scopeLabel} />

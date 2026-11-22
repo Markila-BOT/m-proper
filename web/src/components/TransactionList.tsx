@@ -11,10 +11,11 @@
 // chronological accumulation owes it — every entry, date ascending, filters
 // and sorts notwithstanding. A caption caveat names the divergence
 // whenever the display is not the book's own order — any active filter,
-// any sort that is not date-ascending — because a rail that recomputed
-// itself per view would print accounts that never existed. The totals
-// strip above keeps its own displayed-slice claim; the tfoot below keeps
-// the carried-forward of what the page displays.
+// any sort that is not date-ascending — and names WHY (filtered, sorted,
+// or both), because a rail that recomputed itself per view would print
+// accounts that never existed. The totals strip above keeps its own
+// displayed-slice claim; the tfoot below keeps the carried-forward of
+// what the page displays.
 //
 // The sheet is a printed page of fixed column budget (table-fixed): the
 // description keeps the reading width, Category and Property print as
@@ -125,6 +126,17 @@ export default function TransactionList({
     return () => window.removeEventListener('resize', compute)
   }, [transactions.length])
 
+  // The empty page's own paint is mount-gated, the blank lines' own
+  // pattern: the server renders against its empty snapshot while the
+  // browser may already hold entries, and a lagging hydration window
+  // would print "No entries" over a held book — A3's empty-page episode,
+  // reproduced at the load boundary. The first honest paint is silent;
+  // the ruled "No entries" line belongs to the live snapshot alone.
+  const [isLedgerMounted, setIsLedgerMounted] = useState(false)
+  useEffect(() => {
+    setIsLedgerMounted(true)
+  }, [])
+
   const propertyNames = useMemo(() => {
     const names = new Map<string, string>()
     for (const property of properties) names.set(property.id, property.name)
@@ -193,6 +205,24 @@ export default function TransactionList({
   // equal cardinality means equal sets.
   const isBookSlice = transactions.length === bookTransactions.length
 
+  // The caveat names WHY the display is not the book's own order, not
+  // only that it isn't: a filter took lines away, the sort is not the
+  // passbook's chronological one, or both. Date-descending is "newest
+  // first" in the world's own words; any other column names itself.
+  const SORT_DIVERGENCE_LABELS: Record<string, string> = {
+    date: 'sorted newest first',
+    description: 'sorted by description',
+    category: 'sorted by category',
+    property: 'sorted by property',
+    amount: 'sorted by amount',
+  }
+  const caveatWhy = [
+    !isBookSlice && 'this view is filtered',
+    !isDateAsc &&
+      (SORT_DIVERGENCE_LABELS[sorting[0]?.id ?? ''] ??
+        'sorted by another column'),
+  ].filter((bit): bit is string => bit !== false)
+
   // The rail: the book's own accumulation, always — every entry in the
   // record, date ascending, stable for equal dates. Each displayed row
   // prints the balance the book owes it whatever order the rows sit in,
@@ -256,6 +286,9 @@ export default function TransactionList({
       : (transactions.find((t) => t.id === confirmingId) ?? null)
 
   if (transactions.length === 0) {
+    // Pre-mount, the region stays quiet (see isLedgerMounted above): the
+    // book's absence is the live snapshot's claim to make.
+    if (!isLedgerMounted) return null
     // The printed-totals idiom for nothing: a ruled line, not a card.
     return (
       <div className="rule-totals rule-hairline py-4">
@@ -271,16 +304,21 @@ export default function TransactionList({
   // The empty page returns above, so at least one row is displayed here.
   // "Carried forward" is the page's closing claim, and it claims what the
   // page displays: the latest date of the displayed rows, whatever order
-  // they sit in, with the net of every displayed entry beneath the 3px
+  // they sit in — a stored 'YYYY-MM-DD' string compared as the calendar
+  // string it is (lexicographic order IS chronological order for the
+  // stored format), with the net of every displayed entry beneath the 3px
   // double rule. (The rail's book-claim lives above; the strip's
   // displayed-slice claim lives higher still.)
-  const carriedForwardDate = Math.max(
-    ...displayedRows.map((row) => +new Date(row.original.date)),
+  const carriedForwardDate = displayedRows.reduce(
+    (latest, row) => (row.original.date > latest ? row.original.date : latest),
+    displayedRows[0].original.date,
   )
-  const carriedForwardMonth = new Date(carriedForwardDate).toLocaleDateString(
-    'en-US',
-    { month: 'short', year: 'numeric' },
-  )
+  const [carriedYear, carriedMonth] = carriedForwardDate.split('-').map(Number)
+  const carriedForwardMonth = new Date(
+    carriedYear,
+    carriedMonth - 1,
+    1,
+  ).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   const netBalance = displayedRows.reduce(
     (sum, row) =>
       sum +
@@ -301,12 +339,14 @@ export default function TransactionList({
   return (
     <div>
       {/* The caveat: one line, caption-voiced, printed whenever the
-          display is not the book's own order — a filter took lines away,
-          or the sort is not date-ascending. The rail keeps auditing the
-          book either way; the caveat is the honesty that says so. */}
-      {(!isBookSlice || !isDateAsc) && (
+          display is not the book's own order — and it names why: a filter
+          took lines away ("this view is filtered"), the sort is not the
+          chronological one ("sorted newest first" / "sorted by a column"),
+          or both. The rail keeps auditing the book either way; the caveat
+          is the honesty that says so. */}
+      {caveatWhy.length > 0 && (
         <p className="pb-2 font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
-          Balance follows the book, not this view
+          Balance follows the book · {caveatWhy.join(' · ')}
         </p>
       )}
       <div className="overflow-x-auto">
@@ -364,7 +404,10 @@ export default function TransactionList({
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
-                          className={`inline-flex items-center gap-1.5 underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-print${
+                          // The sheet's touch standard reaches the sort
+                          // headers: 44px of target grown by padding — the
+                          // caption type never grows to fake it.
+                          className={`inline-flex items-center gap-1.5 py-3.5 underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-print${
                             sorted ? ' text-ink' : ''
                           }`}
                         >

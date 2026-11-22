@@ -12,6 +12,7 @@ import type { RefObject } from 'react'
 import type { Transaction } from '../types/transactions'
 import type { Property } from '../types/properties'
 import { TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS } from '#/lib/domain'
+import { localDateString } from '#/lib/format'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../transactions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import { Label } from './ui/label'
@@ -50,11 +51,12 @@ const fieldInput =
 // prints in the mono face — the sans never sets a figure.
 const fieldDateInput = `${fieldInput} font-mono tabular-nums`
 
-// The blank line the form re-opens as after a record: today's date, the
-// expense type, the shell's property scope.
+// The blank line the form re-opens as after a record: today's LOCAL date
+// (never toISOString — whose UTC day is yesterday's page for a UTC+8
+// morning entry), the expense type, the shell's property scope.
 function blankFormData(selectedProperty: string) {
   return {
-    date: new Date().toISOString().split('T')[0],
+    date: localDateString(),
     description: '',
     category: '',
     amount: '',

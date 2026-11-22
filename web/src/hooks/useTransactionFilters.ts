@@ -1,15 +1,27 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { Transaction } from '../types/transactions'
 import { filterTransactions } from '../transactions'
+import { useLedgerFilterStore } from '../stores/ledgerFilterStore'
 
 export function useTransactionFilters(
   transactions: Transaction[],
   selectedProperty: string,
 ) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [selectedType, setSelectedType] = useState('')
-  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  // The interactive filters live in the ledger filter store (critique
+  // round three): the Transactions view drives them, the shell's export
+  // reads them, and both compute the same displayed slice from this one
+  // seam. The selected-property scope arrives as the argument it always
+  // was.
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedCategory,
+    setSelectedCategory,
+    selectedType,
+    setSelectedType,
+    dateRange,
+    setDateRange,
+  } = useLedgerFilterStore()
 
   // Filter transactions based on selected property and other filters
   const filteredTransactions = useMemo(

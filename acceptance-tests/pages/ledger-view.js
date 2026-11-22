@@ -15,8 +15,8 @@
 // budget (table-fixed) — descriptions keep their inner span (readable in
 // full even where the cell truncates) and the balance remains the sixth
 // cell; the rail now audits the BOOK (every entry, date ascending)
-// whatever the view displays, and its caveat reads "Balance follows the
-// book, not this view".
+// whatever the view displays, and its caveat opens "Balance follows the
+// book", naming why the view diverges (filtered, sorted, or both).
 
 const shell = require('./app-shell');
 
@@ -109,14 +109,15 @@ async function balanceColumnValues(page) {
 }
 
 async function expectBalanceCaveat(page) {
-  // 7.2's truth: the rail always accumulates the book's chronological
-  // order — it audits the book, not the display — and the caption caveat
-  // prints whenever the display is not the book's own order: any active
-  // filter, any sort that is not date-ascending. The caveat line prints
-  // above the sheet.
+  // The rail's truth, caveat round three: the caption prints whenever the
+  // display is not the book's own order — any active filter, any sort that
+  // is not date-ascending — and now names WHY ("this view is filtered",
+  // "sorted newest first", both). The stable prefix is what the step
+  // anchors on; the why-suffix is the app's own words. The caveat line
+  // prints above the sheet.
   const caveat = page
     .locator('main')
-    .getByText(/balance follows the book, not this view/i);
+    .getByText(/balance follows the book/i);
   await caveat.waitFor({ state: 'visible', timeout: 5000 });
   return caveat;
 }

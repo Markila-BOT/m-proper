@@ -168,8 +168,13 @@ export default function PropertySidebar({
           </button>
         </div>
 
+        {/* One ink primary per screen: the masthead's "+ Add
+            transaction" keeps the ink; this control steps down to the
+            quiet outline treatment — hairline rule, soft ink, the print
+            wash on hover — a way to add a property, not the page's one
+            loudest claim. */}
         <PropertyModal>
-          <button className="flex justify-center items-center h-9 px-4 w-full text-sm font-semibold text-paper bg-ink rounded-[2px] transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-print">
+          <button className="flex justify-center items-center h-9 px-4 w-full text-sm font-semibold text-ink-soft border border-rule bg-paper rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print">
             <span>Add Property</span>
           </button>
         </PropertyModal>

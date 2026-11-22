@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useLocalStorage, useTransactionFilters } from '../hooks'
+import { useLocalStorage } from '../hooks'
 import {
   useSelectedProperty,
   usePropertiesWithStates,
 } from '../hooks/useProperties'
+import { filterTransactions } from '../transactions'
 import Summary from '../components/Summary'
 
 export const Route = createFileRoute('/overview')({
@@ -18,11 +20,13 @@ function OverviewView() {
   const { properties } = usePropertiesWithStates()
 
   // The Overview's slice of the ledger: the selected property's
-  // transactions (ADR-0003 — each view owns its filter state; the
-  // interactive filters belong to the Transactions view).
-  const { filteredTransactions } = useTransactionFilters(
-    transactions,
-    selectedProperty,
+  // transactions and nothing else (ADR-0003 — the interactive filters
+  // belong to the Transactions view, and this page's strip claims "All
+  // entries" of the scope, so it must never total a filtered-away slice
+  // some other page's apparatus holds).
+  const scopedTransactions = useMemo(
+    () => filterTransactions(transactions, { selectedProperty }),
+    [transactions, selectedProperty],
   )
 
   return (
@@ -31,7 +35,7 @@ function OverviewView() {
         <h1 className="text-[17px] font-bold text-ink">Overview</h1>
       </header>
       <Summary
-        transactions={filteredTransactions}
+        transactions={scopedTransactions}
         properties={properties}
         selectedProperty={selectedProperty}
       />

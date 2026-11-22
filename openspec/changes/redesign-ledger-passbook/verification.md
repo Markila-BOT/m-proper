@@ -41,3 +41,23 @@ A2/B2 scored 25/40 (21 prior). Round-one fixes verified as strengths. New P0s fr
 ## Still deferred (recorded)
 
 The form's Expense-default greeting, recents/clone, entry editing, PropertyModal's native checkbox and pending spinner, durability beyond the footer disclosure, the /reports placeholder.
+
+---
+
+# Round three — 2026-11-22 (critique 28/40 → this pass)
+
+## Findings that drove it
+
+A3/B3 scored 28/40 ("Good — deductions cluster on data integrity, not style"). One P0: the date pipeline used the platform's laziest idiom (toISOString / the bare ISO constructor) — the form defaulted to UTC's date (verified: local Nov 22, form Nov 21), formatDate parsed stored strings as UTC midnight (a day early west of UTC), and month keys followed toISOString. P2: the export wrote a different slice than the page showed, undisclosed. Minors: "2 entries" with no "of 10", no skip link (~14 Tabs to the ledger), 16px sort targets, a caveat that didn't say why, two ink primaries on Properties, and A3's one unreproducible stale-store episode (page showed its empty state while storage held 10 lines).
+
+## What landed (user-confirmed: date P0 front, displayed-slice export, full-sweep minors)
+
+- The pipeline tells the local truth, verified by script under `TZ=Asia/Manila` and `TZ=America/New_York` against the app's own module functions: the form's blank line derives from local parts (`localDateString`, never toISOString — whose UTC day is yesterday's page at Manila 02:00, tomorrow's at New York 19:00); `formatDate` parses 'YYYY-MM-DD' as a calendar string (a stored '2026-11-22' renders "Nov 22, 2026" in both zones; the retired derivation printed Nov 21 in New York); month/current-month keys come from stored strings' own parts and local now-parts (`localMonthKey`, day pinned to the 1st so a 31st can never skip a bucket); the carried-forward label and the export filename stamp follow the same rule (no bare ISO constructor on a stored string survives).
+- Export follows the displayed slice: the ledger's interactive filters lifted into a small zustand store (`ledgerFilterStore`) the shell reads — no prop corridor; the control and stamp read "Export CSV · All entries" at rest (displayed = the book, the backup promise holds exactly) and "· Displayed ledger" whenever anything narrows; the download filename names the slice; Overview keeps totaling the pure scope, never the ledger's apparatus.
+- Minors: the count caption reads "N of M entries" while a filter hides lines; a skip link is the document's first Tab stop, quiet until focused, landing on #main-content (the ledger's heading region); sort headers are 44px targets grown by padding; the caveat names why — "Balance follows the book · this view is filtered" / "· sorted newest first" / both; the rail's Add Property demoted to the quiet outline (one ink primary per screen, the masthead's).
+- Stale-store attempt (one targeted pass, live): synthetic storage events, rapid filter/sort mutations, and a visibility flip with 60 cross-tab writes/removes produced zero empty-state samples over a held book — but a direct SSR load of /transactions with the module scripts held back two seconds reproduced the symptom decisively (126 of 127 samples painted "No entries" while storage held 10 lines): the server snapshot is '[]' by design, so a lagging hydration window claims a blank book. Root cause confirmed; fix: the empty state is mount-gated (the blank ruled lines' own pattern — server and client paint identically, the first honest paint is silent). Re-run after the fix: 0 of 127 samples; the mid-session vectors stay unreproduced.
+- Suite 31/31 via throwaway-branch proof (the git-clean build gates demand a committed tree; the proof branch was dissolved after, work restored uncommitted); web production build (client + SSR) green; tsc/eslint/prettier clean.
+
+## Still deferred (recorded, unpicked)
+
+The reading-column rebalance (description truncation at 1280), Unknown-Property denormalization + property-delete line warning, the undo snackbar re-pin + permanent-deletion status + edit path, the filtered-empty "No matches" wiring.

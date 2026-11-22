@@ -56,8 +56,8 @@
 
 ## 8. Critique round three (2026-11-22, user-confirmed: date P0 front, displayed-slice export, full-sweep minors)
 
-- [ ] 8.1 P0: the date pipeline tells the local truth — form defaults from local parts (never toISOString), formatDate parses 'YYYY-MM-DD' as a calendar string (never the bare ISO constructor), month/current-month keys derive from stored strings and local parts, verified under TZ=Asia/Manila and TZ=America/New_York
-- [ ] 8.2 Export follows the displayed slice with honest labels: "Export CSV · Displayed ledger" while filters are active (and the stamp says so), "· All entries" at rest — at rest the displayed slice IS the book, so the backup promise holds
-- [ ] 8.3 Minors: the count caption reads "N of M entries" when filtered; a keyboard skip link jumps to the ledger; sort targets 44px; the caveat names WHY the view diverges (filtered vs sorted); Properties' second primary demoted to quiet; one targeted stale-store reproduction attempt (fix if reproduced, record if not)
-- [ ] 8.4 Suite stays 31/31; the detector's clean state holds
+- [x] 8.1 P0: the date pipeline tells the local truth — form defaults from local parts (never toISOString), formatDate parses 'YYYY-MM-DD' as a calendar string (never the bare ISO constructor), month/current-month keys derive from stored strings and local parts, verified under TZ=Asia/Manila and TZ=America/New_York
+- [x] 8.2 Export follows the displayed slice with honest labels: "Export CSV · Displayed ledger" while filters are active (and the stamp says so), "· All entries" at rest — at rest the displayed slice IS the book, so the backup promise holds
+- [x] 8.3 Minors: the count caption reads "N of M entries" when filtered; a keyboard skip link jumps to the ledger; sort targets 44px; the caveat names WHY the view diverges (filtered vs sorted); Properties' second primary demoted to quiet; one targeted stale-store reproduction attempt (fix if reproduced, record if not)
+- [x] 8.4 Suite stays 31/31; the detector's clean state holds
 - Queued (recorded, unpicked this round): the reading-column rebalance (description truncation at 1280), Unknown-Property denormalization + property-delete line warning, the undo snackbar re-pin + permanent-deletion status + edit path, the filtered-empty "No matches" wiring

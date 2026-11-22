@@ -22,6 +22,17 @@ export default function AppLayout({
   // rendered once, on every page.
   return (
     <div className="flex min-h-screen bg-paper">
+      {/* The keyboard reader's front door, and the document's first Tab
+          stop: quiet until it holds focus, then a printed stamp pinned to
+          the page's corner. It jumps past the rail to the routed page's
+          own region (#main-content) — on the ledger, the table's heading
+          region above the sheet. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[2px] focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-print"
+      >
+        Skip to content
+      </a>
       <PropertySidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={onToggleSidebar}
