@@ -299,6 +299,52 @@
   }
 }
 
+/* The occluding popover's motion (decision 8): enter 250ms ease-out, exit
+ * 150ms, scale 0.96 from the trigger's origin. The pane is opaque paper, so
+ * this is travel over content, not a material effect; reduced motion gates
+ * the travel and keeps an opacity cross-fade. */
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.popover-surface {
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+.popover-surface[data-state='open'] {
+  animation: popover-in 250ms ease-out;
+}
+
+.popover-surface[data-state='closed'] {
+  animation: popover-out 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover-surface[data-state='open'],
+  .popover-surface[data-state='closed'] {
+    animation: none;
+    transition: opacity 150ms ease-out;
+  }
+}
+
 /* The passbook's one authored motion moment: a newly recorded line prints
  * itself onto the page — a left-to-right wipe with an exponential ease-out,
  * the balance figure landing last. Nothing else animates. */

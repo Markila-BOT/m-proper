@@ -54,3 +54,41 @@ export function localDateString(date = new Date()): string {
 export function localMonthKey(date = new Date()): string {
   return localDateString(date).slice(0, 7)
 }
+
+// A typed calendar string, read strictly. Only 'YYYY-MM-DD' is a calendar
+// date here: the parts construct the LOCAL date the string names (never
+// the ISO constructor, never toISOString), and the parts round-trip back
+// so overflow days — 2025-02-30, 2025-13-01 — are rejected rather than
+// silently rolled into March.
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+export function parseCalendarDate(text: string): Date | null {
+  if (!CALENDAR_DATE.test(text)) return null
+  const [year, month, day] = text.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  const roundTrips =
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  return roundTrips ? date : null
+}
+
+export type CalendarDateIssue = 'required' | 'invalid' | 'before' | 'after'
+
+// Why a typed calendar string cannot be stored, or null when it can. The
+// pickers turn the issue into a message that names the problem and the
+// recovery; the stored value never changes on an issue.
+export function calendarDateIssue(
+  text: string,
+  {
+    required = false,
+    min,
+    max,
+  }: { required?: boolean; min?: string; max?: string } = {},
+): CalendarDateIssue | null {
+  if (text === '') return required ? 'required' : null
+  if (!parseCalendarDate(text)) return 'invalid'
+  if (min && text < min) return 'before'
+  if (max && text > max) return 'after'
+  return null
+}

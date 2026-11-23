@@ -17,6 +17,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../transactions'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
+import { DatePicker } from './ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -47,9 +48,6 @@ const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
 const fieldInput =
   'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
-// The tabular-numerals rule reaches inside the form: the date input
-// prints in the mono face — the sans never sets a figure.
-const fieldDateInput = `${fieldInput} font-mono tabular-nums`
 
 // The blank line the form re-opens as after a record: today's LOCAL date
 // (never toISOString — whose UTC day is yesterday's page for a UTC+8
@@ -246,20 +244,13 @@ export default function TransactionForm({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="transaction-date" className={fieldLabel}>
-              Date
-            </Label>
-            <input
-              id="transaction-date"
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, date: e.target.value }))
-              }
-              className={fieldDateInput}
-            />
-          </div>
+          <DatePicker
+            id="transaction-date"
+            label="Date"
+            value={formData.date}
+            onChange={(date) => setFormData((prev) => ({ ...prev, date }))}
+            required
+          />
 
           <div>
             <Label htmlFor="transaction-description" className={fieldLabel}>

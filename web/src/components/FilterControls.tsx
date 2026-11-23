@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select'
+import { DateRangePicker } from './ui/date-picker'
 
 // Radix forbids the empty string as an item value; the filter's "no
 // filter" state maps onto this sentinel and back.
@@ -51,10 +52,6 @@ const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
 const fieldInput =
   'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
-// The tabular-numerals rule reaches inside the form: a date is a figure,
-// so the date inputs print in the mono face like every other date on the
-// page — the sans never sets one.
-const fieldDateInput = `${fieldInput} font-mono tabular-nums`
 
 export default function FilterControls({
   searchTerm,
@@ -80,8 +77,8 @@ export default function FilterControls({
     selectedCategory !== '',
     selectedType !== '',
     showPropertyFilter && selectedProperty !== 'all',
-    dateRange.start !== '',
-    dateRange.end !== '',
+    // The pair is ONE filter: either bound being set narrows the ledger.
+    dateRange.start !== '' || dateRange.end !== '',
   ].filter(Boolean).length
 
   // One action unwinds every active control — the escape hatch from a
@@ -203,35 +200,14 @@ export default function FilterControls({
           </div>
         )}
 
-        {/* Date range */}
-        <div className="min-w-[9.5rem]">
-          <label htmlFor="ledger-start-date" className={fieldLabel}>
-            Start date
-          </label>
-          <input
-            id="ledger-start-date"
-            type="date"
-            value={dateRange.start}
-            onChange={(e) =>
-              onDateRangeChange({ ...dateRange, start: e.target.value })
-            }
-            className={fieldDateInput}
-          />
-        </div>
-        <div className="min-w-[9.5rem]">
-          <label htmlFor="ledger-end-date" className={fieldLabel}>
-            End date
-          </label>
-          <input
-            id="ledger-end-date"
-            type="date"
-            value={dateRange.end}
-            onChange={(e) =>
-              onDateRangeChange({ ...dateRange, end: e.target.value })
-            }
-            className={fieldDateInput}
-          />
-        </div>
+        {/* Date range — one picker for the from/to pair; the typed fields
+            and the calendar trigger share the pair's state. */}
+        <DateRangePicker
+          start={dateRange.start}
+          end={dateRange.end}
+          onChange={onDateRangeChange}
+          className="min-w-[20rem]"
+        />
 
         {/* The reset control prints only when there is something to reset,
             in the row's own caption voice — one action, every counted
