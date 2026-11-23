@@ -143,20 +143,30 @@ function RootComponent() {
       isSidebarCollapsed={isSidebarCollapsed}
       onToggleSidebar={handleToggleSidebar}
     >
-      <AppHeader
-        exportScopeLabel={exportScopeLabel}
-        onExport={handleExport}
-        onAddTransaction={handleAddTransaction}
-        addTriggerRef={addTriggerRef}
-      />
-      <NavigationTabs />
+      {/* The shell's chrome is one glass pane (ADR-0004): the header and the
+          section nav are its rows, sticky over the routed page, carrying only
+          chrome text — the name, the export disclosure, the one primary
+          control, and the tab labels. The pane is the material's one place on
+          the shell: no row paints its own tint, so there is one blur, one
+          edge, and one elevation. */}
+      <div className="glass-surface glass-chrome glass-edge-b z-40">
+        <AppHeader
+          exportScopeLabel={exportScopeLabel}
+          onExport={handleExport}
+          onAddTransaction={handleAddTransaction}
+          addTriggerRef={addTriggerRef}
+        />
+        <NavigationTabs />
+      </div>
       {/* The skip link's landing ground (AppLayout owns the link itself):
           the routed page's own region, focusable so the jump is real. The
-          outline stays quiet — the region is a destination, not a control. */}
+          outline stays quiet — the region is a destination, not a control.
+          It is also the opaque panel every content surface sits on: the
+          glass chrome floats above it, never the other way round (ADR-0004). */}
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 focus-visible:outline-none"
+        className="flex-1 bg-paper focus-visible:outline-none"
       >
         <Outlet />
       </main>

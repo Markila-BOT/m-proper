@@ -55,7 +55,7 @@ export default function PropertySidebar({
     return (
       <nav
         aria-label="Properties"
-        className="flex flex-col w-28 lg:w-80 bg-paper border-r border-rule"
+        className="glass-surface glass-chrome glass-edge-r flex h-screen w-28 flex-col lg:w-80"
       >
         <div className="hidden lg:block p-6 border-b border-rule">
           <div className="flex justify-between items-center mb-4">
@@ -71,7 +71,10 @@ export default function PropertySidebar({
             </button>
           </div>
         </div>
-        <div className="flex-1 p-4 lg:p-6">
+        {/* The state line is content, not chrome: it sits on an opaque
+            panel inside the pane — the pane never scrolls, and a scrolling
+            subtree inside it never paints on glass (decision 3). */}
+        <div className="flex-1 overflow-y-auto bg-paper p-4 lg:p-6">
           <UnreachableState />
         </div>
       </nav>
@@ -82,7 +85,7 @@ export default function PropertySidebar({
     return (
       <nav
         aria-label="Properties"
-        className="flex flex-col w-28 lg:w-16 bg-paper border-r border-rule"
+        className="glass-surface glass-chrome glass-edge-r flex h-screen w-28 flex-col lg:w-16"
       >
         {/* The expand control is a desktop control: below lg the rail
             keeps its captions by viewport (no toggle needed — the names
@@ -97,7 +100,10 @@ export default function PropertySidebar({
           </button>
         </div>
 
-        <div className="flex-1 p-2 space-y-2">
+        {/* The entry list scrolls, so it is paper: the rail's glass is the
+            outer chrome and the scrolling subtree sits on an opaque panel
+            inside it (decision 3). */}
+        <div className="flex-1 overflow-y-auto bg-paper p-2 space-y-2">
           <button
             onClick={() => setSelectedProperty('all')}
             className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors focus-visible:outline-2 focus-visible:outline-print ${
@@ -152,9 +158,10 @@ export default function PropertySidebar({
   return (
     <nav
       aria-label="Properties"
-      className="flex flex-col w-80 bg-paper border-r border-rule"
+      className="glass-surface glass-chrome glass-edge-r flex h-screen w-80 flex-col"
     >
-      {/* Header */}
+      {/* Header — the rail's chrome on the pane: its name, the collapse
+          control, and the one add action. No record text lives here. */}
       <div className="p-6 border-b border-rule">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
@@ -181,133 +188,141 @@ export default function PropertySidebar({
         </PropertyModal>
       </div>
 
-      {/* All Properties Option */}
-      <div className="border-b border-rule">
-        <button
-          onClick={() => setSelectedProperty('all')}
-          className={`w-full px-5 py-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-print ${
-            selectedProperty === 'all'
-              ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
-              : 'hover:bg-print-wash'
-          }`}
-        >
-          <div className="flex items-center space-x-3">
-            <PropertyTypeIcon
-              type={PROPERTY_TYPE.COMMERCIAL}
-              className={
-                selectedProperty === 'all'
-                  ? 'w-5 h-5 text-print'
-                  : 'w-5 h-5 text-ink-soft'
-              }
-            />
-            <div className="flex-1">
-              {/* A span, not a heading: entry names never nest an h3
-                  inside a button — heading-mode navigation stays the
-                  page's own, and the rail's visual hierarchy is
-                  untouched. */}
-              <span
-                className={`block text-sm ${
+      {/* The entries carry money — figures never sit on glass. The rail's
+          glass is the outer chrome; everything from here down is an opaque
+          paper panel inside it, so the scrolling subtree is opaque too —
+          no scrolling subtree inside a pane ever paints on glass
+          (decision 3). */}
+      <div className="flex min-h-0 flex-1 flex-col bg-paper">
+        {/* All Properties Option */}
+        <div className="border-b border-rule">
+          <button
+            onClick={() => setSelectedProperty('all')}
+            className={`w-full px-5 py-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-print ${
+              selectedProperty === 'all'
+                ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
+                : 'hover:bg-print-wash'
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              <PropertyTypeIcon
+                type={PROPERTY_TYPE.COMMERCIAL}
+                className={
                   selectedProperty === 'all'
-                    ? 'font-bold text-ink'
-                    : 'font-medium text-ink'
+                    ? 'w-5 h-5 text-print'
+                    : 'w-5 h-5 text-ink-soft'
+                }
+              />
+              <div className="flex-1">
+                {/* A span, not a heading: entry names never nest an h3
+                    inside a button — heading-mode navigation stays the
+                    page's own, and the rail's visual hierarchy is
+                    untouched. */}
+                <span
+                  className={`block text-sm ${
+                    selectedProperty === 'all'
+                      ? 'font-bold text-ink'
+                      : 'font-medium text-ink'
+                  }`}
+                >
+                  All Properties
+                </span>
+                <p className="text-xs text-ink-soft">View combined data</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Properties List — a ruled list on paper */}
+        <div className="overflow-y-auto flex-1 bg-paper">
+          {properties.map((property) => {
+            const summary = getSummaryForProperty(property.id)
+            const isSelected = selectedProperty === property.id
+
+            return (
+              <button
+                key={property.id}
+                onClick={() => setSelectedProperty(property.id)}
+                className={`w-full px-5 py-3.5 text-left border-b border-rule transition-colors focus-visible:outline-2 focus-visible:outline-print ${
+                  isSelected
+                    ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
+                    : 'hover:bg-print-wash'
                 }`}
               >
-                All Properties
-              </span>
-              <p className="text-xs text-ink-soft">View combined data</p>
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {/* Properties List — a ruled list on paper */}
-      <div className="overflow-y-auto flex-1">
-        {properties.map((property) => {
-          const summary = getSummaryForProperty(property.id)
-          const isSelected = selectedProperty === property.id
-
-          return (
-            <button
-              key={property.id}
-              onClick={() => setSelectedProperty(property.id)}
-              className={`w-full px-5 py-3.5 text-left border-b border-rule transition-colors focus-visible:outline-2 focus-visible:outline-print ${
-                isSelected
-                  ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
-                  : 'hover:bg-print-wash'
-              }`}
-            >
-              <div className="space-y-2.5">
-                {/* Property Header */}
-                <div className="flex items-start space-x-3">
-                  <PropertyTypeIcon
-                    type={property.type}
-                    className={
-                      isSelected
-                        ? 'flex-shrink-0 w-5 h-5 text-print'
-                        : 'flex-shrink-0 w-5 h-5 text-ink-soft'
-                    }
-                  />
-                  <div className="flex-1 min-w-0">
-                    {/* A span at the 16px step the entry name always
+                <div className="space-y-2.5">
+                  {/* Property Header */}
+                  <div className="flex items-start space-x-3">
+                    <PropertyTypeIcon
+                      type={property.type}
+                      className={
+                        isSelected
+                          ? 'flex-shrink-0 w-5 h-5 text-print'
+                          : 'flex-shrink-0 w-5 h-5 text-ink-soft'
+                      }
+                    />
+                    <div className="flex-1 min-w-0">
+                      {/* A span at the 16px step the entry name always
                         printed (an h3's default): same size, same weight
                         per state — the heading simply stops living inside
                         a button. */}
-                    <span
-                      className={`block truncate text-base ${
-                        isSelected
-                          ? 'font-bold text-ink'
-                          : 'font-medium text-ink'
-                      }`}
-                    >
-                      {property.name}
-                    </span>
-                    <div className="flex items-center space-x-1 text-xs text-ink-soft">
-                      <FiMapPin className="w-3 h-3" />
-                      <span className="truncate">{property.address}</span>
+                      <span
+                        className={`block truncate text-base ${
+                          isSelected
+                            ? 'font-bold text-ink'
+                            : 'font-medium text-ink'
+                        }`}
+                      >
+                        {property.name}
+                      </span>
+                      <div className="flex items-center space-x-1 text-xs text-ink-soft">
+                        <FiMapPin className="w-3 h-3" />
+                        <span className="truncate">{property.address}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Property Details */}
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center space-x-1 text-ink-soft">
-                    <FiUsers className="w-3 h-3" />
-                    <span>
-                      {property.units} {property.units === 1 ? 'unit' : 'units'}
+                  {/* Property Details */}
+                  <div className="flex justify-between items-center text-xs">
+                    <div className="flex items-center space-x-1 text-ink-soft">
+                      <FiUsers className="w-3 h-3" />
+                      <span>
+                        {property.units}{' '}
+                        {property.units === 1 ? 'unit' : 'units'}
+                      </span>
+                    </div>
+                    <span className="font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
+                      {property.type}
                     </span>
                   </div>
-                  <span className="font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft">
-                    {property.type}
-                  </span>
-                </div>
 
-                {/* Financial Summary */}
-                {summary && (
-                  <div className="pt-2 space-y-1.5 border-t border-rule">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-ink-soft">Net</span>
-                      <span className="font-mono text-sm font-semibold text-ink tabular-nums">
-                        {formatMoney(summary.netProfit)}
-                      </span>
+                  {/* Financial Summary */}
+                  {summary && (
+                    <div className="pt-2 space-y-1.5 border-t border-rule">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-ink-soft">Net</span>
+                        <span className="font-mono text-sm font-semibold text-ink tabular-nums">
+                          {formatMoney(summary.netProfit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-ink-soft">Income</span>
+                        <span className="font-mono text-xs text-print tabular-nums">
+                          {formatMoney(summary.totalIncome)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-ink-soft">Expenses</span>
+                        <span className="font-mono text-xs text-ink-soft tabular-nums">
+                          {formatMoney(summary.totalExpenses)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-ink-soft">Income</span>
-                      <span className="font-mono text-xs text-print tabular-nums">
-                        {formatMoney(summary.totalIncome)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-ink-soft">Expenses</span>
-                      <span className="font-mono text-xs text-ink-soft tabular-nums">
-                        {formatMoney(summary.totalExpenses)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </button>
-          )
-        })}
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </nav>
   )

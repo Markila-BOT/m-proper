@@ -9,6 +9,10 @@
 // The name is a link home, not a heading: each route's title is the
 // page's one h1, so the landmarks stay clean.
 //
+// The header is the top row of the shell's glass chrome pane (ADR-0004): it
+// paints no tint of its own — the pane under it is the material — and carries
+// only chrome text, so no record text ever lands on glass.
+//
 // Below the lg breakpoint the rule composes as a masthead block: the name,
 // the quiet disclosure control, then the primary control full-width —
 // nothing clips, and the labels keep their words. At lg the rule is one
@@ -32,7 +36,7 @@ export default function AppHeader({
   addTriggerRef,
 }: AppHeaderProps) {
   return (
-    <header className="border-b border-rule bg-paper">
+    <header className="border-b border-rule">
       <div className="flex flex-col gap-y-2.5 px-6 py-2.5 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-x-2 lg:px-9 lg:py-0">
         <Link
           to="/overview"

@@ -1,9 +1,9 @@
 ## 1. Tokens and glass surfaces (code zone)
 
-- [ ] 1.1 Add the glass token layer: tint, layered highlight, shadow stack, blur ≤24px, saturate ≤160% — with the measured rendered pairs recorded beside them
-- [ ] 1.2 Apply glass to the shell header and nav only; content panels opaque beneath all text
-- [ ] 1.3 Implement the fallback cascade (reduced transparency, no backdrop-filter, forced colors, reduced motion, and the combined case) — red → green → commit
-- [ ] 1.4 Enforce the structural blur boundary: no glass element with a scrolling descendant; scrolling subtrees get opaque panels
+- [x] 1.1 Add the glass token layer: tint, layered highlight, shadow stack, blur ≤24px, saturate ≤160% — with the measured rendered pairs recorded beside them
+- [x] 1.2 Apply glass to the shell header and nav only; content panels opaque beneath all text
+- [x] 1.3 Implement the fallback cascade (reduced transparency, no backdrop-filter, forced colors, reduced motion, and the combined case) — red → green → commit
+- [x] 1.4 Enforce the structural blur boundary: no glass element with a scrolling descendant; scrolling subtrees get opaque panels
 
 ## 2. Calendar pickers (code zone, red → green → commit)
 

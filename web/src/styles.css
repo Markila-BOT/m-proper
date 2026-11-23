@@ -46,6 +46,50 @@
   --passbook-rule-totals: 3px double;
   --passbook-row: 2.375rem;
   --passbook-control: 2.25rem;
+
+  /*
+   * Liquid Glass — the material layer (ADR-0004; change:
+   * liquid-glass-ledger). Glass carries a job: it is the persistent chrome
+   * (the shell header and the navigation) floating over the routed page, and
+   * the occluding surfaces (sheets, popovers) that land above content. Body
+   * copy, table numerals, and ledger figures never sit on it — they stay on
+   * opaque panels — and no scrolling subtree inside a pane paints on glass.
+   *
+   * One token layer, read by every glass surface and by every fallback:
+   *   tint      the translucent surface — the paper at 72%, so the content
+   *             behind keeps a quarter of its light for the blur to hold
+   *   highlight the layered 1px inset — a lit top edge over a full inset
+   *             ring, so the pane reads as a pane and not a wash
+   *   shadow    the elevation stack — a 1px contact shadow under a soft
+   *             ambient one
+   *   edge      the solid hairline the pane shows the content it floats over
+   *             (print at 65% over paper: 3.1:1, the non-text floor)
+   *   blur      the budget: ≤ 24px
+   *   saturate  the budget: ≤ 160%
+   *
+   * Measured rendered pairs (1440px, the Transactions route's title and
+   * totals behind the pane; the darkest composite sampled from the empty
+   * glass between the tabs, #EFEDE7):
+   *   chrome labels, ink on the composite ............ 12.3:1
+   *   chrome secondary labels, ink-soft (72%) ........ 5.4:1
+   *   the active tab's print underline ............... 6.3:1
+   *   the pane's edge, print 65% over paper .......... 3.1:1
+   *   content text on the opaque paper panel ......... ink 13.6:1 · soft 5.7:1
+   * The 1px inset highlight is material texture, not a mark: the pane's
+   * boundary is the edge above, which holds the 3:1 non-text floor. The craft
+   * pass re-measures over the busiest content and records the pairs in
+   * DESIGN.md; no component invents a blur or a tint.
+   */
+  --glass-tint: rgba(251, 248, 241, 0.72);
+  --glass-tint-opaque: var(--color-paper);
+  --glass-highlight:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(46, 94, 78, 0.16);
+  --glass-shadow:
+    0 1px 0 0 rgba(27, 42, 65, 0.06), 0 10px 24px -16px rgba(27, 42, 65, 0.24);
+  --glass-edge: rgba(46, 94, 78, 0.65);
+  --glass-blur: 16px;
+  --glass-saturate: 140%;
 }
 
 /* shadcn / app UI tokens (HSL components) — re-pointed to the passbook
@@ -161,6 +205,97 @@
 
   ::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The material, and the refusal cascade.
+ *
+ * Every glass surface wears .glass-surface and nothing else paints glass: no
+ * component invents a blur, a tint, or a shadow. Glass chrome is fixed or
+ * sticky with visible overflow — the blur boundary is structural, never a
+ * style — and a scrolling subtree inside a pane sits on an opaque panel (the
+ * property rail's list is the first: the rail's glass is the outer chrome,
+ * the list is paper inside it).
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .glass-surface {
+    background-color: var(--glass-tint);
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+      saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
+  }
+
+  /* The solid edge a pane shows the content it floats over. It is always
+   * drawn — the fallbacks take the tint and the blur away, never the edge. */
+  .glass-edge-b {
+    border-bottom: 1px solid var(--glass-edge);
+  }
+
+  .glass-edge-r {
+    border-right: 1px solid var(--glass-edge);
+  }
+
+  /* Glass chrome is sticky with visible overflow: it floats over content,
+   * content never scrolls it away, and the pane is never a scroll container. */
+  .glass-chrome {
+    position: sticky;
+    top: 0;
+    overflow: visible;
+  }
+}
+
+/* The refusal cascade — one implementation, four conditions (decision 4).
+ * Each branch takes away only what the environment refuses; the solid edge
+ * stays, so every refusal still reads as a pane.
+ *
+ * Order is load-bearing: forced colors comes last, so the combined
+ * forced-colors + no-backdrop-filter case is an opaque Canvas panel with a
+ * solid CanvasText border — both rules apply and the later one wins. */
+
+/* 1. The reader refuses transparency: an opaque tint, no translucency. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface {
+    background-color: var(--glass-tint-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 2. The browser cannot blur: an opaque tint behind the solid border. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .glass-surface {
+    background-color: var(--glass-tint-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 3. Forced colors: the system's canvas and text, borders preserved, no blur.
+ * Combined with branch 2 this is the opaque panel with a solid system border. */
+@media (forced-colors: active) {
+  .glass-surface {
+    background-color: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+}
+
+/* 4. Reduced motion: travel is gated off under glass; opacity and colour
+ * cross-fades stay. (The world's one authored motion — the ledger print-in —
+ * keeps its own global gate below.) */
+@media (prefers-reduced-motion: reduce) {
+  .glass-surface {
+    transition-property: opacity, background-color, border-color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+    animation: none;
   }
 }
 
