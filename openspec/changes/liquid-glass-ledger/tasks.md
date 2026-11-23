@@ -21,8 +21,8 @@
 
 ## 4. The four route chromes (code zone)
 
-- [ ] 4.1 Re-skin Overview, Transactions, Properties, Reports to the glass world; figures stay tabular; the honesty instruments verified in the new world (strip claims, rail caveat, unreachable state, undo, exports)
-- [ ] 4.2 Carry forward the still-valid passbook-era constraints: description reading floor, book-authority rail, snackbar geometry, filtered-empty "No matches"
+- [x] 4.1 Re-skin Overview, Transactions, Properties, Reports to the glass world; figures stay tabular; the honesty instruments verified in the new world (strip claims, rail caveat, unreachable state, undo, exports)
+- [x] 4.2 Carry forward the still-valid passbook-era constraints: description reading floor, book-authority rail, snackbar geometry, filtered-empty "No matches"
 
 ## 5. Craft pass and verification
 

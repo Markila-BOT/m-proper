@@ -289,6 +289,20 @@ export default function TransactionList({
     // Pre-mount, the region stays quiet (see isLedgerMounted above): the
     // book's absence is the live snapshot's claim to make.
     if (!isLedgerMounted) return null
+    // The empty page has two truths, and the page must not confuse them.
+    // If the book holds entries, the filters (or the property scope) hid
+    // them: say so and name the way back. Only a book with nothing in it
+    // is a blank page inviting the first line.
+    if (bookTransactions.length > 0) {
+      return (
+        <div className="rule-totals rule-hairline py-4">
+          <p className="font-mono text-ledger text-ink">No matches</p>
+          <p className="mt-1 font-sans text-caption text-ink-soft">
+            No entry matches these filters. Reset them to see the whole book.
+          </p>
+        </div>
+      )
+    }
     // The printed-totals idiom for nothing: a ruled line, not a card.
     return (
       <div className="rule-totals rule-hairline py-4">
