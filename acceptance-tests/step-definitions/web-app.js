@@ -25,16 +25,12 @@ const propertiesView = require('../pages/properties-view');
 const addPropertyModal = require('../pages/add-property-modal');
 const ledgerView = require('../pages/ledger-view');
 
-// The operator's ledger holds these stable rows; the view scenario asserts
-// they render alongside whatever else the API returns.
-const STABLE_LEDGER_NAMES = [
-  'Colinas Verdes',
-  'Downtown Office Complex',
-  'Real Supabase Property',
-  'Suburban Family Home',
-];
-
 // --- View properties from API ---
+//
+// The scenario asserts the application displays what the API returns. It
+// must not assert the operator's own ledger rows: their names are the
+// operator's data, not the app's contract, and they change (this suite once
+// hardcoded four and failed when the operator's ledger shrank to one).
 
 Given('the user opens the application with the properties API available', async function () {
   const health = await this.checkApiHealth();
@@ -56,10 +52,6 @@ Then('the application displays properties returned by the API', async function (
   assert.ok(rows.length > 0, 'the API returned no properties to display');
   for (const row of rows) {
     await shell.expectSidebarProperty(page, row.name);
-  }
-  // The operator's known ledger rows are among what renders.
-  for (const name of STABLE_LEDGER_NAMES) {
-    await shell.expectSidebarProperty(page, name);
   }
   console.log(`[web-app] the sidebar displays all ${rows.length} property row(s) the API returned`);
 });
