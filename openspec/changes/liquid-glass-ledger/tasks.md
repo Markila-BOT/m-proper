@@ -29,5 +29,5 @@
 - [x] 5.1 Read the loaded skill floors (better-ui/colors/layout/typography/motion) and batch the corrections; screenshots at 1440 and 390
 - [x] 5.2 Measure the rendered pairs: body/figure text on panels, chrome labels on the worst-case composite, non-text marks; record beside the tokens
 - [x] 5.3 The suite: 32 + N scenarios green — calendar keyboard, typed rejection, range filter, searchable select, and the four-condition fallback Outline; the suite-minus-self child asserts zero failures
-- [ ] 5.4 Detector over the changed targets; the finish review; DESIGN.md and the surface brief replaced at finish
-- [ ] 5.5 `openspec validate` non-strict clean; every shipping raster carries its provenance
+- [x] 5.4 Detector over the changed targets; the finish review; DESIGN.md and the surface brief replaced at finish
+- [x] 5.5 `openspec validate` non-strict clean; every shipping raster carries its provenance
