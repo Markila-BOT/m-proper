@@ -157,6 +157,7 @@ module.exports = {
   seedTransactions,
   storedTransactions,
   clearStoredTransactions,
+  entryRows,
   displayedTransactionDescriptions,
   expectTransactionVisible,
   balanceColumnValues,

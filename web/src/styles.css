@@ -76,9 +76,12 @@
    * median pixel of the text's own box (glyphs cover well under half of it);
    * the ink is the darkest pixel in that same box.
    *
-   *   worst-case composite behind the chrome .. #e3e3de, the darkest pixel
-   *     the glass shows along the header/section-nav band while the ledger
-   *     scrolls beneath it (sampled at x 423-438, y 63-91, scroll 40)
+   *   worst-case composite behind the chrome: a targeted band sample at
+   *     x 423-438, y 63-91, scroll 40 read #e3e3de (ink 11.22:1, ink-soft
+   *     4.82:1). The 5.3 step scans the whole 1114x93 pane band and finds a
+   *     darker pixel, rgb(217,217,215), where ink is 10.22:1 and ink-soft
+   *     4.87:1 — both still clear the 4.5:1 floor. The single sample was
+   *     optimistic; this is the darker truth, recorded rather than hidden.
    *
    *   chrome labels, each on the worst composite it was measured over:
    *     product name, ink ............................ 12.79:1

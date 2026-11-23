@@ -151,6 +151,13 @@ After(async function () {
   // same helpers the suite's "leaves no trace" scenario invokes to prove
   // the mechanism.
   await clearScenarioBrowserState(this);
+  // The glass scenarios measure at deviceScaleFactor 2, which needs its own
+  // browser context (the harness page runs at the default scale). That
+  // context is closed here whichever way the scenario ended.
+  if (this.extraContext) {
+    await this.extraContext.close().catch(() => {});
+    this.extraContext = null;
+  }
   if (this.page) {
     await this.page.close().catch(() => {});
     this.page = null;
