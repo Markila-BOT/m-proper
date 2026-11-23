@@ -52,11 +52,37 @@ function scenarioSummaries(featurePathEntries) {
       ? new Set(linesPart.split(':').filter(Boolean).map(Number))
       : null;
     const featureText = fs.readFileSync(path.join(HARNESS_DIR, featurePath), 'utf8');
-    featureText.split(/\r?\n/).forEach((line, idx) => {
+    const lines = featureText.split(/\r?\n/);
+    lines.forEach((line, idx) => {
       const heading = /^\s*Scenario(?: Outline)?:\s*(.+?)\s*$/.exec(line);
       if (!heading) return;
       if (keepLines && !keepLines.has(idx + 1)) return;
-      summaries.push(`${featurePath}::${heading[1]}`);
+      const summary = `${featurePath}::${heading[1]}`;
+      // A plain Scenario is one test case. A Scenario Outline is one test
+      // case per Examples data row (the first table row is the header), so
+      // the expected set must expand it the same way cucumber does.
+      if (!/^\s*Scenario\s+Outline:/.test(line)) {
+        summaries.push(summary);
+        return;
+      }
+      let inExamples = false;
+      let headerSeen = false;
+      let dataRows = 0;
+      for (let next = idx + 1; next < lines.length; next += 1) {
+        const row = lines[next];
+        if (/^\s*Scenario(?:\s+Outline)?:/.test(row)) break;
+        if (/^\s*Examples:/.test(row)) {
+          inExamples = true;
+          continue;
+        }
+        if (!inExamples || !/^\s*\|/.test(row)) continue;
+        if (!headerSeen) {
+          headerSeen = true;
+          continue;
+        }
+        dataRows += 1;
+      }
+      for (let n = 0; n < dataRows; n += 1) summaries.push(summary);
     });
   }
   return summaries.sort();
