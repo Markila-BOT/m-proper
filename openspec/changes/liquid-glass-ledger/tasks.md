@@ -15,7 +15,7 @@
 
 ## 3. Searchable select and icons (code zone)
 
-- [ ] 3.1 `ui/searchable-select.tsx`: Radix Select + filter input, no-match message, keyboard preserved
+- [ ] 3.1 `ui/searchable-select.tsx`: popover combobox (agent-lender pattern) — filter input, no-match message, full keyboard operation via `aria-activedescendant`; Radix Select cannot host a filter input without stranding keyboard users
 - [ ] 3.2 Swap the category select; property filter keeps `ui/select`
 - [ ] 3.3 Migrate `ui/select.tsx` and `ui/dialog.tsx` to `react-icons`; retire `@radix-ui/react-icons` (unreferenced rule)
 

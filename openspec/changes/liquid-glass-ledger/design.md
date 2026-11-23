@@ -39,7 +39,7 @@ flowchart LR
 
 **5. The picker is the agent-lender pattern, re-written for this stack.** `ui/calendar.tsx` wraps `react-day-picker` v9 (range mode supported for the filter pair) with `react-icons` chevrons; `ui/date-picker.tsx` wraps it in a Radix Popover with a typed input parsed by the Local-Date Rule's calendar-string helpers (`format.ts` already owns `localDateString`/`localMonthKey`; a `parseCalendarDate` companion lands there, not in a second date module). `date-fns` is used only for formatting/parse helpers where `Intl` cannot do the job.
 
-**6. The searchable select is a variant, not a replacement.** `ui/searchable-select.tsx` composes Radix Select with a filter input (the agent-lender pattern: search narrows the listbox, no-match message, keyboard preserved); the transaction category select uses it; the property filter keeps `ui/select`.
+**6. The searchable select is a variant, not a replacement.** `ui/searchable-select.tsx` is a popover combobox: a Radix Popover holding a filter input and a listbox (`aria-activedescendant`, arrows/Home/End/Enter/Escape, a visible no-match message) — the agent-lender pattern. Radix Select was the first sketch, but its roving-focus listbox owns the keyboard and cannot host a filter input without stranding keyboard users, so it cannot meet the spec's "fully keyboard-operable". The transaction category select uses the combobox; the property filter keeps `ui/select`.
 
 **7. Icon migration is mechanical and final.** `react-icons` everywhere; `ui/select.tsx` and `ui/dialog.tsx` migrate off `@radix-ui/react-icons`; the package retires (dependency-maintenance's unreferenced rule). One stroke family per surface.
 
