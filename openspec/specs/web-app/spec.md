@@ -67,3 +67,27 @@ And the same state appears at the totals strip
 And the state names the problem and the recovery
 And the empty ledger's zeroed figures do not render as though the ledger were merely empty
 ```
+
+### Requirement: The ledger shows a running balance
+The web application MUST show a running balance column on the ledger, derived client-side from the transactions displayed on the page, with no opening-balance concept and no API changes.
+
+#### Scenario: The ledger shows a running balance
+
+```gherkin
+Given the ledger shows its recorded transactions
+When the user reads down the ledger
+Then a running balance accumulates along the ledger's right edge in displayed order
+And it is derived from the transactions on the page with no opening balance
+```
+
+### Requirement: The ledger can be sorted by its columns
+The web application MUST let the user sort the ledger by its columns, and the running balance MUST follow the displayed order after a sort.
+
+#### Scenario: The ledger can be sorted by its columns
+
+```gherkin
+Given the ledger showing its transactions
+When the user sorts by a column
+Then the rows reorder by that column
+And the running balance follows the new displayed order
+```
