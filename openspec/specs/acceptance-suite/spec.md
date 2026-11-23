@@ -13,7 +13,7 @@ The acceptance suite MUST execute the effective spec — every main spec with ac
 #### Scenario: One command runs every committed behavior
 
 ```gherkin
-Given the three main specs are fenced and committed
+Given the main specs are fenced and committed
 When the landlord runs the single test command
 Then every scenario of the effective spec executes with no pending or undefined steps
 And a run report records what ran

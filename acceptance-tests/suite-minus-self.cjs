@@ -20,7 +20,9 @@ const { effectivePaths } = require('./openspec-effective-paths.cjs');
 
 extractAll();
 
-const SELF_FEATURE = 'changes/adopt-acceptance-suite/specs/acceptance-suite/';
+// The suite's own capability is a main spec now (adopt-acceptance-suite was
+// archived), so the self feature lives under .extracted/specs/.
+const SELF_FEATURE = 'specs/acceptance-suite/';
 
 const paths = effectivePaths().filter((featurePath) => !featurePath.includes(SELF_FEATURE));
 

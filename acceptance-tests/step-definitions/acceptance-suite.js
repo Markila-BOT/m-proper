@@ -13,7 +13,7 @@ const path = require('node:path');
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 
-const { extractFile } = require('../extract-gherkin.cjs');
+const { extractAll, extractFile } = require('../extract-gherkin.cjs');
 const { effectivePaths } = require('../openspec-effective-paths.cjs');
 const {
   REPO_ROOT,
@@ -31,7 +31,10 @@ const shell = require('../pages/app-shell');
 const ledgerView = require('../pages/ledger-view');
 
 const HARNESS_DIR = path.join(REPO_ROOT, 'acceptance-tests');
-const SELF_FEATURE_MARKER = 'changes/adopt-acceptance-suite/specs/acceptance-suite/';
+// The suite's own capability is a main spec now (adopt-acceptance-suite was
+// archived), so the self feature lives under .extracted/specs/, not under a
+// change's delta path.
+const SELF_FEATURE_MARKER = 'specs/acceptance-suite/';
 
 async function git(args) {
   return runCommand('git', args, { cwd: REPO_ROOT, timeoutMs: 30_000 });
@@ -63,9 +66,11 @@ function scenarioSummaries(featurePathEntries) {
 // One command runs every committed behavior
 // ---------------------------------------------------------------------------
 
-Given('the three main specs are fenced and committed', async function () {
-  const mainSpecs = ['properties', 'web-app', 'dependency-maintenance'].map((capability) =>
-    path.join('openspec', 'specs', capability, 'spec.md')
+Given('the main specs are fenced and committed', async function () {
+  // Every main spec, including this suite's own capability (it became a main
+  // spec when adopt-acceptance-suite was archived).
+  const mainSpecs = ['properties', 'web-app', 'dependency-maintenance', 'acceptance-suite'].map(
+    (capability) => path.join('openspec', 'specs', capability, 'spec.md')
   );
   for (const relativePath of mainSpecs) {
     const absolutePath = path.join(REPO_ROOT, relativePath);
@@ -147,15 +152,15 @@ Then('every scenario of the effective spec executes with no pending or undefined
     );
   }
 
-  // Nothing fails: the redesign-ledger-passbook pair (running balance,
-  // column sorting) landed and runs green like everything else, so the
-  // single command must exit clean.
+  // Nothing fails: the archived redesign-ledger-passbook scenarios (running
+  // balance, column sorting) run green from the main spec like everything
+  // else, so the single command must exit clean.
   const failed = cases.filter((testCase) => testCase.status === 'FAILED').map((testCase) => testCase.name);
   assert.deepStrictEqual(
     failed,
     [],
-    `the child run must fail on nothing — the redesign-ledger-passbook scenarios ` +
-      `run green since that change landed, and any failure is a regression (failures were: ${failed.join(', ')})`
+    `the child run must fail on nothing — the archived redesign-ledger-passbook scenarios ` +
+      `run green from the main spec, and any failure is a regression (failures were: ${failed.join(', ')})`
   );
   assert.strictEqual(
     child.code,
@@ -177,7 +182,8 @@ Then('a run report records what ran', async function () {
   );
   assert.ok(
     report.includes('The ledger shows a running balance'),
-    'the report must record the redesign-ledger-passbook scenarios too'
+    'the report must record the archived redesign-ledger-passbook scenarios too ' +
+      '(they run from the main spec)'
   );
   const summaryLine = summarizeCases(cases);
   console.log(`[self] the child report records the run — ${summaryLine}`);
@@ -268,35 +274,84 @@ Then('the run fails naming that spec file and line', async function () {
 // Superseded rules never reach the runner
 // ---------------------------------------------------------------------------
 
-Given('an active change replaces a requirement of a main spec', async function () {
-  // redesign-ledger-passbook marks the main web-app requirements MODIFIED —
-  // that replacement is what keeps the superseded versions out of the
-  // runner. Every MODIFIED requirement must name a rule that exists in the
-  // main spec.
-  const deltaPath = path.join(
-    REPO_ROOT,
-    'openspec',
-    'changes',
-    'redesign-ledger-passbook',
-    'specs',
-    'web-app',
-    'spec.md'
-  );
-  const mainPath = path.join(REPO_ROOT, 'openspec', 'specs', 'web-app', 'spec.md');
-  assert.ok(fs.existsSync(deltaPath), 'the redesign-ledger-passbook delta is missing');
-  assert.ok(fs.existsSync(mainPath), 'the main web-app spec is missing');
+// Scenario names under one requirement of a main spec, in order.
+function scenarioNamesOfRequirement(specPath, requirementName) {
+  const lines = fs.readFileSync(specPath, 'utf8').split(/\r?\n/);
+  const names = [];
+  let inRequirement = false;
+  for (const line of lines) {
+    const requirement = /^###\s+Requirement:\s*(.+?)\s*$/.exec(line);
+    if (requirement) {
+      inRequirement = requirement[1] === requirementName;
+      continue;
+    }
+    // Any other heading ends the requirement; a #### Scenario is matched below.
+    if (/^#{1,3}\s+/.test(line)) {
+      inRequirement = false;
+      continue;
+    }
+    if (!inRequirement) continue;
+    const scenario = /^####\s+Scenario(?:\s+Outline)?:\s*(.+?)\s*$/.exec(line);
+    if (scenario) names.push(scenario[1]);
+  }
+  return names;
+}
 
-  const modifiedNames = requirementNames(deltaPath, { section: 'MODIFIED' });
+Given('an active change replaces a requirement of a main spec', async function () {
+  // Supersession is a mechanism, not a property of whichever change happens
+  // to be active. The suite builds a throwaway active change that marks a
+  // real main requirement MODIFIED, so the proof never depends on a change's
+  // name — and the probe is removed in the When's finally, before any
+  // assertion runs, so a failing assertion cannot leak it into the tree.
+  const requirement = 'Client-side transactions retained';
+  const deltaScenario = 'Transactions survive reload (superseded probe)';
+  const mainPath = path.join(REPO_ROOT, 'openspec', 'specs', 'web-app', 'spec.md');
+  const changeDir = path.join(REPO_ROOT, 'openspec', 'changes', '__superseded_probe__');
+  const deltaPath = path.join(changeDir, 'specs', 'web-app', 'spec.md');
+
+  assert.ok(fs.existsSync(mainPath), 'the main web-app spec is missing');
   const mainNames = requirementNames(mainPath, {});
-  assert.ok(modifiedNames.length > 0, 'the redesign delta must mark requirements MODIFIED');
-  const replaced = modifiedNames.filter((name) => mainNames.includes(name));
-  assert.deepStrictEqual(
-    replaced,
-    modifiedNames,
-    `every MODIFIED requirement must replace a real main-spec rule (missing: ` +
-      `${modifiedNames.filter((name) => !mainNames.includes(name)).join(', ')})`
+  assert.ok(
+    mainNames.includes(requirement),
+    `the probe must supersede a real main-spec rule (missing: ${requirement})`
   );
-  this.replacedRequirements = replaced;
+  const mainScenarioNames = scenarioNamesOfRequirement(mainPath, requirement);
+  assert.ok(mainScenarioNames.length > 0, `the superseded rule "${requirement}" must carry a scenario`);
+
+  this.supersededProbe = {
+    changeDir,
+    requirement,
+    deltaScenario,
+    mainScenarioNames,
+    mainUri: '.extracted/specs/web-app/spec.feature',
+    deltaUri: '.extracted/changes/__superseded_probe__/specs/web-app/spec.feature',
+  };
+
+  fs.rmSync(changeDir, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(deltaPath), { recursive: true });
+  fs.writeFileSync(
+    deltaPath,
+    [
+      '# web-app',
+      '',
+      '## MODIFIED Requirements',
+      '',
+      `### Requirement: ${requirement}`,
+      '',
+      'Transactions are retained client-side. This throwaway delta exists only',
+      'to prove the supersession mechanism: the suite rewrites this rule,',
+      'extracts the tree, and checks that the main version never reaches the',
+      'runner.',
+      '',
+      `#### Scenario: ${deltaScenario}`,
+      '',
+      '```gherkin',
+      'Given the user has recorded transactions and reloads the application',
+      'Then those transactions are still available in the UI',
+      '```',
+      '',
+    ].join('\n')
+  );
 });
 
 function requirementNames(specPath, { section }) {
@@ -319,22 +374,40 @@ When('the suite runs', async function () {
   // A dry run discovers exactly what a real run would execute — same
   // effective paths, no boots, no steps. Its message stream is joined to
   // the composition report on stderr.
+  const probe = this.supersededProbe;
   const messagesPath = path.join(HARNESS_DIR, 'reports', 'superseded-check-messages.ndjson');
-  const dryRun = await runCommand(
-    'npx',
-    ['cucumber-js', '--config', 'suite-discovery.cjs', '--dry-run'],
-    { cwd: HARNESS_DIR, timeoutMs: 120_000 }
-  );
-  const discovered = parseMessages(fs.readFileSync(messagesPath, 'utf8'));
+  let dryRun;
+  let discovered;
+  let leftOut;
+  let expected;
+  try {
+    dryRun = await runCommand(
+      'npx',
+      ['cucumber-js', '--config', 'suite-discovery.cjs', '--dry-run'],
+      { cwd: HARNESS_DIR, timeoutMs: 120_000 }
+    );
+    discovered = parseMessages(fs.readFileSync(messagesPath, 'utf8'));
 
-  // The composition report names each superseded rule and every left-out
-  // scenario with its spec.md file:line.
-  const leftOut = [];
-  for (const line of `${dryRun.stderr}\n${dryRun.stdout}`.split(/\r?\n/)) {
-    const entry = /\[effective-spec\]\s+left out:\s+(.*?)\s+\((.*?spec\.md):(\d+)\)/.exec(line);
-    if (entry) leftOut.push({ name: entry[1], specMd: entry[2], line: Number(entry[3]) });
+    // The composition report names each superseded rule and every left-out
+    // scenario with its spec.md file:line.
+    leftOut = [];
+    for (const line of `${dryRun.stderr}\n${dryRun.stdout}`.split(/\r?\n/)) {
+      const entry = /\[effective-spec\]\s+left out:\s+(.*?)\s+\((.*?spec\.md):(\d+)\)/.exec(line);
+      if (entry) leftOut.push({ name: entry[1], specMd: entry[2], line: Number(entry[3]) });
+    }
+
+    // Captured while the probe is still in the tree: the delta version is
+    // part of the effective set and the main version is not. The Thens
+    // compare the dry run against this snapshot after cleanup.
+    expected = scenarioSummaries(effectivePaths());
+  } finally {
+    // The throwaway probe never survives the scenario — not even when an
+    // assertion below fails. Re-extracting restores .extracted to the
+    // committed tree's composition.
+    fs.rmSync(probe.changeDir, { recursive: true, force: true });
+    extractAll();
   }
-  this.supersededCheck = { dryRun, discovered, leftOut };
+  this.supersededCheck = { dryRun, discovered, leftOut, expected };
 });
 
 // The composition report prints the left-out scenarios relative to
@@ -346,43 +419,51 @@ function featureUriOfSpecMd(specMd) {
 
 Then('the replaced version of that requirement is not executed', async function () {
   const { discovered, leftOut } = this.supersededCheck;
+  const probe = this.supersededProbe;
   assert.ok(leftOut.length > 0, 'the composition report must name the superseded scenarios it left out');
+
+  // Every main scenario of the superseded rule is named as left out...
+  for (const name of probe.mainScenarioNames) {
+    assert.ok(
+      leftOut.some(
+        (entry) => entry.name === name && entry.specMd.endsWith('specs/web-app/spec.md')
+      ),
+      `the composition report must name the superseded main scenario "${name}" ` +
+        `(left out: ${leftOut.map((entry) => entry.name).join(', ') || 'none'})`
+    );
+  }
+
+  // ...and none of them reaches the runner, under any status.
+  for (const name of probe.mainScenarioNames) {
+    assert.deepStrictEqual(
+      discovered.filter((testCase) => testCase.uri === probe.mainUri && testCase.name === name),
+      [],
+      `the superseded scenario "${name}" (${probe.mainUri}) must not be executed by the suite`
+    );
+  }
+
+  // The delta version is what runs instead.
+  assert.ok(
+    discovered.some(
+      (testCase) => testCase.uri === probe.deltaUri && testCase.name === probe.deltaScenario
+    ),
+    `the replacement scenario "${probe.deltaScenario}" must run from the active change's delta`
+  );
+
+  // And the generic left-out set is absent too.
   for (const { name, specMd } of leftOut) {
     const uri = featureUriOfSpecMd(specMd);
-    const executedAnyway = discovered.filter(
-      (testCase) => testCase.uri === uri && testCase.name === name
-    );
     assert.deepStrictEqual(
-      executedAnyway,
+      discovered.filter((testCase) => testCase.uri === uri && testCase.name === name),
       [],
       `the superseded scenario "${name}" (${uri}) must not be executed by the suite`
     );
   }
-  // The named example, spelled out: the main dependency-maintenance spec's
-  // diff rule is superseded by this change's own delta.
-  const example = leftOut.find(
-    (entry) =>
-      entry.name === 'Refreshing a dependency produces a reviewable diff' &&
-      entry.specMd.includes('specs/dependency-maintenance/spec.md')
-  );
-  assert.ok(
-    example,
-    'the main dependency-maintenance scenario "Refreshing a dependency produces a reviewable diff" ' +
-      'must be among the left-out scenarios'
-  );
-  assert.ok(
-    !discovered.some(
-      (testCase) =>
-        testCase.name === 'Refreshing a dependency produces a reviewable diff' &&
-        testCase.uri.startsWith('.extracted/specs/dependency-maintenance/')
-    ),
-    'the superseded "Refreshing a dependency produces a reviewable diff" must not reach the runner'
-  );
   console.log(`[self] ${leftOut.length} superseded scenario(s) stayed out of the runner`);
 });
 
 Then('it is not reported as skipped', async function () {
-  const { discovered, leftOut, dryRun } = this.supersededCheck;
+  const { discovered, leftOut, dryRun, expected } = this.supersededCheck;
   // Absent, not skipped: no test case exists for any left-out scenario —
   // under any status.
   for (const { name, specMd } of leftOut) {
@@ -394,9 +475,9 @@ Then('it is not reported as skipped', async function () {
       `"${name}" must not appear as a skipped (or any-status) scenario — supersession excludes it entirely`
     );
   }
-  // The runner's discovered set is exactly the effective scenario set:
-  // nothing superseded, nothing lost.
-  const expected = scenarioSummaries(effectivePaths());
+  // The runner's discovered set is exactly the effective scenario set
+  // captured while the probe was in the tree: nothing superseded, nothing
+  // lost.
   const discoveredSummaries = discovered
     .map((testCase) => `${testCase.uri}::${testCase.name}`)
     .sort();
@@ -515,7 +596,7 @@ Given('scenarios that record and reload transactions in the browser', async func
     'the suite-minus-self child run must have executed earlier in this feature ' +
       '(scenario "One command runs every committed behavior" runs first)'
   );
-  const uri = '.extracted/changes/redesign-ledger-passbook/specs/web-app/spec.feature';
+  const uri = '.extracted/specs/web-app/spec.feature';
   this.browserScenarioNames = [
     'View properties from API',
     'Create property from UI',
@@ -548,7 +629,7 @@ Then('each executes against the real web application in a real browser', async f
   // ports (the same hooks that booted this run) and drove them with a real
   // headless chromium; a passing result proves the execution was real.
   const stash = state.suiteMinusSelf;
-  const uri = '.extracted/changes/redesign-ledger-passbook/specs/web-app/spec.feature';
+  const uri = '.extracted/specs/web-app/spec.feature';
   for (const name of this.browserScenarioNames) {
     const found = stash.cases.find((testCase) => testCase.uri === uri && testCase.name === name);
     assert.ok(found, `"${name}" must be in the child run's results`);
@@ -697,7 +778,7 @@ Given('a change whose effective suite runs green', async function () {
   // suite-minus-self child run earlier in this feature: every scenario of
   // the effective spec passes, nothing pending or undefined. (The run that
   // once failed on the redesign-ledger-passbook pair went green when that
-  // change landed — this gate is why it had to.)
+  // change landed and its delta was absorbed into the main spec.)
   const stash = state.suiteMinusSelf;
   assert.ok(stash, 'the suite-minus-self child run must have executed earlier in this feature');
   const failing = stash.cases.filter((testCase) => testCase.status !== 'PASSED');
