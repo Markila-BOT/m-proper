@@ -37,6 +37,14 @@ Then the ledger filters to that inclusive range
 And the from and to fields show the chosen days
 ```
 
+#### Scenario: The calendar's month controls work with a pointer
+
+```gherkin
+Given the transaction form's date picker is open
+When the user clicks the next-month control
+Then the calendar shows the following month
+```
+
 ### Requirement: Long option lists are searchable
 
 The transaction category select MUST offer search over its options, including a visible no-match state, and MUST remain fully keyboard-operable; the property filter MAY keep the plain select.

@@ -92,6 +92,23 @@ function formDateAlert(page) {
   return dialog(page).getByRole('alert');
 }
 
+// --- the calendar's month controls ---
+
+// The caption as the world prints it ("June 2025"). During a month change
+// the hook keeps the outgoing month in the DOM, so its caption comes first;
+// callers that want the incoming month wait for it.
+async function calendarCaptionText(page) {
+  return (
+    await page.locator('[data-animated-caption]').first().innerText()
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function clickNextMonth(page) {
+  await page.getByRole('button', { name: 'Go to the Next Month' }).click();
+}
+
 async function typeIntoFormDate(page, text) {
   // Free typing: the input holds the visitor's characters until Enter
   // confirms them. Filling focuses the field, which dismisses the open
@@ -158,6 +175,8 @@ module.exports = {
   waitForFocusedDay,
   expectFocusOnCalendarTrigger,
   formDateAlert,
+  calendarCaptionText,
+  clickNextMonth,
   typeIntoFormDate,
   filters,
   rangeTrigger,

@@ -283,3 +283,64 @@ Then('the from and to fields show the chosen days', async function () {
     `the range trigger must carry both chosen days; saw "${triggerText}"`
   );
 });
+
+// --- The calendar's month controls work with a pointer ---
+//
+// A regression fence: the month caption's full-width box once sat over the
+// chevrons, so pointer users could not change months (the keyboard scenario
+// never noticed). The caption is printed "June 2025", so the test reads the
+// month index from its own words.
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function captionMonthIndex(caption) {
+  const match = /([A-Za-z]+)\s+(\d{4})/.exec(caption);
+  assert.ok(match, `unrecognized calendar caption: "${caption}"`);
+  const month = MONTH_NAMES.indexOf(match[1]);
+  assert.ok(month >= 0, `unrecognized month name in caption: "${caption}"`);
+  return Number(match[2]) * 12 + month;
+}
+
+When('the user clicks the next-month control', async function () {
+  const page = requirePage(this);
+  this.captionBeforeNextMonth = await datePicker.calendarCaptionText(page);
+  await datePicker.clickNextMonth(page);
+});
+
+Then('the calendar shows the following month', async function () {
+  const page = requirePage(this);
+  await waitFor(
+    async () => {
+      const caption = await datePicker.calendarCaptionText(page);
+      return (
+        captionMonthIndex(caption) ===
+        captionMonthIndex(this.captionBeforeNextMonth) + 1
+      );
+    },
+    {
+      timeoutMs: WAIT_MS,
+      intervalMs: 50,
+      label: 'the calendar to show the following month',
+    }
+  );
+  const caption = await datePicker.calendarCaptionText(page);
+  assert.strictEqual(
+    captionMonthIndex(caption),
+    captionMonthIndex(this.captionBeforeNextMonth) + 1,
+    `the next-month control must move the calendar on one month; saw ` +
+      `"${this.captionBeforeNextMonth}" -> "${caption}"`
+  );
+});

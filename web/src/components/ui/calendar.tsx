@@ -68,12 +68,22 @@ function Calendar({ className, ...props }: ComponentProps<typeof DayPicker>) {
     <DayPicker
       showOutsideDays
       autoFocus
+      // The library's own month-change animation hook: it cross-fades the
+      // incoming and outgoing month, cleans up on animationend, and skips
+      // the transition while a day holds keyboard focus (its a11y choice).
+      // The classes below are the hook's eight slots; the keyframes live in
+      // styles.css at 150ms ease-out, opacity only.
+      animate
       className={cn('font-sans text-ink', className)}
       classNames={{
         root: 'w-fit',
         months: 'relative flex flex-col gap-4 sm:flex-row',
         month: 'relative flex w-full flex-col gap-2',
-        nav: 'pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between',
+        // The nav is absolutely positioned over the month, so it must paint
+        // above the caption: without the z-index the caption's full-width
+        // box swallows clicks on the chevrons (keyboard still worked, which
+        // is how it slipped past the keyboard scenario).
+        nav: 'pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between',
         button_previous: navButton,
         button_next: navButton,
         month_caption: 'flex h-8 items-center justify-center px-10',
@@ -102,6 +112,17 @@ function Calendar({ className, ...props }: ComponentProps<typeof DayPicker>) {
           '[&>button]:outline-2 [&>button]:outline-offset-1 [&>button]:outline-print',
         hidden: 'invisible',
         footer: '',
+        // The eight month-change slots the library's animate hook reads: an
+        // entering caption/weeks fade in, the leaving pair fades out (the
+        // exit animation's end is what unmounts the old month).
+        caption_after_enter: 'calendar-month-enter',
+        caption_before_enter: 'calendar-month-enter',
+        weeks_after_enter: 'calendar-month-enter',
+        weeks_before_enter: 'calendar-month-enter',
+        caption_after_exit: 'calendar-month-exit',
+        caption_before_exit: 'calendar-month-exit',
+        weeks_after_exit: 'calendar-month-exit',
+        weeks_before_exit: 'calendar-month-exit',
       }}
       components={{
         Chevron: CalendarChevron,

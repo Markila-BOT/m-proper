@@ -230,7 +230,7 @@ Drift, recorded not canonized: one pre-world leftover survives outside the passe
 
 ## Motion
 
-The page's one authored motion is the print-in: a newly recorded line wipes itself onto the page left to right with an exponential ease-out, the balance landing last; a restored line prints back in. The pickers' and combobox's occluding popovers enter in 250ms and leave in 150ms, scaling from 0.96 at `--radix-popover-content-transform-origin` (the trigger's side, never the center); they are opened during data entry, and the short exit keeps a cancelled open from lingering over the field. Hover and focus are color states, not travel. Under `prefers-reduced-motion: reduce` the cascade sets `animation: none` on glass and gates the popover travel, while `transition-property` keeps `opacity` — the cross-fade survives, the movement does not.
+The page's one authored motion is the print-in: a newly recorded line wipes itself onto the page left to right with an exponential ease-out, the balance landing last; a restored line prints back in. The pickers' and combobox's occluding popovers enter in 250ms and leave in 150ms, scaling from 0.96 at `--radix-popover-content-transform-origin` (the trigger's side, never the center); they are opened during data entry, and the short exit keeps a cancelled open from lingering over the field. The calendar cross-fades its month change in 150ms (opacity only); react-day-picker's own animate hook runs it and skips it while a day holds keyboard focus. Hover and focus are color states, not travel. Under `prefers-reduced-motion: reduce` the cascade sets `animation: none` on glass and gates the popover travel, while `transition-property` keeps `opacity` — the cross-fade survives, the movement does not.
 
 ## Shapes
 

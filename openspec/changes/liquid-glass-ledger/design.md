@@ -8,7 +8,7 @@ Diagram assumptions (C4-inspired, plain Mermaid): one new primitive layer inside
 flowchart LR
   subgraph Web[Web container]
     CH[Glass chrome<br/>header · nav] --> CP[Opaque content panels<br/>ledger · forms]
-    SH[Glass sheets & popovers<br/>occlusion] --> DP[Date picker<br/>react-day-picker + date-fns]
+    SH[Opaque popovers<br/>glass edge/shadow only] --> DP[Date picker<br/>react-day-picker + date-fns]
     SH --> SS[Searchable select]
     T[Glass tokens<br/>tint · highlight · shadow] --> CH
     T --> SH
@@ -33,7 +33,7 @@ flowchart LR
 
 **2. Legibility model: two text classes, two measurement methods.** Content text (body, numerals, ledger figures) sits on opaque panels — measured text-vs-panel. Chrome text (nav labels, header actions) sits on glass — measured against the worst-case sampled composite behind the glass (sampled from rendered pixels over the busiest route content, with the documented composite recorded). Non-text marks (borders, highlights, icons) hold 3:1 against their surface.
 
-**3. The blur boundary is structural.** No glass element may contain a scrolling descendant: glass chrome is `position: fixed` or `sticky` with `overflow: visible`; any scrolling subtree inside a glass sheet or popover renders on an opaque panel. Enforced by a lint-style check in the craft pass and by the glass-surfaces scenario.
+**3. The blur boundary is structural.** No glass element may contain a scrolling descendant: glass chrome is `position: fixed` or `sticky` with `overflow: visible`; any scrolling subtree inside a glass sheet or popover renders on an opaque panel. Enforced by the glass-surfaces scenario (the craft pass audited it live across widths; no static lint can see a runtime DOM).
 
 **4. Fallbacks are one cascade.** `prefers-reduced-transparency: reduce` → opaque tint; `@supports not (backdrop-filter: blur(1px))` → opaque tint + solid border; `forced-colors: active` → system colors, borders preserved; `prefers-reduced-motion: reduce` → travel gated, opacity cross-fades stay. The combined forced-colors + no-backdrop-filter case renders an opaque panel with a solid system border. One cascade, four conditions, one Outline.
 
@@ -43,13 +43,13 @@ flowchart LR
 
 **7. Icon migration is mechanical and final.** `react-icons` everywhere; `ui/select.tsx` and `ui/dialog.tsx` migrate off `@radix-ui/react-icons`; the package retires (dependency-maintenance's unreferenced rule). One stroke family per surface.
 
-**8. Motion and type follow the loaded skill floors.** Popover enter 250ms ease-out, exit 150ms, scale 0.96 from the trigger origin; month change ≤150ms cross-fade; highlights ≤150ms; reduced-motion gates travel. Tabular numerals on figures and calendar days; inputs `text-base sm:text-sm`.
+**8. Motion and type follow the loaded skill floors.** Popover enter 250ms ease-out, exit 150ms, scale 0.96 from the trigger origin; month change ≤150ms cross-fade via react-day-picker's own `animate` hook (the hook skips the transition while a day holds keyboard focus, the library's a11y choice); highlights ≤150ms; reduced-motion gates travel. Tabular numerals on figures and calendar days; inputs `text-base sm:text-sm`.
 
 ## Risks / Trade-offs
 
 - [Composited blur on fixed chrome over long sessions] -> Blur confined to small fixed surfaces; measured at the craft pass; no blur on scrolling content by construction.
 - [The four-condition Outline is the suite's first] -> Steps implemented once with a condition-to-emulation switch; the combined case included.
-- [Range-mode keyboard behavior is the least-standard interaction] -> The keyboard scenario covers arrows/PageUp/Down/Home/End/Enter; Escape restores the trigger.
+- [Range-mode keyboard behavior is the least-standard interaction] -> The keyboard scenario covers arrows/PageUp/PageDown/Enter and Escape restores the trigger; Home/End are react-day-picker's native model and are verified live, not separately fenced by a scenario.
 - [World replacement resets visual baselines] -> Intentional: the parity baseline restarts against the glass world; the passbook captures stay as history.
 - [Passbook-era queued fronts (reading column, Unknown-Property, snackbar re-pin, No-matches)] -> They survive as behavior constraints where still relevant; the new world's layout re-lands the ledger, and the queued list rides the tasks' carry-forward section.
 
