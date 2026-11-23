@@ -7,7 +7,7 @@
 
 ## 2. Calendar pickers (code zone, red → green → commit)
 
-- [x] 2.1 Add `react-day-picker` v9, `date-fns` v4, `@radix-ui/react-popover` at explicit carets (ADR-0001)
+- [x] 2.1 Add `react-day-picker` v9 and `@radix-ui/react-popover` at explicit carets (ADR-0001); `date-fns` arrives transitively through react-day-picker and is not a direct dependency (the app imports neither it nor needs it, and the unreferenced rule forbids a direct entry)
 - [x] 2.2 `ui/calendar.tsx`: react-day-picker v9 with react-icons chevrons, single and range modes
 - [x] 2.3 `ui/date-picker.tsx`: Radix Popover + calendar + typed input validated by a `parseCalendarDate` companion in `lib/format.ts` (Local-Date Rule)
 - [x] 2.4 Swap the transaction form's native date input for the single picker; the filter from/to pair becomes one range picker

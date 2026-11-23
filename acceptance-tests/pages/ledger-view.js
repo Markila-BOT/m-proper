@@ -124,8 +124,11 @@ async function expectBalanceCaveat(page) {
 
 async function sortByColumn(page, column) {
   // A sortable column renders its header as a control named by the column.
+  // Scope to the table head: the filters above the ledger carry controls
+  // whose names can contain a column word (the range picker's "Choose date
+  // range" matches \bDate\b), and the header is the only sort control.
   const header = page
-    .locator('main')
+    .locator('main thead')
     .getByRole('button', { name: new RegExp(`\\b${column}\\b`, 'i') })
     .first();
   await header.waitFor({ state: 'visible', timeout: 5000 });
