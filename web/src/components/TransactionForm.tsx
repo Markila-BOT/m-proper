@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
 import { DatePicker } from './ui/date-picker'
+import { SearchableSelect } from './ui/searchable-select'
 import {
   Select,
   SelectContent,
@@ -272,32 +273,20 @@ export default function TransactionForm({
             />
           </div>
 
-          <div>
-            <Label htmlFor="transaction-category" className={fieldLabel}>
-              Category
-            </Label>
-            <Select
-              value={formData.category === '' ? UNCHOSEN : formData.category}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  category: value === UNCHOSEN ? '' : value,
-                }))
-              }
-            >
-              <SelectTrigger id="transaction-category" aria-label="Category">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNCHOSEN}>Select category</SelectItem>
-                {categoryOptions.map((category) => (
-                  <SelectItem key={category.name} value={category.name}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SearchableSelect
+            id="transaction-category"
+            label="Category"
+            value={formData.category}
+            onChange={(category) =>
+              setFormData((prev) => ({ ...prev, category }))
+            }
+            options={categoryOptions.map((category) => ({
+              value: category.name,
+              label: category.name,
+            }))}
+            placeholder="Select category"
+            required
+          />
 
           <div>
             <Label htmlFor="transaction-amount" className={fieldLabel}>

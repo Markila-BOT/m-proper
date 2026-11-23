@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { FiX } from 'react-icons/fi'
 
 import { cn } from '@/lib/utils'
 
@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close className="absolute right-2 top-2 flex rounded-[2px] p-3.5 text-ink-soft opacity-70 ring-offset-paper transition-opacity hover:opacity-100 hover:text-ink focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-        <Cross2Icon className="h-4 w-4" />
+        <FiX className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

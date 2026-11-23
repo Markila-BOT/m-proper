@@ -15,9 +15,9 @@
 
 ## 3. Searchable select and icons (code zone)
 
-- [ ] 3.1 `ui/searchable-select.tsx`: popover combobox (agent-lender pattern) — filter input, no-match message, full keyboard operation via `aria-activedescendant`; Radix Select cannot host a filter input without stranding keyboard users
-- [ ] 3.2 Swap the category select; property filter keeps `ui/select`
-- [ ] 3.3 Migrate `ui/select.tsx` and `ui/dialog.tsx` to `react-icons`; retire `@radix-ui/react-icons` (unreferenced rule)
+- [x] 3.1 `ui/searchable-select.tsx`: popover combobox (agent-lender pattern) — filter input, no-match message, full keyboard operation via `aria-activedescendant`; Radix Select cannot host a filter input without stranding keyboard users
+- [x] 3.2 Swap the category select; property filter keeps `ui/select`
+- [x] 3.3 Migrate `ui/select.tsx` and `ui/dialog.tsx` to `react-icons`; retire `@radix-ui/react-icons` (unreferenced rule)
 
 ## 4. The four route chromes (code zone)
 

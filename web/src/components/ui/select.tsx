@@ -2,11 +2,7 @@
 
 import * as React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@radix-ui/react-icons'
+import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi'
 
 import { cn } from '../../lib/utils'
 
@@ -32,7 +28,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDownIcon className="h-4 w-4 text-print" />
+      <FiChevronDown className="h-4 w-4 text-print" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -50,7 +46,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUpIcon className="h-4 w-4 text-ink-soft" />
+    <FiChevronUp className="h-4 w-4 text-ink-soft" />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -67,7 +63,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDownIcon className="h-4 w-4 text-ink-soft" />
+    <FiChevronDown className="h-4 w-4 text-ink-soft" />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -137,7 +133,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <CheckIcon className="h-4 w-4 text-print" />
+        <FiCheck className="h-4 w-4 text-print" />
       </SelectPrimitive.ItemIndicator>
     </span>
 
