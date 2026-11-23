@@ -40,7 +40,7 @@ export default function AppHeader({
       <div className="flex flex-col gap-y-2.5 px-6 py-2.5 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-x-2 lg:px-9 lg:py-0">
         <Link
           to="/overview"
-          className="self-start text-[17px] font-bold tracking-[0.01em] text-ink focus-visible:outline-2 focus-visible:outline-print lg:mr-auto"
+          className="self-center text-[17px] font-bold tracking-[0.01em] text-ink focus-visible:outline-2 focus-visible:outline-print lg:mr-auto"
         >
           Landlord Ledger
         </Link>
