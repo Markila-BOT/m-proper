@@ -297,7 +297,7 @@ export default function TransactionList({
       return (
         <div className="rule-totals rule-hairline py-4">
           <p className="font-mono text-ledger text-ink">No matches</p>
-          <p className="mt-1 font-sans text-caption text-ink-soft">
+          <p className="mt-1 text-pretty font-sans text-caption text-ink-soft">
             No entry matches these filters. Reset them to see the whole book.
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function TransactionList({
     return (
       <div className="rule-totals rule-hairline py-4">
         <p className="font-mono text-ledger text-ink">No entries</p>
-        <p className="mt-1 font-sans text-caption text-ink-soft">
+        <p className="mt-1 text-pretty font-sans text-caption text-ink-soft">
           This page of the ledger is blank. Record your first line with “+ Add
           transaction”.
         </p>

@@ -21,6 +21,17 @@ type PropertySidebarProps = {
 const railCaptionClass =
   'w-full truncate text-center font-sans text-caption font-medium lg:hidden'
 
+// The rail is the shell's third chrome surface, and the blur boundary is
+// structural (ADR-0004): the entry list scrolls, so the list is an opaque
+// paper panel and the glass lives only on the rail's own chrome blocks —
+// the header (name, collapse, add) and the footer action. No glass element
+// here has a scrolling descendant, and the rail's frame carries the solid
+// edge the pane shows the page.
+const railFrame = 'glass-edge-r sticky top-0 flex h-dvh flex-col'
+const railHeader = 'glass-surface glass-chrome border-b border-rule'
+const railFooter = 'glass-surface glass-chrome-b border-t border-rule'
+const railScroll = 'min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper'
+
 export default function PropertySidebar({
   isCollapsed,
   onToggleCollapse,
@@ -51,30 +62,26 @@ export default function PropertySidebar({
   if (error) {
     // The rail's mount of the one shared unreachable state: where the
     // entry index would print, the state names what happened — no empty
-    // list pretending the ledger is merely blank.
+    // list pretending the ledger is merely blank. The state line is
+    // content, not chrome: it sits on the opaque paper panel, never on
+    // glass.
     return (
-      <nav
-        aria-label="Properties"
-        className="glass-surface glass-chrome glass-edge-r flex h-screen w-28 flex-col lg:w-80"
-      >
-        <div className="hidden lg:block p-6 border-b border-rule">
-          <div className="flex justify-between items-center mb-4">
+      <nav aria-label="Properties" className={`${railFrame} w-28 lg:w-80`}>
+        <div className={`${railHeader} hidden p-6 lg:block`}>
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
               Properties
             </h2>
             <button
               onClick={onToggleCollapse}
               aria-label="Collapse properties"
-              className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
+              className="rounded-[2px] p-2 text-ink-soft transition-colors hover:bg-print-wash hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
             >
-              <FiChevronRight className="w-5 h-5 transform rotate-180" />
+              <FiChevronRight className="h-5 w-5 rotate-180" />
             </button>
           </div>
         </div>
-        {/* The state line is content, not chrome: it sits on an opaque
-            panel inside the pane — the pane never scrolls, and a scrolling
-            subtree inside it never paints on glass (decision 3). */}
-        <div className="flex-1 overflow-y-auto bg-paper p-4 lg:p-6">
+        <div className={`${railScroll} p-4 lg:p-6`}>
           <UnreachableState />
         </div>
       </nav>
@@ -83,30 +90,27 @@ export default function PropertySidebar({
 
   if (railCollapsed) {
     return (
-      <nav
-        aria-label="Properties"
-        className="glass-surface glass-chrome glass-edge-r flex h-screen w-28 flex-col lg:w-16"
-      >
+      <nav aria-label="Properties" className={`${railFrame} w-28 lg:w-16`}>
         {/* The expand control is a desktop control: below lg the rail
             keeps its captions by viewport (no toggle needed — the names
             are already printed), so the toggle (and its rule) hide. */}
-        <div className="hidden lg:block p-4 border-b border-rule">
+        <div className={`${railHeader} hidden p-4 lg:block`}>
           <button
             onClick={onToggleCollapse}
             aria-label="Expand properties"
-            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
+            className="rounded-[2px] p-2 text-ink-soft transition-colors hover:bg-print-wash hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
           >
-            <FiChevronRight className="w-5 h-5 transform rotate-180" />
+            <FiChevronRight className="h-5 w-5 rotate-180" />
           </button>
         </div>
 
-        {/* The entry list scrolls, so it is paper: the rail's glass is the
-            outer chrome and the scrolling subtree sits on an opaque panel
-            inside it (decision 3). */}
-        <div className="flex-1 overflow-y-auto bg-paper p-2 space-y-2">
+        {/* The entry list scrolls, so it is paper: the rail's glass is its
+            chrome blocks and the scrolling list is a paper panel between
+            them (decision 3). */}
+        <div className={`${railScroll} space-y-2 p-2`}>
           <button
             onClick={() => setSelectedProperty('all')}
-            className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors focus-visible:outline-2 focus-visible:outline-print ${
+            className={`flex w-full flex-col items-center gap-1 rounded-[2px] px-1 py-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-print ${
               selectedProperty === 'all'
                 ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                 : 'text-ink-soft hover:bg-print-wash'
@@ -116,7 +120,7 @@ export default function PropertySidebar({
           >
             <PropertyTypeIcon
               type={PROPERTY_TYPE.COMMERCIAL}
-              className="w-5 h-5"
+              className="h-5 w-5"
             />
             <span className={railCaptionClass}>All Properties</span>
           </button>
@@ -125,7 +129,7 @@ export default function PropertySidebar({
             <button
               key={property.id}
               onClick={() => setSelectedProperty(property.id)}
-              className={`flex flex-col items-center gap-1 w-full px-1 py-2.5 rounded-[2px] transition-colors focus-visible:outline-2 focus-visible:outline-print ${
+              className={`flex w-full flex-col items-center gap-1 rounded-[2px] px-1 py-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-print ${
                 selectedProperty === property.id
                   ? 'bg-print-soft text-print shadow-[inset_2px_0_0_var(--color-print)]'
                   : 'text-ink-soft hover:bg-print-wash'
@@ -133,20 +137,20 @@ export default function PropertySidebar({
               aria-label={property.name}
               title={property.name}
             >
-              <PropertyTypeIcon type={property.type} className="w-5 h-5" />
+              <PropertyTypeIcon type={property.type} className="h-5 w-5" />
               <span className={railCaptionClass}>{property.name}</span>
             </button>
           ))}
         </div>
 
-        <div className="p-2 border-t border-rule">
+        <div className={`${railFooter} p-2`}>
           <PropertyModal>
             <button
-              className="flex flex-col items-center gap-1 w-full px-1 py-2.5 text-ink-soft rounded-[2px] transition-colors hover:text-print hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
+              className="flex w-full flex-col items-center gap-1 rounded-[2px] px-1 py-2.5 text-ink-soft transition-colors hover:bg-print-wash hover:text-print focus-visible:outline-2 focus-visible:outline-print"
               aria-label="Add Property"
               title="Add Property"
             >
-              <FiPlus className="w-5 h-5" />
+              <FiPlus className="h-5 w-5" />
               <span className={railCaptionClass}>Add Property</span>
             </button>
           </PropertyModal>
@@ -156,23 +160,21 @@ export default function PropertySidebar({
   }
 
   return (
-    <nav
-      aria-label="Properties"
-      className="glass-surface glass-chrome glass-edge-r flex h-screen w-80 flex-col"
-    >
+    <nav aria-label="Properties" className={`${railFrame} w-80`}>
       {/* Header — the rail's chrome on the pane: its name, the collapse
-          control, and the one add action. No record text lives here. */}
-      <div className="p-6 border-b border-rule">
-        <div className="flex justify-between items-center mb-4">
+          control, and the one add action. No record text lives here, and
+          nothing in it scrolls. */}
+      <div className={`${railHeader} p-6`}>
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
             Properties
           </h2>
           <button
             onClick={onToggleCollapse}
             aria-label="Collapse properties"
-            className="p-2 text-ink-soft rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print"
+            className="rounded-[2px] p-2 text-ink-soft transition-colors hover:bg-print-wash hover:text-ink focus-visible:outline-2 focus-visible:outline-print"
           >
-            <FiChevronRight className="w-5 h-5 transform rotate-180" />
+            <FiChevronRight className="h-5 w-5 rotate-180" />
           </button>
         </div>
 
@@ -182,16 +184,15 @@ export default function PropertySidebar({
             wash on hover — a way to add a property, not the page's one
             loudest claim. */}
         <PropertyModal>
-          <button className="flex justify-center items-center h-9 px-4 w-full text-sm font-semibold text-ink-soft border border-rule bg-paper rounded-[2px] transition-colors hover:text-ink hover:bg-print-wash focus-visible:outline-2 focus-visible:outline-print">
+          <button className="flex h-9 w-full items-center justify-center rounded-[2px] border border-rule bg-paper px-4 text-sm font-semibold text-ink-soft transition-colors hover:bg-print-wash hover:text-ink focus-visible:outline-2 focus-visible:outline-print">
             <span>Add Property</span>
           </button>
         </PropertyModal>
       </div>
 
-      {/* The entries carry money — figures never sit on glass. The rail's
-          glass is the outer chrome; everything from here down is an opaque
-          paper panel inside it, so the scrolling subtree is opaque too —
-          no scrolling subtree inside a pane ever paints on glass
+      {/* The entries carry money — figures never sit on glass. Everything
+          from here down is an opaque paper panel: the scrolling subtree is
+          opaque too, and it sits outside the glass chrome, not inside it
           (decision 3). */}
       <div className="flex min-h-0 flex-1 flex-col bg-paper">
         {/* All Properties Option */}
@@ -209,8 +210,8 @@ export default function PropertySidebar({
                 type={PROPERTY_TYPE.COMMERCIAL}
                 className={
                   selectedProperty === 'all'
-                    ? 'w-5 h-5 text-print'
-                    : 'w-5 h-5 text-ink-soft'
+                    ? 'h-5 w-5 text-print'
+                    : 'h-5 w-5 text-ink-soft'
                 }
               />
               <div className="flex-1">
@@ -234,7 +235,7 @@ export default function PropertySidebar({
         </div>
 
         {/* Properties List — a ruled list on paper */}
-        <div className="overflow-y-auto flex-1 bg-paper">
+        <div className={`${railScroll}`}>
           {properties.map((property) => {
             const summary = getSummaryForProperty(property.id)
             const isSelected = selectedProperty === property.id
@@ -243,7 +244,7 @@ export default function PropertySidebar({
               <button
                 key={property.id}
                 onClick={() => setSelectedProperty(property.id)}
-                className={`w-full px-5 py-3.5 text-left border-b border-rule transition-colors focus-visible:outline-2 focus-visible:outline-print ${
+                className={`w-full border-b border-rule px-5 py-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-print ${
                   isSelected
                     ? 'bg-print-soft shadow-[inset_3px_0_0_var(--color-print)]'
                     : 'hover:bg-print-wash'
@@ -256,11 +257,11 @@ export default function PropertySidebar({
                       type={property.type}
                       className={
                         isSelected
-                          ? 'flex-shrink-0 w-5 h-5 text-print'
-                          : 'flex-shrink-0 w-5 h-5 text-ink-soft'
+                          ? 'h-5 w-5 flex-shrink-0 text-print'
+                          : 'h-5 w-5 flex-shrink-0 text-ink-soft'
                       }
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       {/* A span at the 16px step the entry name always
                         printed (an h3's default): same size, same weight
                         per state — the heading simply stops living inside
@@ -275,16 +276,16 @@ export default function PropertySidebar({
                         {property.name}
                       </span>
                       <div className="flex items-center space-x-1 text-xs text-ink-soft">
-                        <FiMapPin className="w-3 h-3" />
+                        <FiMapPin className="h-3 w-3" />
                         <span className="truncate">{property.address}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Property Details */}
-                  <div className="flex justify-between items-center text-xs">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1 text-ink-soft">
-                      <FiUsers className="w-3 h-3" />
+                      <FiUsers className="h-3 w-3" />
                       <span>
                         {property.units}{' '}
                         {property.units === 1 ? 'unit' : 'units'}
@@ -297,22 +298,22 @@ export default function PropertySidebar({
 
                   {/* Financial Summary */}
                   {summary && (
-                    <div className="pt-2 space-y-1.5 border-t border-rule">
-                      <div className="flex justify-between items-center">
+                    <div className="space-y-1.5 border-t border-rule pt-2">
+                      <div className="flex items-center justify-between">
                         <span className="text-xs text-ink-soft">Net</span>
-                        <span className="font-mono text-sm font-semibold text-ink tabular-nums">
+                        <span className="font-mono text-sm font-semibold tabular-nums text-ink">
                           {formatMoney(summary.netProfit)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex items-center justify-between">
                         <span className="text-xs text-ink-soft">Income</span>
-                        <span className="font-mono text-xs text-print tabular-nums">
+                        <span className="font-mono text-xs tabular-nums text-print">
                           {formatMoney(summary.totalIncome)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex items-center justify-between">
                         <span className="text-xs text-ink-soft">Expenses</span>
-                        <span className="font-mono text-xs text-ink-soft tabular-nums">
+                        <span className="font-mono text-xs tabular-nums text-ink-soft">
                           {formatMoney(summary.totalExpenses)}
                         </span>
                       </div>

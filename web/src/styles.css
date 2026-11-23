@@ -63,22 +63,46 @@
    *   shadow    the elevation stack — a 1px contact shadow under a soft
    *             ambient one
    *   edge      the solid hairline the pane shows the content it floats over
-   *             (print at 65% over paper: 3.1:1, the non-text floor)
+   *             (print at 72%: 3.29:1 against the shadowed paper it borders,
+   *             the non-text floor; 65% measured 2.84:1 and failed it)
    *   blur      the budget: ≤ 24px
    *   saturate  the budget: ≤ 160%
    *
-   * Measured rendered pairs (1440px, the Transactions route's title and
-   * totals behind the pane; the darkest composite sampled from the empty
-   * glass between the tabs, #EFEDE7):
-   *   chrome labels, ink on the composite ............ 12.3:1
-   *   chrome secondary labels, ink-soft (72%) ........ 5.4:1
-   *   the active tab's print underline ............... 6.3:1
-   *   the pane's edge, print 65% over paper .......... 3.1:1
-   *   content text on the opaque paper panel ......... ink 13.6:1 · soft 5.7:1
-   * The 1px inset highlight is material texture, not a mark: the pane's
-   * boundary is the edge above, which holds the 3:1 non-text floor. The craft
-   * pass re-measures over the busiest content and records the pairs in
-   * DESIGN.md; no component invents a blur or a tint.
+   * Measured rendered pairs (tasks 5.2). 1440×900, deviceScaleFactor 2, a
+   * populated ledger (60 entries) scrolling under the pane. Every value is
+   * read out of a full-viewport Playwright screenshot: a clipped
+   * screenshot re-renders its sub-rect without the backdrop-filter, so it
+   * measures a page that is not the one on screen. The surface is the
+   * median pixel of the text's own box (glyphs cover well under half of it);
+   * the ink is the darkest pixel in that same box.
+   *
+   *   worst-case composite behind the chrome .. #e3e3de, the darkest pixel
+   *     the glass shows along the header/section-nav band while the ledger
+   *     scrolls beneath it (sampled at x 423-438, y 63-91, scroll 40)
+   *
+   *   chrome labels, each on the worst composite it was measured over:
+   *     product name, ink ............................ 12.79:1
+   *     export control, ink-soft ..................... 5.63:1
+   *     section label (inactive), ink-soft ........... 5.62:1
+   *     section label (active), ink .................. 13.24:1
+   *     the same inks against #e3e3de ................ ink 11.22:1 · soft 4.82:1
+   *
+   *   content text on the opaque paper panel:
+   *     page title, ink 13.62:1 · count caption, ink-soft 5.73:1
+   *     ledger description, ink 13.62:1 · balance figure, ink 12.50:1
+   *     totals figures ................................ print 7.00:1 · ink 13.62:1
+   *
+   *   non-text marks (3:1 floor):
+   *     pane edge, print 72% ......................... 3.29:1
+   *     active tab underline, print .................. 6.81:1
+   *     focus ring, print ............................ 7.00:1 (5.77:1 against
+   *                                                    the darkest composite)
+   *     calendar popover border ...................... 3.64:1
+   *
+   * Calendar day cells carry no border at all (border-width 0 in every
+   * cell); a day's state mark is the print fill, so there is no day-border
+   * pair to hold to the floor. The 1px inset highlight is material texture,
+   * not a mark: the pane's boundary is the edge above.
    */
   --glass-tint: rgba(251, 248, 241, 0.72);
   --glass-tint-opaque: var(--color-paper);
@@ -87,7 +111,7 @@
     inset 0 0 0 1px rgba(46, 94, 78, 0.16);
   --glass-shadow:
     0 1px 0 0 rgba(27, 42, 65, 0.06), 0 10px 24px -16px rgba(27, 42, 65, 0.24);
-  --glass-edge: rgba(46, 94, 78, 0.65);
+  --glass-edge: rgba(46, 94, 78, 0.72);
   --glass-blur: 16px;
   --glass-saturate: 140%;
 }
@@ -148,6 +172,31 @@
 @layer base {
   html {
     color-scheme: light;
+
+    /* Content scrolls beneath the sticky glass chrome (the shell's header +
+     * section nav), so the scrolling root reserves that chrome's height:
+     * anchored targets and focused elements scroll to a point below the pane,
+     * never under it. Measured pane heights (px, default text size, with the
+     * worst-case export label):
+     *   320px ...... 290.5  (masthead block + three nav rows)
+     *   390px ...... 229.5  (masthead block + two nav rows)
+     *   640-1023px . 188.5  (stacked masthead + one nav row)
+     *   >=1024px ...  99    (one header line + one nav row)
+     * The value steps up to the tallest case in each range; extra padding
+     * only scrolls a target a little further into view. */
+    scroll-padding-block-start: 291px;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      scroll-padding-block-start: 189px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      scroll-padding-block-start: 99px;
+    }
   }
 
   body {
@@ -214,9 +263,9 @@
  * Every glass surface wears .glass-surface and nothing else paints glass: no
  * component invents a blur, a tint, or a shadow. Glass chrome is fixed or
  * sticky with visible overflow — the blur boundary is structural, never a
- * style — and a scrolling subtree inside a pane sits on an opaque panel (the
- * property rail's list is the first: the rail's glass is the outer chrome,
- * the list is paper inside it).
+ * style — and a scrolling subtree sits on an opaque panel outside the glass,
+ * never inside it (the property rail: its header and footer action wear the
+ * glass, its scrolling entry list is a paper panel between them).
  * ------------------------------------------------------------------------- */
 @layer components {
   .glass-surface {
@@ -242,6 +291,15 @@
   .glass-chrome {
     position: sticky;
     top: 0;
+    overflow: visible;
+  }
+
+  /* A chrome block pinned to the trailing edge of its rail (the property
+   * rail's add action): the same promise as .glass-chrome — fixed in place
+   * over content, never a scroll container — anchored to the bottom edge. */
+  .glass-chrome-b {
+    position: sticky;
+    bottom: 0;
     overflow: visible;
   }
 }
@@ -302,7 +360,15 @@
 /* The occluding popover's motion (decision 8): enter 250ms ease-out, exit
  * 150ms, scale 0.96 from the trigger's origin. The pane is opaque paper, so
  * this is travel over content, not a material effect; reduced motion gates
- * the travel and keeps an opacity cross-fade. */
+ * the travel and keeps an opacity cross-fade.
+ *
+ * The 250ms enter is kept deliberately: these popovers open during data
+ * entry (the calendar while a date is being typed, the category list inside
+ * the transaction form), and the enter is the only cue that says where the
+ * opaque sheet came from and how to get back. Nothing in the measured path
+ * failed at 250ms — the sheet is not re-opened per keystroke, only per
+ * control — so it stays in the dropdown band, with the shorter 150ms exit
+ * so a cancelled open never lingers over the field being typed in. */
 @keyframes popover-in {
   from {
     opacity: 0;

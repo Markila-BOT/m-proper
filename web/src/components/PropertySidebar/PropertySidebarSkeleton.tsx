@@ -5,90 +5,98 @@ type PropertySidebarSkeletonProps = {
   isCollapsed?: boolean
 }
 
+// The skeleton wears the rail's real structure: glass only on the chrome
+// blocks, the entry list on the opaque paper panel, no scrolling subtree
+// inside a glass surface (ADR-0004 — the boundary is structural).
+const railFrame = 'glass-edge-r sticky top-0 flex h-dvh flex-col'
+const railHeader = 'glass-surface glass-chrome border-b border-rule'
+const railFooter = 'glass-surface glass-chrome-b border-t border-rule'
+const railScroll = 'min-h-0 flex-1 overflow-y-auto overscroll-contain bg-paper'
+
 export function PropertySidebarSkeleton({
   count = 3,
   isCollapsed = false,
 }: PropertySidebarSkeletonProps) {
   if (isCollapsed) {
     return (
-      <div className="glass-surface glass-chrome glass-edge-r flex h-screen w-28 flex-col lg:w-16">
-        <div className="p-4 border-b border-rule">
-          <Skeleton className="w-10 h-10" />
+      <div className={`${railFrame} w-28 lg:w-16`}>
+        <div className={`${railHeader} hidden p-4 lg:block`}>
+          <Skeleton className="h-10 w-10" />
         </div>
-        <div className="flex-1 overflow-y-auto bg-paper p-2 space-y-2">
-          <Skeleton className="mx-auto w-10 h-10" />
+        <div className={`${railScroll} space-y-2 p-2`}>
+          <Skeleton className="mx-auto h-10 w-10" />
           {Array.from({ length: count }).map((_, i) => (
-            <Skeleton key={i} className="mx-auto w-10 h-10" />
+            <Skeleton key={i} className="mx-auto h-10 w-10" />
           ))}
         </div>
-        <div className="p-2 border-t border-rule">
-          <Skeleton className="mx-auto w-10 h-10" />
+        <div className={`${railFooter} p-2`}>
+          <Skeleton className="mx-auto h-10 w-10" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="glass-surface glass-chrome glass-edge-r flex h-screen w-80 flex-col">
+    <div className={`${railFrame} w-80`}>
       {/* Header */}
-      <div className="p-6 border-b border-rule">
-        <div className="flex justify-between items-center mb-4">
-          <Skeleton className="w-24 h-4" />
-          <Skeleton className="w-10 h-10" />
+      <div className={`${railHeader} p-6`}>
+        <div className="mb-4 flex items-center justify-between">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-10" />
         </div>
-        <Skeleton className="w-full h-9" />
+        <Skeleton className="h-9 w-full" />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col bg-paper">
         {/* All Properties Option */}
         <div className="border-b border-rule">
-          <div className="px-5 py-3.5 w-full">
+          <div className="w-full px-5 py-3.5">
             <div className="flex items-center space-x-3">
-              <Skeleton className="w-5 h-5" />
+              <Skeleton className="h-5 w-5" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="w-24 h-4" />
-                <Skeleton className="w-32 h-3" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Properties List */}
-        <div className="overflow-y-auto flex-1 bg-paper">
+        <div className={railScroll}>
           {Array.from({ length: count }).map((_, i) => (
-            <div key={i} className="px-5 py-3.5 w-full border-b border-rule">
+            <div key={i} className="w-full border-b border-rule px-5 py-3.5">
               <div className="space-y-2.5">
                 {/* Property Header */}
                 <div className="flex items-start space-x-3">
-                  <Skeleton className="flex-shrink-0 w-5 h-5" />
-                  <div className="flex-1 space-y-2 min-w-0">
-                    <Skeleton className="w-32 h-4" />
+                  <Skeleton className="h-5 w-5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
                     <div className="flex items-center space-x-1">
-                      <Skeleton className="w-3 h-3" />
-                      <Skeleton className="w-24 h-3" />
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-24" />
                     </div>
                   </div>
                 </div>
 
                 {/* Property Details */}
-                <div className="flex justify-between items-center">
-                  <Skeleton className="w-16 h-3" />
-                  <Skeleton className="w-20 h-3" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
 
                 {/* Financial Summary */}
-                <div className="pt-2 space-y-1.5 border-t border-rule">
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-12 h-3" />
-                    <Skeleton className="w-20 h-4" />
+                <div className="space-y-1.5 border-t border-rule pt-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-4 w-20" />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-12 h-3" />
-                    <Skeleton className="w-16 h-3" />
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton className="w-14 h-3" />
-                    <Skeleton className="w-16 h-3" />
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-14" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
                 </div>
               </div>

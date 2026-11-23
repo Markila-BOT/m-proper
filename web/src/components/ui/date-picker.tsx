@@ -31,10 +31,14 @@ const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
 const fieldInput =
   'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 font-mono text-base tabular-nums text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper sm:text-sm'
+// The range pair's own bound labels: visible below sm, where the two fields
+// stack and the dash between them cannot say which bound is which.
+const rangeFieldLabel =
+  'w-9 shrink-0 font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft sm:sr-only'
 const triggerButton =
   'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[2px] border border-rule bg-paper text-ink-soft transition-colors duration-150 hover:text-ink focus-visible:outline-2 focus-visible:outline-print'
 const popoverBody =
-  'w-auto max-w-[calc(100vw-2rem)] overflow-auto p-3 max-h-[var(--radix-popover-content-available-height)]'
+  'w-auto max-w-[calc(100vw-2rem)] overflow-auto overscroll-contain p-3 max-h-[var(--radix-popover-content-available-height)]'
 
 // The recovery example the message offers: the last stored day when it is a
 // real one, otherwise today's local date. Never a UTC-derived day.
@@ -339,65 +343,83 @@ function DateRangePicker({
   return (
     <div className={className}>
       <span className={fieldLabel}>Date range</span>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <label htmlFor="ledger-start-date" className="sr-only">
-            From
-          </label>
-          <input
-            id="ledger-start-date"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="YYYY-MM-DD"
-            aria-label="From"
-            value={startText}
-            disabled={disabled}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? `${startHintId} ${errorId}` : startHintId}
-            onChange={(event) => {
-              setStartText(event.target.value)
-              setError(null)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                commitBound('start')
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* Below sm the pair stacks inside the column and names each bound:
+            two 8.5rem fields plus the dash need ~292px, and the 278px column
+            the rail leaves at 390 cannot carry them side by side without
+            clipping the placeholder. The labels are the words the dash would
+            have stood for; at sm and up they step back to sr-only and the
+            dash returns between the two inline fields. */}
+        <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-none sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <label htmlFor="ledger-start-date" className={rangeFieldLabel}>
+              From
+            </label>
+            <input
+              id="ledger-start-date"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="YYYY-MM-DD"
+              aria-label="From"
+              value={startText}
+              disabled={disabled}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={
+                error ? `${startHintId} ${errorId}` : startHintId
               }
-            }}
-            onBlur={() => commitBound('start')}
-            className={cn(fieldInput, 'w-[8.5rem] px-2')}
-          />
-          <span aria-hidden="true" className="text-ink-soft">
+              onChange={(event) => {
+                setStartText(event.target.value)
+                setError(null)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  commitBound('start')
+                }
+              }}
+              onBlur={() => commitBound('start')}
+              className={cn(
+                fieldInput,
+                'min-w-0 flex-1 px-2 sm:w-[8.5rem] sm:flex-none',
+              )}
+            />
+          </div>
+          <span aria-hidden="true" className="hidden text-ink-soft sm:inline">
             –
           </span>
-          <label htmlFor="ledger-end-date" className="sr-only">
-            To
-          </label>
-          <input
-            id="ledger-end-date"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="YYYY-MM-DD"
-            aria-label="To"
-            value={endText}
-            disabled={disabled}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? `${endHintId} ${errorId}` : endHintId}
-            onChange={(event) => {
-              setEndText(event.target.value)
-              setError(null)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                commitBound('end')
-              }
-            }}
-            onBlur={() => commitBound('end')}
-            className={cn(fieldInput, 'w-[8.5rem] px-2')}
-          />
+          <div className="flex min-w-0 items-center gap-1.5">
+            <label htmlFor="ledger-end-date" className={rangeFieldLabel}>
+              To
+            </label>
+            <input
+              id="ledger-end-date"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="YYYY-MM-DD"
+              aria-label="To"
+              value={endText}
+              disabled={disabled}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? `${endHintId} ${errorId}` : endHintId}
+              onChange={(event) => {
+                setEndText(event.target.value)
+                setError(null)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  commitBound('end')
+                }
+              }}
+              onBlur={() => commitBound('end')}
+              className={cn(
+                fieldInput,
+                'min-w-0 flex-1 px-2 sm:w-[8.5rem] sm:flex-none',
+              )}
+            />
+          </div>
         </div>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -405,11 +427,19 @@ function DateRangePicker({
               ref={triggerRef}
               type="button"
               aria-label="Choose date range"
+              title={rangeLabel}
               disabled={disabled}
-              className={cn(triggerButton, 'w-auto gap-2 px-2.5')}
+              className={cn(
+                triggerButton,
+                'w-auto min-w-0 max-w-full gap-2 px-2.5',
+              )}
             >
               <FiCalendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap font-mono text-ledger tabular-nums">
+              {/* The range reads in full in the two fields beside this
+                  control; the trigger truncates rather than force the row
+                  wider than its column, and carries the full label as a
+                  title for the pointer. */}
+              <span className="min-w-0 truncate font-mono text-ledger tabular-nums">
                 {rangeLabel}
               </span>
             </button>

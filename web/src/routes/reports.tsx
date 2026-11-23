@@ -18,11 +18,11 @@ function ReportsView() {
         <p className="font-sans text-caption font-semibold uppercase tracking-[0.18em] text-ink-soft">
           Not built
         </p>
-        <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink">
+        <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink">
           Reports is not built yet. This page keeps its address so the gap is
           visible rather than hidden, but there is no report to show.
         </p>
-        <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+        <p className="mt-2 max-w-[60ch] text-pretty text-sm leading-relaxed text-ink-soft">
           The ledger&apos;s totals, the property register, and the overview
           strip are the record today.
         </p>

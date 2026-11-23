@@ -252,7 +252,7 @@ function SearchableSelect({
             id={listId}
             role="listbox"
             aria-label={label}
-            className="max-h-[min(15rem,calc(var(--radix-popover-content-available-height)-3.5rem))] overflow-y-auto p-1"
+            className="max-h-[min(15rem,calc(var(--radix-popover-content-available-height)-3.5rem))] overflow-y-auto overscroll-contain p-1"
           >
             {matches.map((option, index) => {
               const isSelected = option.value === value

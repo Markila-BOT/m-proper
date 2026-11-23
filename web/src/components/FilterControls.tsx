@@ -50,8 +50,10 @@ type FilterControlsProps = {
 
 const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
+// 16px below sm, 14px at sm and up: iOS Safari zooms the page when a field's
+// text is smaller than 16px, and the filter row is a field users type in.
 const fieldInput =
-  'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
+  'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-base text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper sm:text-sm'
 
 export default function FilterControls({
   searchTerm,
@@ -113,8 +115,9 @@ export default function FilterControls({
         id="ledger-filters"
         className={`${isFiltersOpen ? 'flex' : 'hidden'} flex-wrap items-end gap-x-4 gap-y-3 pt-3 sm:flex`}
       >
-        {/* Search */}
-        <div className="min-w-[12rem] flex-1">
+        {/* Search — the field keeps its printed share but may shrink: at
+            320 the content column is narrower than 12rem. */}
+        <div className="min-w-0 flex-1 basis-[12rem]">
           <label htmlFor="ledger-search" className={fieldLabel}>
             Search
           </label>
@@ -130,7 +133,7 @@ export default function FilterControls({
         </div>
 
         {/* Category Filter */}
-        <div className="min-w-[11rem]">
+        <div className="min-w-0 basis-[11rem]">
           <label htmlFor="ledger-category" className={fieldLabel}>
             Category
           </label>
@@ -155,7 +158,7 @@ export default function FilterControls({
         </div>
 
         {/* Type Filter */}
-        <div className="min-w-[8rem]">
+        <div className="min-w-0 basis-[8rem]">
           <label htmlFor="ledger-type" className={fieldLabel}>
             Type
           </label>
@@ -180,7 +183,7 @@ export default function FilterControls({
 
         {/* Property Filter (only when the shell's scope is "all") */}
         {showPropertyFilter && (
-          <div className="min-w-[13rem]">
+          <div className="min-w-0 basis-[13rem]">
             <label htmlFor="ledger-property" className={fieldLabel}>
               Property
             </label>
@@ -201,12 +204,14 @@ export default function FilterControls({
         )}
 
         {/* Date range — one picker for the from/to pair; the typed fields
-            and the calendar trigger share the pair's state. */}
+            and the calendar trigger share the pair's state. It fills the
+            row below sm (the narrow column cannot carry a 20rem control
+            beside anything) and takes its printed width from sm up. */}
         <DateRangePicker
           start={dateRange.start}
           end={dateRange.end}
           onChange={onDateRangeChange}
-          className="min-w-[20rem]"
+          className="w-full min-w-0 sm:w-auto sm:min-w-[20rem]"
         />
 
         {/* The reset control prints only when there is something to reset,

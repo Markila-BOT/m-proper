@@ -48,7 +48,7 @@ type TransactionFormProps = {
 const fieldLabel =
   'mb-1.5 block font-sans text-caption font-semibold uppercase tracking-[0.14em] text-ink-soft'
 const fieldInput =
-  'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper'
+  'h-9 w-full rounded-[2px] border border-rule bg-paper px-3 text-base text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-paper sm:text-sm'
 
 // The blank line the form re-opens as after a record: today's LOCAL date
 // (never toISOString — whose UTC day is yesterday's page for a UTC+8
