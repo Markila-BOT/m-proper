@@ -279,6 +279,21 @@ function DateRangePicker({
     const stored = bound === 'start' ? start : end
     const issue = calendarDateIssue(text)
     if (issue === null) {
+      // A range whose start falls after its end is impossible: reject it
+      // exactly as an impossible day is rejected — name the problem and the
+      // recovery, and leave the stored pair unchanged. Calendar strings
+      // compare correctly as text.
+      const nextStart = bound === 'start' ? text : start
+      const nextEnd = bound === 'end' ? text : end
+      if (nextStart !== '' && nextEnd !== '' && nextStart > nextEnd) {
+        setError(
+          `The start date ${nextStart} is after the end date ${nextEnd}. ` +
+            `Choose a start on or before ${nextEnd}.`,
+        )
+        if (bound === 'start') setStartText(start)
+        else setEndText(end)
+        return
+      }
       setError(null)
       if (text !== stored) {
         onChange(
