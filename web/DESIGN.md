@@ -1,115 +1,118 @@
 ---
-name: Landlord Ledger — Bank Passbook
-description: A landlord income/expense ledger that reads the way a bank records money — a machine-print green hairline grid on ivory paper, ink-navy type, and a running balance auditable by eye.
+name: Landlord Ledger — Liquid Glass
+description: A landlord income/expense ledger on a passbook page under a liquid-glass chrome — a machine-print hairline grid and ink-navy figures on ivory paper, with a bounded translucent header, nav, and rail chrome that floats over the content and refuses to paint where text must be read.
 colors:
-  paper: "#fbf8f1"
-  ink: "#1b2a41"
-  ink-soft: "rgba(27, 42, 65, 0.72)"
-  ink-faint: "rgba(27, 42, 65, 0.66)"
-  print: "#2e5e4e"
-  print-wash: "rgba(46, 94, 78, 0.06)"
-  print-soft: "#e9f1ea"
-  rule: "rgba(46, 94, 78, 0.38)"
-  stamp: "#a31621"
+  glass-tint: 'rgba(251, 248, 241, 0.72)'
+  glass-edge: 'rgba(46, 94, 78, 0.72)'
+  glass-shadow: '0 1px 0 0 rgba(27, 42, 65, 0.06), 0 10px 24px -16px rgba(27, 42, 65, 0.24)'
+  paper: '#fbf8f1'
+  ink: '#1b2a41'
+  ink-soft: 'rgba(27, 42, 65, 0.72)'
+  ink-faint: 'rgba(27, 42, 65, 0.66)'
+  print: '#2e5e4e'
+  print-wash: 'rgba(46, 94, 78, 0.06)'
+  print-soft: '#e9f1ea'
+  rule: 'rgba(46, 94, 78, 0.38)'
+  stamp: '#a31621'
 typography:
   page-title:
     fontFamily: "Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
-    fontSize: "17px"
+    fontSize: '17px'
     fontWeight: 700
-    letterSpacing: "0.01em"
+    letterSpacing: '0.01em'
   caption:
     fontFamily: "Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
-    fontSize: "0.6875rem"
+    fontSize: '0.6875rem'
     fontWeight: 600
     lineHeight: 1.45
-    letterSpacing: "0.14em"
+    letterSpacing: '0.14em'
   body:
     fontFamily: "Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
-    fontSize: "0.875rem"
+    fontSize: '0.875rem'
     fontWeight: 500
   ledger:
     fontFamily: "IBM Plex Mono, ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace"
-    fontSize: "0.8125rem"
+    fontSize: '0.8125rem'
     fontWeight: 500
     lineHeight: 1.45
-    fontFeature: "tnum"
+    fontFeature: 'tnum'
   totals-figure:
     fontFamily: "IBM Plex Mono, ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace"
-    fontSize: "21px"
+    fontSize: '21px'
     fontWeight: 600
-    fontFeature: "tnum"
+    fontFeature: 'tnum'
   stamp-mark:
     fontFamily: "IBM Plex Mono, ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace"
-    fontSize: "11px"
+    fontSize: '11px'
     fontWeight: 700
-    letterSpacing: "0.18em"
+    letterSpacing: '0.18em'
 rounded:
-  sm: "2px"
+  sm: '2px'
 spacing:
-  ledger-row: "2.375rem"
-  control: "2.25rem"
-  cell: "0.75rem 0.625rem"
-  page-gutter: "1.5rem"
-  page-gutter-lg: "2.25rem"
+  ledger-row: '2.375rem'
+  control: '2.25rem'
+  cell: '0.75rem 0.625rem'
+  page-gutter: '1.5rem'
+  page-gutter-lg: '2.25rem'
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: "2.25rem"
-    padding: "0 1rem"
+    backgroundColor: '{colors.ink}'
+    textColor: '{colors.paper}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    height: '2.25rem'
+    padding: '0 1rem'
   button-primary-hover:
-    backgroundColor: "rgba(27, 42, 65, 0.9)"
-    textColor: "{colors.paper}"
+    backgroundColor: 'rgba(27, 42, 65, 0.9)'
+    textColor: '{colors.paper}'
   button-quiet:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink-soft}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    padding: "0.5rem 0.75rem"
+    backgroundColor: 'transparent'
+    textColor: '{colors.ink-soft}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    padding: '0.5rem 0.75rem'
   button-quiet-hover:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    backgroundColor: 'transparent'
+    textColor: '{colors.ink}'
   button-outline-quiet:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink-soft}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: "2.25rem"
-    padding: "0 1rem"
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink-soft}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    height: '2.25rem'
+    padding: '0 1rem'
   button-outline-quiet-hover:
-    backgroundColor: "{colors.print-wash}"
-    textColor: "{colors.ink}"
+    backgroundColor: '{colors.print-wash}'
+    textColor: '{colors.ink}'
   stamp-confirm:
-    backgroundColor: "{colors.stamp}"
-    textColor: "{colors.paper}"
-    typography: "{typography.stamp-mark}"
-    rounded: "{rounded.sm}"
-    padding: "0.125rem 0.5rem"
+    backgroundColor: '{colors.stamp}'
+    textColor: '{colors.paper}'
+    typography: '{typography.stamp-mark}'
+    rounded: '{rounded.sm}'
+    padding: '0.125rem 0.5rem'
   stamp-confirm-hover:
-    backgroundColor: "rgba(163, 22, 33, 0.9)"
-    textColor: "{colors.paper}"
+    backgroundColor: 'rgba(163, 22, 33, 0.9)'
+    textColor: '{colors.paper}'
   nav-tab-active:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    padding: "0.625rem 0"
+    backgroundColor: 'transparent'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    padding: '0.625rem 0'
   ledger-balance-cell:
-    backgroundColor: "{colors.print-wash}"
-    textColor: "{colors.ink}"
-    typography: "{typography.ledger}"
-    padding: "0.75rem 0.625rem"
-    width: "8rem"
+    backgroundColor: '{colors.print-wash}'
+    textColor: '{colors.ink}'
+    typography: '{typography.ledger}'
+    padding: '0.75rem 0.625rem'
+    width: '8rem'
   register-net-cell:
-    backgroundColor: "{colors.print-wash}"
-    textColor: "{colors.ink}"
-    typography: "{typography.ledger}"
-    padding: "0.75rem 0.625rem"
-    width: "8rem"
+    backgroundColor: '{colors.print-wash}'
+    textColor: '{colors.ink}'
+    typography: '{typography.ledger}'
+    padding: '0.75rem 0.625rem'
+    width: '8rem'
 ---
 
-# Design System: Landlord Ledger — Bank Passbook
+# Design System: Landlord Ledger — Liquid Glass
 
 Recorded from the built code on 2026-11-22 (`src/styles.css`, the components under `src/components/`, and the record's own pipeline — `src/lib/format.ts`, `src/transactions/summarize.ts`, `src/stores/ledgerFilterStore.ts`, the routes), after the third refinement pass — local-truth dates, the displayed-slice export, the mount-gated empty state, and the minors (the skip link, 44px sort headers, the count caption, the caveat's why, the rail's quiet Add Property). The second pass's records — one-line density at real widths, the book-authority rail, the Properties register, the accelerators (Reset filters, "/") — still stand. Every value below is evidenced by the shipped artifact, not by the plan that preceded it. Where the build and the earlier direction contract diverge, the build wins and the divergence is noted.
 
@@ -119,19 +122,20 @@ Recorded from the built code on 2026-11-22 (`src/styles.css`, the components und
 
 The ledger reads the way a bank records money. The surface is a passbook page: ivory paper carries dense printed columns ruled in machine-print green hairlines, every date and peso figure is set in IBM Plex Mono with tabular numerals at print density, and a running balance marches down the right edge on a pale print wash so the eye can audit the month by running down the rail. The category's default — a dashboard of white cards floating on a gray ground — is refused wholesale: no cards, no shadows at rest, no chart rings. Every total is a ruled printed strip, the trend is a ruled table, and the empty ledger is a ruled line, never an illustrated panel.
 
-Depth comes from rules and ground, never elevation. Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion exists — a newly recorded line prints itself onto the page — and nothing else animates; hover and focus are color states, not motion.
+Depth comes from rules and ground on the content, never elevation — while the shell's chrome is the one floating material. A bounded liquid-glass pane carries the header and the section nav as one sticky surface, and the rail's header and footer are glass blocks; the entry list between them is opaque paper. The glass is translucent enough for the page to move under it and refuses to paint anywhere text must be read (see Material). Ink navy does the reading; print green is the machine's voice — it owns the hairline grid, income figures, focus, selection, and the selected rail's wash; stamp red is held out for state marks only, the red of a rubber stamp landing on a confirmation or a rejected line. The browser surfaces carry the world too: selection, caret, native accents, link underlines, and scrollbars are all passbook-toned, the cheap tell that it was built rather than assembled. One authored motion belongs to the page — a newly recorded line prints itself onto the page — and the pickers' occluding popovers enter in 250ms and leave in 150ms from their trigger origin; hover and focus are color states, not motion.
 
-The world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its register pass — the card grid retired wholesale, one ruled line per property answering the product question in money (Net on the print wash first, Income in green, Expenses in ink-soft), the ledger's own trailing-cell delete and stamp confirm — and the third pass tightened the record's own truths: every user-visible date now derives from local parts (The Local-Date Rule), the export writes the displayed slice and says so on its control, its stamp, and its filename, and the empty page's paint is mount-gated so the first honest paint is silent. The record tells the truth about itself: the shell's footer names where the data lives on every page, the export's stamp names the slice that was written, and a delete carries a five-second undo. Two deferrals remain, both recorded, not canonized (see Elevation & Depth and the contracted records): the Add-Property modal's native checkbox and pending spinner, and the unlinked Reports placeholder; round three's unpicked fronts are queued in the change's records, not canonized here.
+The world is an Operate surface: a landlord completing bookkeeping, where scanability, density, and trust outrank expression. The finished world covers the shell (rail, header, tabs, footer), the Overview, Transactions, and Properties views, and the shared primitives; the Properties page has had its register pass — the card grid retired wholesale, one ruled line per property answering the product question in money (Net on the print wash first, Income in green, Expenses in ink-soft), the ledger's own trailing-cell delete and stamp confirm — and the third pass tightened the record's own truths: every user-visible date now derives from local parts (The Local-Date Rule), the export writes the displayed slice and says so on its control, its stamp, and its filename, and the empty page's paint is mount-gated so the first honest paint is silent. The record tells the truth about itself: the shell's footer names where the data lives on every page, the export's stamp names the slice that was written, and a delete carries a five-second undo. One deferral remains, recorded, not canonized (see Elevation & Depth and the contracted records): the Add-Property modal's native checkbox and pending spinner. The unlinked Reports route is the world's honest placeholder now; round three's unpicked fronts are queued in the change's records, not canonized here.
 
 **Key Characteristics:**
 
 - Ivory paper ground (#fbf8f1), ink-navy type (#1b2a41), machine-print green hairline rules (#2e5e4e), stamp red (#a31621) reserved for state marks.
+- One glass material, on the shell chrome only: a sticky header+nav pane and the rail's header/footer blocks — paper tinted to 72%, 16px blur, 140% saturate, a print edge at 72% (3.29:1). Every content panel under text is opaque.
 - IBM Plex Mono with tabular numerals for every date and money figure, at print density (0.8125rem line; one-line rows ≈39.84px, held at real widths).
 - Every user-visible date tells the local truth: a stored date is a calendar name, never a UTC instant, and the one format module owns every derivation (The Local-Date Rule, verified under TZ=Asia/Manila and TZ=America/New_York).
 - Structure from rules — 1px hairlines everywhere, a 3px double totals rule for closing lines — never from shadows.
 - The running balance rail on a print wash down the ledger's right edge always accumulates the book (every entry, date ascending) whatever the display; the caveat "Balance follows the book" prints whenever the view is not the book's own order and names why — "this view is filtered", "sorted newest first", or both.
 - Properties is a ruled register, not a card grid: one line per property, Net on the print wash first, Income in green, Expenses in ink-soft, the delete in the reserved trailing margin.
-- One authored motion (the print-in), removed entirely under prefers-reduced-motion; a restored line prints back in too.
+- Motion is authored and bounded: the print-in for a recorded line, and the pickers' popovers (250ms in / 150ms out, scale 0.96 from the trigger origin); reduced motion keeps the opacity cross-fade and gates the travel.
 - Honesty signals throughout: the footer's storage note, the export's stamp acknowledgment naming the slice it wrote (all entries at rest, the displayed ledger whenever anything narrows), the five-second delete undo that restores the original id, and the shared unreachable state that names a dead connection where the silent zero used to print.
 - 2px corners everywhere: squared, printed form fields.
 
@@ -166,6 +170,18 @@ The shadcn HSL layer underneath the ui/* primitives is re-pointed at this same p
 
 **The Owned Browser Chrome Rule.** Selection prints as print green at 22% over paper with ink text; carets and native checkbox/radio accents are print green; links carry ink text over a 1px print underline at 3px offset, turning print green on hover; scrollbars are thin ink (34% alpha) on a transparent track with a paper-framed thumb. The world does not stop at the components.
 
+## Material
+
+**The glass is a job, not a texture.** One material layer (ADR-0004) paints only where a surface floats over the page or occludes it: the shell's header+nav pane, the rail's header and footer chrome, and — within the material's rules — sheets and popovers. Body copy, table numerals, ledger figures, the rail's entry list, form fields, and every content panel under text stay on opaque paper. Glass never appears where it would put a record on a translucent ground.
+
+**The tokens.** `--glass-tint` is paper at 72% (the content behind keeps a quarter of its light for the blur to hold); `--glass-highlight` is a lit 1px top edge over a full inset ring; `--glass-shadow` is a 1px contact shadow under a soft ambient one; `--glass-edge` is print at 72% (the pane's boundary, 3.29:1); `--glass-blur` is 16px and `--glass-saturate` 140% — the budget is blur ≤ 24px and saturate ≤ 160%, and no component invents a value.
+
+**The blur boundary is structural.** No glass element contains a scrolling descendant. Glass chrome is `position: sticky` with `overflow: visible`; the rail's scrolling entry list lives on an opaque paper panel between the glass header and footer, so the material never sits over a scroll container.
+
+**The refusal cascade.** One implementation, four conditions: reduced transparency → an opaque tint, no translucency; no `backdrop-filter` support → an opaque tint behind the solid border; forced colors → Canvas/CanvasText with borders preserved and no blur (links take LinkText); reduced motion → animation off and `transition-property` keeps opacity, so the cross-fade survives and travel is gated. Forced colors is the last rule in source order, so the combined forced-colors + no-backdrop-filter case is an opaque Canvas panel with a solid CanvasText border.
+
+**Measured, not asserted.** At 1440×900, DPR 2, over a populated ledger scrolling under the pane: chrome labels 5.62–13.24:1 against their worst composite; body and figure text 5.73–13.62:1 on paper; the pane edge 3.29:1; the active tab underline 6.81:1; the focus ring 7.00:1; the calendar popover border 3.64:1. The full-band scan's darkest composite is rgb(217,217,215), where ink-soft is 4.87:1 — still above the 4.5:1 floor. The numbers and the sampling method are recorded beside the tokens in `src/styles.css`. A clipped screenshot re-renders without the `backdrop-filter`, so measurements use one full-viewport capture.
+
 ## Typography
 
 **Body Font:** Manrope (system-ui sans fallback)
@@ -192,23 +208,29 @@ There is no display face. The largest type on any page is a 21px mono total; tit
 
 ## Layout
 
-The shell is two columns on paper: a left property rail and the main column. The rail has three composed states. Below lg (1024px) it is w-28 (7rem) and every entry prints its name as a tiny centered caption under its icon — a touch user cannot hover a tooltip — truncated like any narrow printed column. At lg it is either w-16 (4rem) icon-only with hover tooltips, or the expanded w-80 (20rem) list with the collapse toggle; the toggle is a desktop-only control and hides below lg. `useIsDesktop` mirrors the lg media query through matchMedia, SSR-safe: the server paints the desktop rail and narrow viewports correct it on hydration.
+The shell is two columns on paper under one sticky glass chrome. The header and the section nav share a single glass pane pinned to the top (the material's one place on the shell); the rail is a structural frame whose head and foot are glass blocks and whose middle is an opaque paper list, so no glass element contains a scroll container. The rail has three composed states. Below lg (1024px) it is w-28 (7rem) and every entry prints its name as a tiny centered caption under its icon — a touch user cannot hover a tooltip — truncated like any narrow printed column. At lg it is either w-16 (4rem) icon-only with hover tooltips, or the expanded w-80 (20rem) list with the collapse toggle; the toggle is a desktop-only control and hides below lg. `useIsDesktop` mirrors the lg media query through matchMedia, SSR-safe: the server paints the desktop rail and narrow viewports correct it on hydration.
 
 The main column floors at `min-w-0` so a wide ledger sheet can never push or clip the paper — wide regions scroll inside their own ruled areas instead. Page gutters are 1.5rem below lg and 2.25rem at lg; each view's header row is the 17px bold title with a right-aligned mono caption where a count exists — the plain count at rest, and on the ledger "N of M entries" while filters hide lines (N displayed of the property scope's M) — and the Properties view carries its product question under the title instead. Landmarks stay honest: the product name in the header is a styled link home, never a heading, each route carries exactly one h1 — its own title, with the register's line names as h2s beneath it — and the browser tab is titled "Landlord Ledger". The keyboard reader's front door is the document's first Tab stop: a "Skip to content" link, quiet until it holds focus, then a printed ink stamp pinned to the page's top-left corner, jumping past the rail to `#main-content` — the routed page's own region, focusable so the jump is real, its outline quiet because a destination is not a control. The app header composes as a stacked masthead below lg (name, quiet export control, then the primary control full-width at the 44px touch height) and one 3.5rem line at lg, the primary back at the 2.25rem control height.
 
 Density is the passbook's: ledger rows run one line at print density (declared `--passbook-row` 2.375rem, realized as 0.625rem cell padding plus the 0.8125rem ledger line and the 1px row rule — ≈39.84px, held at real widths: 1280 and 1440 both), and the register's lines run the same budget; every field, select trigger, and primary button is 2.25rem high (`--passbook-control`, h-9); the blank ruled lines below the last entry run at the entries' own rhythm (2.5rem, 40px) and cap at fifteen. Touch reaches 44px wherever a thumb owns the surface: the masthead's primary below lg, the form's radios (by label padding — the mark itself stays 16px), the bottom-sheet confirms and the Undo target below sm.
 
-Overflow is owned, never leaked: both tables and the tab row are horizontal overflow regions (`overflow-x-auto`), and the body clips nothing (`overflow-x: hidden`). Below sm the narrow window opens onto the record, not a wall of apparatus: the filters row folds behind a disclosure control that names its active count ("Filters · N", `aria-expanded`, CSS-composed so the server paints it collapsed with no hydration flash), the ledger sheet holds its wider print (64rem below sm, a 55rem floor at sm and up) and slides inside its ruled region with the date column frozen at the left edge (opaque paper ground, its own right rule — header, entries, and blank lines alike), and the destructive confirm pins as a fixed bottom sheet with 44px targets — gated by the live sm query (`useMediaQuery`, SSR-safe), so the sheet is never sat `display:none` in a desktop page: at sm and up the inline cluster is the confirm and the sheet is not in the DOM at all. At 390px the composition is leak-free by construction — the rail's captions truncate, the header stacks its masthead, the tabs scroll inside their rule, the sheet slides inside its own, and `min-w-0` keeps the paper intact. The mobile captures in `.impeccable/review/` (finish and critique passes) are the provenance of that width.
+The two calendar pickers and the searchable category combobox are the one new primitive group: each opens an opaque paper popover (they hold text and scroll, so they are not glass), sized to the viewport and capped against the available height. The date fields accept typed `YYYY-MM-DD` and reject an impossible day or a reversed range with a message naming the problem and the recovery; the ledger's from/to pair is one range picker whose bounds stack with visible labels below sm and sit side by side above it.
+
+Overflow is owned, never leaked: the two tables are horizontal overflow regions (`overflow-x-auto`), and the body clips nothing (`overflow-x: hidden`). The section nav carries no scroll container — its three labels wrap when the window is narrow, because the blur boundary forbids a scroller inside glass. Below sm the narrow window opens onto the record, not a wall of apparatus: the filters row folds behind a disclosure control that names its active count ("Filters · N", `aria-expanded`, CSS-composed so the server paints it collapsed with no hydration flash), the ledger sheet holds its wider print (64rem below sm, a 55rem floor at sm and up) and slides inside its ruled region with the date column frozen at the left edge (opaque paper ground, its own right rule — header, entries, and blank lines alike), and the destructive confirm pins as a fixed bottom sheet with 44px targets — gated by the live sm query (`useMediaQuery`, SSR-safe), so the sheet is never sat `display:none` in a desktop page: at sm and up the inline cluster is the confirm and the sheet is not in the DOM at all. At 390px the composition is leak-free by construction — the rail's captions truncate, the header stacks its masthead, the section nav wraps to two rows inside the glass pane (chrome measures 229.5px at 390 and 290.5px at 320; both are recorded rather than hidden), the sheet slides inside its own, and `min-w-0` keeps the paper intact. The mobile captures in `.impeccable/review/` (finish and critique passes) are the provenance of that width.
 
 ## Elevation & Depth
 
-Flat. The finished world casts no shadows at rest; depth is conveyed by rules (hairline green), ground (paper, wash, soft), and ink weight. Every soft shadow in the world belongs to a surface that floats: the Radix Select option list (`shadow-md`), the dialog panel, the destructive confirm (the inline cluster on the row's edge at sm and up, the fixed bottom sheet below it), the export stamp, and the delete-undo snackbar (each `shadow-lg`) — the one soft shadow a floating surface is allowed. A dialog's page beneath stays legible through a 35% ink wash rather than going dark. The selected rail entry marks itself with an inset print bar (2px on the collapsed rail, 3px expanded) — a printed inset, not a raised edge. The Properties register has no cards to lift: its lines rule themselves like the ledger's, and a row's hover reveals the delete control and changes nothing else.
+The content is flat: no shadows at rest; depth is conveyed by rules (hairline green), ground (paper, wash, soft), and ink weight. The glass chrome is the one elevated material — a 1px contact shadow under a soft ambient one (`--glass-shadow`) beneath its edge — and every floating surface carries a soft shadow: the pickers' and combobox's opaque paper popovers (`--glass-shadow`), the dialog panel, the destructive confirm (the inline cluster on the row's edge at sm and up, the fixed bottom sheet below it), the export stamp, and the delete-undo snackbar (each `shadow-lg`) — the one soft shadow a floating surface is allowed. A dialog's page beneath stays legible through a 35% ink wash rather than going dark. The selected rail entry marks itself with an inset print bar (2px on the collapsed rail, 3px expanded) — a printed inset, not a raised edge. The Properties register has no cards to lift: its lines rule themselves like the ledger's, and a row's hover reveals the delete control and changes nothing else.
 
 ### Named Rules
 
 **The Flat Page Rule.** The page never casts shadows; a floating surface may cast one, softly. Hover on a page element changes color, never elevation.
 
-Drift, recorded not canonized: two pre-world leftovers survive outside the passes that reached them — the Add-Property modal's native checkbox still wears a gray default border (`border-gray-300`) and its submit button still spins a pending spinner, and the unlinked /reports route keeps its raw template card. Inherited deferrals, not rules future surfaces should follow.
+Drift, recorded not canonized: one pre-world leftover survives outside the passes that reached it — the Add-Property modal's native checkbox still wears a gray default border (`border-gray-300`) and its submit button still spins a pending spinner. Inherited deferral, not a rule future surfaces should follow. The unlinked Reports route was re-skinned in the glass pass: it is the world's honest placeholder now, not the old template card.
+
+## Motion
+
+The page's one authored motion is the print-in: a newly recorded line wipes itself onto the page left to right with an exponential ease-out, the balance landing last; a restored line prints back in. The pickers' and combobox's occluding popovers enter in 250ms and leave in 150ms, scaling from 0.96 at `--radix-popover-content-transform-origin` (the trigger's side, never the center); they are opened during data entry, and the short exit keeps a cancelled open from lingering over the field. Hover and focus are color states, not travel. Under `prefers-reduced-motion: reduce` the cascade sets `animation: none` on glass and gates the popover travel, while `transition-property` keeps `opacity` — the cross-fade survives, the movement does not.
 
 ## Shapes
 
@@ -305,7 +327,7 @@ The Do list is the keep-list — the invariants that never get diluted as the wo
 - **Do** keep every actionable surface on the 2px print outline (or the field ring) on focus-visible — rail, toggle, tabs, disclosure, delete control — never the browser default.
 - **Do** keep stamp red for state marks only — destructive confirms and validation failures — squared, uppercase mono, bordered or grounded.
 - **Do** keep one ink primary per screen — the masthead's "+ Add transaction"; the rail's "Add Property" is a quiet outline, and everything else is quiet ink.
-- **Do** keep every overflow inside its own ruled region (tables and the tab row scroll; the main column floors at `min-w-0`) so the paper never leaks at 390px.
+- **Do** keep every overflow inside its own ruled region (the tables scroll; the section nav wraps because glass may not contain a scroller; the main column floors at `min-w-0`) so the paper never leaks at 390px.
 - **Do** honor `prefers-reduced-motion` by removing the print-in entirely.
 - **Do** keep the form's validation to one voice: the authored stamp names only the actually-missing fields, read as a person says them — no native `required` bubbles.
 - **Do** keep every accelerator honest: "Reset filters" prints only when there is something to reset and unwinds exactly the counted controls; "/" reaches the search field unless the hand is already writing in a field; the dialog's every close path returns focus to the trigger that opened it.
@@ -323,7 +345,7 @@ The Do list is the keep-list — the invariants that never get diluted as the wo
 - **Don't** replace the ruled empty state with a card or illustration.
 - **Don't** animate anything beyond the print-in; hover and focus are color states.
 - **Don't** spend print green on decoration — it belongs to rules, income, focus, selection, and the rail's selected state.
-- **Don't** inherit the two recorded deferrals — the Add-Property modal's native gray-bordered checkbox and pending spinner, and the unlinked /reports placeholder's raw template chrome; they are recorded, not canonized.
+- **Don't** inherit the recorded deferral — the Add-Property modal's native gray-bordered checkbox and pending spinner; it is recorded, not canonized.
 
 ### Contracted records
 
