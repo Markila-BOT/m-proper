@@ -1,7 +1,8 @@
-// Generated/validated against api/openapi.json (API 0.1.0) on 2026-11-25T13:17:21.141Z
 // web/src/lib/api-client.ts
-// Hand-maintained client aligned with the properties route contract.
-// Regenerate guidance: pnpm run generate:api-client
+// Hand-maintained client for the properties routes the app serves on its own
+// origin (`/api/properties`, `/api/properties/:id`). There is no generated
+// contract and no API host: the domain types here and the route handlers share
+// `#/lib/domain`, so a shape drift fails the type check.
 
 import type { CreatePropertyRequest, Property } from '#/lib/domain'
 

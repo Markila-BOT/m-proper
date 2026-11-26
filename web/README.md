@@ -7,14 +7,14 @@ TanStack Start UI for m-proper. Calls the properties routes on its own origin (`
 ```bash
 # from repo root
 pnpm install
-pnpm run dev:web
+pnpm dev
 # http://localhost:3001
 ```
 
 ## Build
 
 ```bash
-pnpm run build:web
+pnpm build
 ```
 
 `vite build` runs TanStack Start behind Nitro (`nitro/vite`). It emits a Node

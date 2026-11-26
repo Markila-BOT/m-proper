@@ -53,10 +53,10 @@
 
 ## 7. Delete the Rust service
 
-- [ ] 7.1 Delete `api/` (crate, migrations, tests, `openapi.json`, Swagger wiring, `api/README.md`) and `scripts/generate-api-client.ts`; remove `dev:api` and `build:api` from the root scripts
-- [ ] 7.2 Remove the CORS configuration and the `Authorization`-header path from the client, and delete any remaining reference to the retired override key
-- [ ] 7.3 Rewrite the `openspec/config.yaml` context that asserts "Architecture A: Start is UI shell only — business logic lives in Rust"
-- [ ] 7.4 Update the glossary (`Access token`, `Identity`, and new terms for the routes and the cookie contract) and both READMEs
+- [x] 7.1 Delete `api/` (crate, migrations, tests, `openapi.json`, Swagger wiring, `api/README.md`) and `scripts/generate-api-client.ts`; remove `dev:api` and `build:api` from the root scripts
+- [x] 7.2 Remove the CORS configuration and the `Authorization`-header path from the client, and delete any remaining reference to the retired override key
+- [x] 7.3 Rewrite the `openspec/config.yaml` context that asserts "Architecture A: Start is UI shell only — business logic lives in Rust"
+- [x] 7.4 Update the glossary (`Access token`, `Identity`, and new terms for the routes and the cookie contract) and both READMEs
 
 ## 8. Completion
 

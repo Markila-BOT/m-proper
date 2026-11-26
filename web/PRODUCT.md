@@ -24,9 +24,9 @@ Landlord bookkeeping: monthly income/expense entry against a property portfolio,
 
 ## Capabilities and Constraints
 
-- Properties (create, list, delete) are server-backed: Rust Axum API over sqlx → Supabase Postgres, JSON envelope `{ success, message, data? }`, camelCase fields.
-- Transactions are browser-local (localStorage) today. Durable intent, confirmed: transactions move onto the Rust API next.
-- Architecture A is binding on implementation shape: the web app is a UI shell; business logic lives in Rust, not in TanStack Start server functions.
+- Properties (create, list, delete) are server-backed: TanStack Start server routes over Drizzle → Supabase Postgres, JSON envelope `{ success, message, data? }`, camelCase fields.
+- Transactions are still browser-local (localStorage); the planned `server-transactions` change moves them onto the same server routes.
+- The app is one TanStack Start process: server routes under `/api` own the business logic and the database, and the browser calls them same-origin with its session cookie.
 - Single-user today; multi-user is undecided, not foreclosed.
 - No test suite in the product code yet; an acceptance-test harness is planned (spec-as-source, cucumber-js).
 
@@ -43,7 +43,7 @@ None binding. The header name "Landlord Ledger" and the ₱ currency are current
 ## Product Principles
 
 1. The ledger is the product: recording and reading money in and out of a property must be fast and boring.
-2. The server owns durable truth; the browser is a shell (Architecture A).
+2. The server owns durable truth; the browser is a view of it.
 3. Landlord vocabulary, not accounting jargon: properties, units, income, expenses, categories.
 4. The record stays exportable (CSV) and inspectable (your own Postgres).
 5. Multi-user doors stay unlocked: decisions may be single-user today, but never single-user forever by accident.

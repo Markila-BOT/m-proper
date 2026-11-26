@@ -3,13 +3,13 @@ schema: intent-driven
 context: |
   Product: m-proper — landlord property income/expense tracker.
   Domain: properties and income/expense transactions; financial records are sensitive.
-  Stack: Rust Axum API (sqlx → Supabase Postgres), TanStack Start web app (React Query, Tailwind), pnpm for JS.
-  Tooling: cargo build/clippy/test, pnpm --filter web build, pnpm run generate:api-client.
+  Stack: one TanStack Start app (React Query, Tailwind) over Supabase Postgres; pnpm for JS.
+  Tooling: pnpm --filter web build, pnpm --filter web test:unit, and the Drizzle migrate step.
 
-  Architecture A: Start is UI shell only — business logic lives in Rust, not Start server functions.
+  Architecture: one TanStack Start app owns the pages, the auth server functions, and the /api routes. Drizzle owns the schema and migrations over Supabase Postgres. The Supabase session cookie is the identity. No Rust service exists.
   Wire format: JSON envelope { success, message, data? } with camelCase fields.
-  Monorepo: api/ (Cargo), web/ (TanStack Start).
-  DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL.
+  Monorepo: web/ (TanStack Start); there is no api/ package.
+  DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL. Migrations use DIRECT_DATABASE_URL, the non-pooled connection.
   Conventional commits. Prefer small, focused changes.
 
   Agents: Route source implementation to the senior-dev subagent and

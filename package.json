@@ -3,23 +3,16 @@
   "version": "0.4.0",
   "private": true,
   "type": "module",
-  "description": "Landlord property tracker — Rust Axum API + TanStack Start",
+  "description": "Landlord property tracker — TanStack Start on Supabase",
   "license": "MIT",
   "packageManager": "pnpm@11.21.0+sha512.521705bce689924eac72f5a3587122f362689ef6571e55ba80076fd637c11132ecffada26fad4ea79c485bfddbfd3d5a2a5b05805a77e893de71ec8a6cca3bb1",
   "scripts": {
-    "dev": "pnpm run dev:stack",
-    "dev:stack": "concurrently -n api,web -c blue,green \"pnpm run dev:api\" \"pnpm run dev:web\"",
-    "dev:api": "cd api && cargo watch -x run",
+    "dev": "pnpm --filter web dev",
     "dev:web": "pnpm --filter web dev",
-    "build": "pnpm run build:api && pnpm run build:web",
-    "build:api": "cd api && cargo build --release",
+    "build": "pnpm --filter web build",
     "build:web": "pnpm --filter web build",
-    "generate:api-client": "node --experimental-strip-types scripts/generate-api-client.ts",
     "seed:auth": "node --experimental-strip-types scripts/seed-auth.ts",
     "test:scripts": "node --experimental-strip-types --test scripts/*.test.ts",
     "test:acceptance": "cd acceptance-tests && npm test"
-  },
-  "devDependencies": {
-    "concurrently": "^10.0.7"
   }
 }

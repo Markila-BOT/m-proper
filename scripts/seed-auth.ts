@@ -6,9 +6,9 @@
  * email confirmed so they are usable immediately.
  *
  * THE SERVICE ROLE KEY BELONGS TO THIS SEED STEP AND THE TEST HARNESS ONLY.
- * It must never be placed in web/.env, api/.env, or any web or API runtime
- * configuration. The web carries the project URL and the publishable key; the
- * API carries the issuer, JWKS location, and audience.
+ * It must never be placed in web/.env or any runtime configuration. The web
+ * carries the project URL and the publishable key; the server carries the
+ * issuer, JWKS location, and audience.
  *
  * Configuration (environment only, nothing is read from .env files):
  *   SUPABASE_URL               required — the project URL, https://<ref>.supabase.co

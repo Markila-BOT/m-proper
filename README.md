@@ -6,61 +6,61 @@ Landlord property income/expense tracker.
 
 | Layer | Tech |
 |-------|------|
-| API | Rust · Axum · sqlx → Supabase Postgres |
-| Web | TanStack Start · React Query · Tailwind |
-| JS tooling | **pnpm** workspaces (`web/`) |
+| App | TanStack Start · React Query · Tailwind |
+| Data | Drizzle → Supabase Postgres |
+| Auth | Supabase Auth · session cookie |
+| JS tooling | **pnpm** workspace (`web/`) |
 
 ## Quick start
 
-### 1. API
+### 1. Install
 
 ```bash
-cp api/.env.example api/.env
-```
-
-In Supabase: **Project Settings → Database → Connection string → URI**  
-Paste a `postgresql://…` value (not the `https://….supabase.co` project URL).
-
-```bash
-pnpm run dev:api
-# http://localhost:3000
-# Swagger: http://localhost:3000/swagger-ui
-```
-
-### 2. Web
-
-```bash
-cp web/.env.example web/.env   # optional; defaults to http://localhost:3000
 pnpm install
-pnpm run dev:web
+```
+
+### 2. Configure
+
+```bash
+cp web/.env.example web/.env
+```
+
+Fill in the public Supabase values, then add the server-only names from the
+environment contract in [`web/README.md`](web/README.md): `DATABASE_URL`
+(pooled), `SUPABASE_URL`, `SUPABASE_JWKS_URL`, `SUPABASE_JWT_ISSUER`, and
+`SUPABASE_JWT_AUD`. Migrations also need `DIRECT_DATABASE_URL`, the non-pooled
+connection.
+
+### 3. Migrate
+
+Migrations are an explicit step; they never run during the build or from a
+request.
+
+```bash
+pnpm --filter web db:migrate
+```
+
+### 4. Run
+
+```bash
+pnpm dev
 # http://localhost:3001
 ```
 
-### Both
-
-```bash
-pnpm run dev
-```
-
-### Generate / validate API client
-
-```bash
-pnpm run generate:api-client
-```
-
-See `api/README.md` for details.
+The app serves its pages and the `/api` routes on one origin.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `pnpm run dev` | Rust API + TanStack Start |
-| `pnpm run dev:api` | Axum with cargo-watch |
-| `pnpm run dev:web` | Start on port 3001 |
-| `pnpm run build` | Release API + web production build |
-| `pnpm run generate:api-client` | Validate OpenAPI → stamp TS client |
+| `pnpm dev` | Start the app on port 3001 |
+| `pnpm build` | Production build (Nitro output in `web/.output`) |
+| `pnpm --filter web db:migrate` | Apply Drizzle migrations over the direct connection |
+| `pnpm seed:auth` | Create or find the bootstrap and test owners |
+| `pnpm test:scripts` | Unit-test the root scripts |
 
 ## Env
 
-- `api/.env` — `DATABASE_URL` (**postgresql://** URI, required), `PORT` (default 3000)
-- `web/.env` — `VITE_API_BASE_URL` (default `http://localhost:3000`)
+- `web/.env` — local development values. See the environment contract in
+  [`web/README.md`](web/README.md) for every name. `VITE_`-prefixed values are
+  public and reach the browser; every other value stays server-side.
