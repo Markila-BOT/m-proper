@@ -19,6 +19,7 @@ const assert = require('node:assert/strict');
 const { Given, When, Then, After } = require('@cucumber/cucumber');
 
 const { state } = require('../support/harness');
+const authState = require('../support/auth-state');
 const { requirePage } = require('../pages/browser');
 const glass = require('../pages/glass-surfaces');
 const ledgerView = require('../pages/ledger-view');
@@ -86,7 +87,15 @@ function ratio(value) {
 // and the new context is registered for the After hook.
 async function openMeasuredPage(world, viewport = glass.VIEWPORT) {
   requirePage(world); // named cause when chromium is missing
-  const session = await glass.openSession(state.browser, viewport);
+  // The measured context is signed in like every other scenario: cookies do
+  // not cross contexts, so it gets the same cached storage state — with the
+  // ledger-state keys stripped first, like the per-scenario Before sweep.
+  const cached = authState.getStorageState({
+    origin: state.webBaseUrl,
+    identity: 'primary',
+  });
+  const storageState = cached ? ledgerView.clearLedgerStateFromStorageState(cached) : null;
+  const session = await glass.openSession(state.browser, viewport, { storageState });
   const previous = world.page;
   world.page = session.page;
   world.extraContext = session.context;

@@ -68,6 +68,13 @@ async function expectSidebarPropertyAbsent(page, name) {
   await entry.waitFor({ state: 'detached', timeout: WAIT_MS });
 }
 
+// Pick a property in the sidebar, which writes the property store's persisted
+// selection — the state the sign-out reset must remove.
+async function selectProperty(page, name) {
+  const entry = await expectSidebarProperty(page, name);
+  await entry.click();
+}
+
 // --- the shared unreachable state (surface-api-unreachable-state) ---
 
 // The app's runtime base-URL override key (web/src/lib/api-client.ts): a
@@ -107,6 +114,33 @@ async function expectUnreachableRailState(page) {
   return state;
 }
 
+// --- the signed-in identity and the way out (design §7) ---
+
+// The header names the signed-in landlord beside the one sign-out control.
+async function expectSignedInAs(page, email) {
+  await page.getByText(email, { exact: true }).first().waitFor({
+    state: 'visible',
+    timeout: WAIT_MS,
+  });
+}
+
+// Sign-out is a server function behind the header button; on success the page
+// loads /sign-in, so the guard re-reads the cleared cookies on the server.
+async function signOut(page) {
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.waitForURL((url) => url.pathname.startsWith('/sign-in'), { timeout: WAIT_MS });
+}
+
+// Open a protected route as an unsigned visitor: the shell's beforeLoad guard
+// must send them to sign-in instead of rendering the ledger.
+async function openProtectedPageExpectingSignIn(page, path = '/overview') {
+  await page.goto(new URL(path, state.webBaseUrl).toString(), { waitUntil: 'networkidle' });
+  await page.waitForURL((url) => url.pathname.startsWith('/sign-in'), { timeout: WAIT_MS });
+  await page
+    .getByRole('heading', { level: 1, name: 'Sign in', exact: true })
+    .waitFor({ state: 'visible', timeout: WAIT_MS });
+}
+
 module.exports = {
   open,
   reload,
@@ -115,7 +149,11 @@ module.exports = {
   waitForSidebarProperties,
   expectSidebarProperty,
   expectSidebarPropertyAbsent,
+  selectProperty,
   openWithApiBaseUrl,
   clearApiBaseUrlOverride,
   expectUnreachableRailState,
+  expectSignedInAs,
+  signOut,
+  openProtectedPageExpectingSignIn,
 };

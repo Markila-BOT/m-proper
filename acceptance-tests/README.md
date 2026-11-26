@@ -38,10 +38,51 @@ missing configuration. Use the `postgresql://` URI from the Supabase
 Database settings, not the project `https` URL.
 
 Browser scenarios drive a real Playwright chromium (one browser for the
-whole suite, a fresh page per scenario, closed after the run). The browser
-binary is installed once with `npx playwright install chromium` — without
-it, HTTP scenarios still run and browser steps fail naming the missing
-binary.
+whole suite, a fresh context per scenario, closed after the run). The browser
+binary is installed once with `npx playwright install chromium` — the suite
+signs in through the real sign-in page, so without it no session exists and
+API/browser steps fail naming the missing binary.
+
+## Signed-in identities and disposable accounts
+
+The suite runs as real landlords. `acceptance-tests/.env.local` (gitignored;
+never commit it) supplies:
+
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — the Auth admin key, used
+  only by Node to create, confirm, and remove disposable accounts;
+- `TEST_OWNER_A_ID` and `TEST_OWNER_B_ID` — the seeded owners' Auth ids;
+- `SEED_OWNER_EMAIL`/`SEED_OWNER_PASSWORD`,
+  `SEED_A_EMAIL`/`SEED_A_PASSWORD`, `SEED_B_EMAIL`/`SEED_B_PASSWORD` — the
+  seeded credentials.
+
+The harness signs the primary owner (test owner A) in once per origin through
+the real sign-in page at boot, saves the Playwright `storageState`, and gives
+every scenario context that state. Cookies do not cross origins, so the
+suite-minus-self child signs in again in its own process against its offset
+web port; each origin caches exactly one session. Test owner B is available
+through the same cache under its own identity key (and
+`authState.newContextForIdentity`), so isolation scenarios get B's own context
+rather than sharing A's.
+
+Sign-up, sign-out, and password-reset scenarios must not use the shared
+owner. They create a disposable identity through the Auth admin API
+(`world.createDisposableIdentity()` or
+`world.createUnconfirmedDisposableIdentity()`), which returns
+`{ id, email, password, confirmed }`. Disposable addresses begin
+`acceptance-disposable-`; the delete guard refuses any other address, so the
+three seeded owners can never be removed. The After hook deletes each
+scenario's identities even when it failed, and AfterAll sweeps the run-wide
+registry.
+
+The API and web app processes are started without the admin key or seeded
+passwords, and every sign-in asserts that the page's cookies and storage do
+not contain the admin key. Admin calls stay in Node.
+
+A single harness scenario can be run while developing:
+
+```sh
+cd acceptance-tests && npx cucumber-js --name "The suite runs signed in"
+```
 
 ## The effective spec
 
@@ -56,6 +97,32 @@ truth will become once those changes are synced and archived.
 - Archived changes (`openspec/changes/archive/`) never execute.
 - The run prints a composition report to stderr naming each superseded
   rule and every left-out scenario with its `spec.md` file:line.
+
+### Verifying one change
+
+`HARNESS_CHANGE=<change-id>` narrows a run to the source-of-truth specs plus
+**only** that change's delta, so a change can be verified before the other
+active changes' scenarios are implemented:
+
+```sh
+cd acceptance-tests && HARNESS_CHANGE=landlord-accounts npx cucumber-js --dry-run
+cd acceptance-tests && HARNESS_CHANGE=landlord-accounts npm test
+```
+
+- Unset (the default) is exactly the full effective spec above.
+- Set, the composition uses `openspec/specs/` as-is plus
+  `.extracted/changes/<change-id>/specs/**/*.feature`. Other active changes'
+  deltas are excluded and named in the composition report, so the report
+  stays honest about what was left out in both modes.
+- The id must name an active change with at least one delta; an unknown or
+  archived id fails the run naming the missing delta.
+- The supersession self-check composes its own throwaway change's scope
+  (it runs its discovery child with `HARNESS_CHANGE=__superseded_probe__`),
+  so another active change that supersedes the same requirement cannot
+  collide with the probe, whatever scope the caller's run uses.
+- `npm run test:specs` still executes only `openspec/specs/` (its profile
+  overrides the composed paths), so `HARNESS_CHANGE` does not change what that
+  run executes.
 
 `npm run test:specs` is the source-of-truth-only regression run: it executes
 `openspec/specs/` as-is, with no deltas applied.
@@ -135,9 +202,12 @@ any other failure is reported as a regression.
 
 The harness proves its own cleanup:
 
-- After every scenario the After hook clears the browser storage it seeded
-  and deletes its smoke rows through the API; AfterAll sweeps any leftover
-  probe rows through the still-running API before shutting down.
+- After every scenario the Before-side sweep clears every
+  `landlord-transactions*` key and the persisted property selection before the
+  scenario's first page script, and the After hook clears them again, asserts
+  none survived (naming any that did), and deletes its smoke rows through the
+  API; AfterAll sweeps any leftover probe rows through the still-running API
+  before shutting down.
 - The scenario "The app is alive for the scenarios and gone after" records
   that both harness ports were free before boot and registers a
   post-teardown check; after AfterAll stops both apps, the harness prints
@@ -160,6 +230,11 @@ curl -s http://localhost:3021/health   # connection refused
 skill pack. Their destination filenames are load-bearing (`cucumber.cjs`
 is discovered by name; the extractor is required by `cucumber.cjs`) — do not
 rename or modify them; improvements belong in the pack, not here.
+
+One deliberate local extension: `openspec-effective-paths.cjs` carries the
+opt-in `HARNESS_CHANGE` scope documented above. It is a superset of the pack
+file (unset behaves exactly as the pack does), and it should be folded back
+into the pack before the pack is re-copied over it.
 
 `suite-minus-self.cjs` and `suite-discovery.cjs` are not pack files: they
 are this harness's own child-run configurations (same extraction and

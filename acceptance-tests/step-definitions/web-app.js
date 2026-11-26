@@ -24,6 +24,12 @@ const shell = require('../pages/app-shell');
 const propertiesView = require('../pages/properties-view');
 const addPropertyModal = require('../pages/add-property-modal');
 const ledgerView = require('../pages/ledger-view');
+const signInPage = require('../pages/sign-in');
+const authState = require('../support/auth-state');
+const authTokens = require('../support/auth-tokens');
+const identities = require('../support/identities');
+const api = require('../support/api-client');
+const { startApiWithUnreachableJwks, stopProbeApi } = require('../support/second-api');
 
 // --- View properties from API ---
 //
@@ -40,6 +46,18 @@ Given('the user opens the application with the properties API available', async 
     true,
     'expected /health success true — the properties API must be available to the application'
   );
+
+  // Accounts own their rows now, so the landlord the suite signs in as starts
+  // with an empty ledger. Arrange one row through the API (registered for the
+  // After-hook cleanup) so this scenario has something the API returns to
+  // display; the assertion still reads whatever the API lists, never a
+  // hardcoded name.
+  const arranged = await this.postProbeProperty({ address: 'Acceptance Probe Way 0' });
+  assert.ok(
+    arranged.status === 201 && arranged.body && arranged.body.data && arranged.body.data.id,
+    `arrangement failed: could not create a property for this landlord (${arranged.status})`
+  );
+
   const page = requirePage(this);
   await shell.open(page);
   await shell.waitForSidebarProperties(page);
@@ -529,3 +547,804 @@ Then("the empty ledger's zeroed figures do not render as though the ledger were 
     `the strip must not print money figures while the state shows, but printed: "${stripText.trim()}"`
   );
 });
+
+// ===========================================================================
+// landlord-accounts: the authenticated shell, the bearer client, and sign-out
+// ===========================================================================
+//
+// Two environment facts shape these scenarios and are stated where they matter:
+//
+// 1. The project's ES256 private key is unavailable, so a genuinely expired or
+//    rejected access token cannot be minted. The browser's stored session
+//    carries the two facts the client reads — `expires_at` and the refresh
+//    token — so the harness moves `expires_at` into the past (exactly the
+//    refresh an hour of waiting would force) or replaces the access token's
+//    signature (exactly the 401 a rejected token would earn), keeping the real
+//    refresh token. Nothing is stubbed.
+// 2. "Sign-out" is a server function that clears the cookie session; the guard
+//    sends the visitor to sign-in on the next navigation (web/src/lib/supabase/
+//    sign-out.ts, api-client.ts). The steps therefore assert the signed-out
+//    state, then observe the guard on a navigation — the app's documented path.
+
+const LEDGER_PROPERTY_SELECTION_KEY = 'landlord-selected-property';
+// Where the flash detector records the previous landlord's markers it saw.
+const FLASH_STORAGE_KEY = 'acceptance-previous-account-flash';
+const REFRESH_URL_PATTERN = /\/auth\/v1\/token\?grant_type=refresh_token/;
+
+function apiOrigin() {
+  return new URL(state.apiBaseUrl).origin;
+}
+
+function webOrigin() {
+  return new URL(state.webBaseUrl).origin;
+}
+
+function isPropertiesUrl(url) {
+  return url.origin === apiOrigin() && /^\/properties(\/|$)/.test(url.pathname);
+}
+
+// Records every token-refresh request the page makes, and every property
+// request/response the app sends. A scenario owns its listeners through its
+// page, and the After hook closes that page.
+function watchAuthAndApi(page, sink) {
+  page.on('request', (request) => {
+    if (REFRESH_URL_PATTERN.test(request.url())) {
+      sink.refreshes.push({ method: request.method(), url: request.url() });
+    }
+    const url = new URL(request.url());
+    if (isPropertiesUrl(url)) {
+      sink.propertyRequests.push({ method: request.method(), url: request.url() });
+    }
+  });
+  page.on('response', (response) => {
+    const url = new URL(response.url());
+    if (isPropertiesUrl(url)) {
+      sink.propertyResponses.push({
+        method: response.request().method(),
+        status: response.status(),
+        url: response.url(),
+      });
+    }
+  });
+}
+
+function emptyRequestSink() {
+  return { refreshes: [], propertyRequests: [], propertyResponses: [] };
+}
+
+// The app makes an authenticated request through the real Add Property flow:
+// a user action that crosses the bearer client, unlike the load-time list
+// fetch which has already happened by the time a scenario attaches.
+async function triggerAuthenticatedRequest(world, payload) {
+  await addPropertyModal.open(world.landlordPage);
+  await addPropertyModal.fill(world.landlordPage, payload);
+  await addPropertyModal.submit(world.landlordPage);
+}
+
+// ---------------------------------------------------------------------------
+// The guard and the return target
+// ---------------------------------------------------------------------------
+
+Given('the visitor is signed out', async function () {
+  const { context, page } = await authState.newUnsignedContext({ browser: state.browser });
+  this.extraContext = context;
+  this.visitorPage = page;
+  assert.strictEqual(
+    authState.hasSessionCookie(await context.storageState()),
+    false,
+    'the visitor must start with no Supabase session cookie'
+  );
+});
+
+When('the visitor opens a ledger screen', async function () {
+  this.intendedScreen = '/transactions';
+  await this.visitorPage.goto(new URL(this.intendedScreen, state.webBaseUrl).toString(), {
+    waitUntil: 'networkidle',
+  });
+  await this.visitorPage.waitForURL((url) => url.pathname.startsWith('/sign-in'), {
+    timeout: signInPage.WAIT_MS,
+  });
+  await this.visitorPage
+    .getByRole('heading', { level: 1, name: 'Sign in', exact: true })
+    .waitFor({ state: 'visible', timeout: signInPage.WAIT_MS });
+  this.signInRedirect = new URL(this.visitorPage.url()).searchParams.get('redirect');
+});
+
+Then('the app sends the visitor to sign in', async function () {
+  assert.ok(signInPage.isSignInUrl(this.visitorPage), 'the guard must land the visitor on sign-in');
+  assert.strictEqual(
+    new URL(this.visitorPage.url()).searchParams.get('redirect'),
+    this.intendedScreen,
+    'the sign-in page must carry the intended screen as the return target'
+  );
+  assert.strictEqual(
+    authState.hasSessionCookie(await this.extraContext.storageState()),
+    false,
+    'the guard must not sign the visitor in'
+  );
+});
+
+Then('after a successful sign-in it returns to the intended screen', async function () {
+  this.visitor = await this.createDisposableIdentity({ confirmed: true });
+  await signInPage.submit(this.visitorPage, {
+    email: this.visitor.email,
+    password: this.visitor.password,
+  });
+
+  await this.visitorPage.waitForURL((url) => url.pathname === this.intendedScreen, {
+    timeout: signInPage.WAIT_MS,
+  });
+  await shell.waitForShell(this.visitorPage);
+  await shell.expectSignedInAs(this.visitorPage, this.visitor.email);
+  // The intended ledger screen really rendered (not just its URL).
+  await this.visitorPage
+    .locator('main')
+    .getByRole('heading', { name: /Transactions/ })
+    .first()
+    .waitFor({ state: 'visible', timeout: signInPage.WAIT_MS });
+  console.log(`[web-app] the signed-out visit to ${this.intendedScreen} returned there after sign-in`);
+});
+
+When('the return target is an absolute URL, a protocol-relative path, or has a scheme', async function () {
+  // Every shape the one validator must refuse: an absolute URL, a
+  // protocol-relative path, and a scheme (which also covers javascript:).
+  this.tamperedTargets = [
+    'https://evil.example/transactions',
+    '//evil.example/transactions',
+    'javascript:alert(1)',
+  ];
+  this.tamperedLandlord = await this.createDisposableIdentity({ confirmed: true });
+});
+
+Then('after sign-in the app lands on the default screen, not the target', async function () {
+  const page = this.visitorPage;
+  const observed = [];
+
+  for (const target of this.tamperedTargets) {
+    // Start each attempt signed out so the sign-in form is the one that acts.
+    await this.extraContext.clearCookies();
+    assert.strictEqual(
+      authState.hasSessionCookie(await this.extraContext.storageState()),
+      false,
+      `the visitor must be signed out before the "${target}" attempt`
+    );
+
+    const signInUrl = new URL('/sign-in', state.webBaseUrl);
+    signInUrl.searchParams.set('redirect', target);
+    await page.goto(signInUrl.toString(), { waitUntil: 'networkidle' });
+    await page
+      .getByRole('heading', { level: 1, name: 'Sign in', exact: true })
+      .waitFor({ state: 'visible', timeout: signInPage.WAIT_MS });
+
+    await signInPage.submit(page, {
+      email: this.tamperedLandlord.email,
+      password: this.tamperedLandlord.password,
+    });
+    await page.waitForURL(
+      (url) => url.origin === webOrigin() && url.pathname === '/overview',
+      { timeout: signInPage.WAIT_MS }
+    );
+    await shell.waitForShell(page);
+
+    const landed = new URL(page.url());
+    observed.push(`${target} -> ${landed.pathname}`);
+    assert.strictEqual(landed.origin, webOrigin(), `a tampered target must never leave the app origin: ${target}`);
+    assert.notStrictEqual(
+      landed.pathname,
+      new URL(target, webOrigin()).pathname,
+      `the app must not honour the tampered target "${target}"`
+    );
+  }
+
+  console.log(`[web-app] tampered return targets fell back to the default screen: ${observed.join('; ')}`);
+});
+
+Then("the header shows the landlord's email", async function () {
+  await shell.expectSignedInAs(this.landlordPage, this.landlord.email);
+  await this.landlordPage
+    .getByRole('button', { name: 'Sign out', exact: true })
+    .waitFor({ state: 'visible', timeout: signInPage.WAIT_MS });
+  console.log(`[web-app] the header names ${this.landlord.email} beside the one sign-out control`);
+});
+
+Then('the session ends and a protected screen sends the visitor to sign in', async function () {
+  assert.strictEqual(
+    authState.hasSessionCookie(await this.extraContext.storageState()),
+    false,
+    'sign-out must clear the cookie session'
+  );
+  // The guard is the app's documented "next navigation" path: a protected
+  // screen now answers with sign-in and a return target.
+  await shell.openProtectedPageExpectingSignIn(this.landlordPage, '/overview');
+  assert.strictEqual(
+    new URL(this.landlordPage.url()).searchParams.get('redirect'),
+    '/overview',
+    'the guard must carry the protected screen as the return target'
+  );
+});
+
+// ---------------------------------------------------------------------------
+// The bearer client: a valid token, an expiry, a revocation, an outage
+// ---------------------------------------------------------------------------
+
+When('the app requests the properties list', async function () {
+  const page = this.landlordPage;
+
+  const matchesList = (urlString, method) => {
+    const url = new URL(urlString);
+    return method === 'GET' && isPropertiesUrl(url) && url.pathname === '/properties';
+  };
+
+  // The list request the app makes after a successful UI create: the create
+  // invalidates the properties query, and the app re-reads the list through the
+  // same bearer client. No navigation is involved, so the response body can be
+  // read while the document that owns it is alive.
+  const requestSeen = new Promise((resolve) => {
+    const onRequest = (request) => {
+      if (!matchesList(request.url(), request.method())) return;
+      page.off('request', onRequest);
+      resolve(request.allHeaders().then((headers) => ({ url: request.url(), headers })));
+    };
+    page.on('request', onRequest);
+  });
+  const responseSeen = new Promise((resolve) => {
+    const onResponse = (response) => {
+      if (!matchesList(response.url(), response.request().method())) return;
+      page.off('response', onResponse);
+      resolve(response.json().then((body) => ({ status: response.status(), body })).catch(() => ({ status: response.status(), body: null })));
+    };
+    page.on('response', onResponse);
+  });
+
+  // The create that triggers the invalidation, through the real modal.
+  this.triggerPayload = this.probePayload({ address: 'Acceptance Probe Way Valid Token' });
+  await addPropertyModal.submitProperty(page, this.triggerPayload);
+
+  const [request, response] = await Promise.all([requestSeen, responseSeen]);
+  const authorization = request.headers.authorization || request.headers.Authorization;
+  const tokenMatch = /^Bearer\s+(.+)$/i.exec(authorization || '');
+  this.observedListRequest = { url: request.url, token: tokenMatch ? tokenMatch[1] : null };
+  assert.ok(response.body, `the list response body must be readable (status ${response.status})`);
+  this.observedListResponse = response;
+  await shell.waitForSidebarProperties(page);
+});
+
+Then('the request carries the access token', async function () {
+  const observed = this.observedListRequest;
+  assert.ok(observed, 'the app must have made a properties request first');
+  assert.ok(observed.token, `the request must carry a Bearer token (saw ${observed.url})`);
+
+  const claims = authTokens.decode(observed.token);
+  assert.ok(claims, 'the Bearer credential must be a JWT');
+  assert.strictEqual(
+    claims.payload.sub,
+    this.landlord.id,
+    'the request must carry the signed-in landlord’s own access token'
+  );
+  assert.ok(
+    claims.payload.exp * 1000 > Date.now(),
+    'the carried token must still be inside its validity window'
+  );
+});
+
+Then('the response is accepted', async function () {
+  const observed = this.observedListResponse;
+  assert.strictEqual(observed.status, 200, `the API must accept the token (got ${observed.status})`);
+  assert.strictEqual(observed.body.success, true, 'the accepted response must carry success true');
+  assert.ok(Array.isArray(observed.body.data), 'the accepted response must carry the property list');
+  console.log('[web-app] the app sent the landlord’s access token and the API accepted the list request');
+});
+
+Given('the access token has expired and the refresh token is valid', async function () {
+  this.landlord = await this.createDisposableIdentity({ confirmed: true });
+  const session = await authState.newSignedInContext({
+    browser: state.browser,
+    origin: state.webBaseUrl,
+    email: this.landlord.email,
+    password: this.landlord.password,
+  });
+  this.extraContext = session.context;
+  this.landlordPage = session.page;
+
+  const before = authState.sessionFromStorageState(session.storageState);
+  assert.ok(before && before.access_token && before.refresh_token, 'the sign-in must store a full session');
+  this.sessionBeforeExpiry = before;
+  this.expiryForced = true;
+
+  // The expiry is forced by rewriting the stored session, not by waiting: the
+  // real access token and the real refresh token stay, only `expires_at` moves
+  // an hour into the past — the state supabase-js treats as an expired access
+  // token. The project's ES256 key is unavailable, so this is how a real
+  // expiry is simulated; nothing about the refresh path is stubbed.
+  const rewritten = await authState.expireStoredSession(session.context, {
+    origin: state.webBaseUrl,
+  });
+  assert.ok(
+    rewritten.expires_at * 1000 < Date.now(),
+    'the stored session must say the access token has already expired'
+  );
+  assert.strictEqual(rewritten.access_token, before.access_token, 'the access token itself is the real one');
+  assert.strictEqual(rewritten.refresh_token, before.refresh_token, 'the refresh token is the real one');
+});
+
+Given('the session can no longer be refreshed', async function () {
+  this.landlord = await this.createDisposableIdentity({ confirmed: true });
+  const session = await authState.newSignedInContext({
+    browser: state.browser,
+    origin: state.webBaseUrl,
+    email: this.landlord.email,
+    password: this.landlord.password,
+  });
+  this.extraContext = session.context;
+  this.landlordPage = session.page;
+
+  const before = authState.sessionFromStorageState(session.storageState);
+  assert.ok(before && before.access_token && before.refresh_token, 'the sign-in must store a full session');
+  this.sessionBeforeRevocation = before;
+  this.revocationForced = true;
+
+  // Revoke the session for real: the Auth admin API deletes the account, so
+  // the stored refresh token can no longer be exchanged. The After hook's
+  // deletion tolerates the account already being gone.
+  await identities.deleteDisposableUser(this.landlord);
+  assert.strictEqual(
+    await identities.getAdminUser(this.landlord.id),
+    null,
+    'the disposable account must be gone before its session is used'
+  );
+
+  // The access token is still a signed JWT the API would accept for up to an
+  // hour, so no refresh would be attempted. Replace only its signature
+  // (header and claims kept) so the API answers the 401 a rejected token
+  // would — the closest a harness without the project key can get, stated
+  // here rather than implied.
+  await authState.replaceStoredAccessToken(session.context, {
+    origin: state.webBaseUrl,
+    token: authTokens.replaceSignature(before.access_token),
+  });
+});
+
+When('the app makes a request', async function () {
+  if (this.outageProbe) {
+    // The page's own load-time fetch already targeted the key-set-outage API.
+    await waitFor(
+      () => this.outageResponses.some((response) => response.path === '/properties' && response.status === 503),
+      {
+        timeoutMs: 30_000,
+        label: 'the app’s properties request reached the key-set-outage API and was refused with 503',
+      }
+    );
+    return;
+  }
+
+  const page = this.landlordPage;
+  this.requestSink = emptyRequestSink();
+  watchAuthAndApi(page, this.requestSink);
+
+  this.triggerPayload = this.probePayload({ address: 'Acceptance Probe Way Token Refresh' });
+  const postSeen = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && isPropertiesUrl(new URL(response.url())),
+    { timeout: signInPage.WAIT_MS }
+  ).catch(() => null);
+
+  await triggerAuthenticatedRequest(this, this.triggerPayload);
+
+  if (this.expiryForced) {
+    // The proactive refresh happens before the request goes out; wait for the
+    // POST to settle and record its envelope.
+    const response = await postSeen;
+    assert.ok(response, 'the app’s POST must have reached the API after the refresh');
+    this.triggerResponse = { status: response.status(), body: await response.json() };
+  } else if (this.revocationForced) {
+    // The 401 starts the refresh; the failed refresh signs the landlord out.
+    // Wait for the session to disappear rather than for a response the flow
+    // is designed to abandon.
+    await waitFor(
+      async () => !authState.hasSessionCookie(await this.extraContext.storageState()),
+      {
+        timeoutMs: 60_000,
+        intervalMs: 500,
+        label: 'the app’s sign-out to clear the session after the failed refresh',
+      }
+    );
+  }
+});
+
+Then('the client refreshes once and retries', async function () {
+  const sink = this.requestSink;
+  assert.ok(sink, 'the app must have made a request first');
+  assert.strictEqual(
+    sink.refreshes.length,
+    1,
+    `the client must refresh exactly once, saw ${sink.refreshes.length}: ${JSON.stringify(sink.refreshes)}`
+  );
+
+  // A second refresh would be a loop. The successful flow ends at the API
+  // response, so the count cannot grow afterwards either.
+  await this.landlordPage.waitForTimeout(750);
+  assert.strictEqual(
+    sink.refreshes.length,
+    1,
+    `the client must not refresh again (saw ${sink.refreshes.length})`
+  );
+  assert.ok(
+    sink.propertyRequests.some((request) => request.method === 'POST'),
+    'the client must retry the API request after refreshing'
+  );
+  console.log('[web-app] the expired stored session forced exactly one token refresh before the retried POST');
+});
+
+Then('the retried request succeeds', async function () {
+  const observed = this.triggerResponse;
+  assert.ok(observed, 'the retried request must have completed');
+  assert.strictEqual(observed.status, 201, `the retried POST must succeed (got ${observed.status})`);
+  assert.strictEqual(observed.body.success, true, 'the retried response must carry success true');
+
+  // The refresh really rotated the session: the stored access token differs and
+  // is valid again, and the retried request carried it.
+  const after = await authState.storedSession(this.extraContext, state.webBaseUrl);
+  assert.ok(after, 'the refreshed session must be stored in the browser');
+  assert.notStrictEqual(
+    after.access_token,
+    this.sessionBeforeExpiry.access_token,
+    'the refresh must have rotated the access token'
+  );
+  assert.ok(after.expires_at * 1000 > Date.now(), 'the refreshed session must be valid again');
+  const claims = authTokens.decode(after.access_token);
+  assert.ok(claims, 'the refreshed access token must be a JWT');
+  assert.strictEqual(claims.payload.sub, this.landlord.id, 'the refreshed token must belong to the landlord');
+
+  if (observed.body.data && observed.body.data.id) {
+    this.createdProperties.push({ id: observed.body.data.id, token: after.access_token });
+  }
+});
+
+Then('the landlord is signed out and sent to sign in', async function () {
+  const sink = this.requestSink;
+  assert.ok(sink, 'the app must have made a request first');
+
+  // One failed refresh, not a loop: the first 401 triggers exactly one
+  // exchange, and the failure ends the session.
+  assert.strictEqual(
+    sink.refreshes.length,
+    1,
+    `a revoked session must refresh once and then sign out, saw ${sink.refreshes.length} refresh(es)`
+  );
+  assert.ok(
+    sink.propertyResponses.some((response) => response.method === 'POST' && response.status === 401),
+    'the API must have refused the tampered/expired credential with 401'
+  );
+  assert.strictEqual(
+    authState.hasSessionCookie(await this.extraContext.storageState()),
+    false,
+    'the failed refresh must clear the session cookie (the landlord is signed out)'
+  );
+
+  // The app's documented path: the guard sends the signed-out visitor to
+  // sign-in on the next navigation, carrying the protected screen back.
+  await shell.openProtectedPageExpectingSignIn(this.landlordPage, '/overview');
+  assert.strictEqual(
+    new URL(this.landlordPage.url()).searchParams.get('redirect'),
+    '/overview',
+    'the guard must carry the protected screen as the return target'
+  );
+  console.log('[web-app] one failed refresh signed the landlord out; the guard then sent them to sign in');
+});
+
+Given('the API cannot verify tokens because the key set is unavailable', async function () {
+  // A real second API whose JWKS location is a closed port: every verification
+  // fails to fetch a key and fails closed with 503. The page's base URL is
+  // pointed at it through the existing runtime override, so the app's own
+  // client — not a stub — receives the 503.
+  const page = requirePage(this);
+  this.outageProbe = await startApiWithUnreachableJwks();
+  this.probeApis.push(this.outageProbe);
+
+  this.outageResponses = [];
+  page.on('response', (response) => {
+    const url = new URL(response.url());
+    if (url.origin === new URL(this.outageProbe.baseUrl).origin) {
+      this.outageResponses.push({ path: url.pathname, status: response.status() });
+    }
+  });
+
+  await shell.openWithApiBaseUrl(page, this.outageProbe.baseUrl);
+  assert.ok(!signInPage.isSignInUrl(page), 'the signed-in landlord must still reach the shell');
+});
+
+Then('the app shows the unreachable state', async function () {
+  const page = requirePage(this);
+  const stateElement = await shell.expectUnreachableRailState(page);
+  assert.strictEqual(
+    await stateElement.getAttribute('role'),
+    'status',
+    'the shared state must announce itself as a status'
+  );
+  const refused = await (async () => {
+    try {
+      return (await fetch(`${this.outageProbe.baseUrl}/properties`, {
+        headers: { authorization: 'Bearer probe' },
+        signal: AbortSignal.timeout(5000),
+      })).status;
+    } catch {
+      return null;
+    }
+  })();
+  assert.ok(
+    this.outageResponses.some((response) => response.path === '/properties' && response.status === 503),
+    `the app's properties request must have been refused by the outage API with 503 ` +
+      `(observed: ${JSON.stringify(this.outageResponses)}, direct probe: ${refused})`
+  );
+});
+
+Then('the session is not cleared', async function () {
+  const page = requirePage(this);
+  const stored = await authState.storedSession(this.context, state.webBaseUrl);
+  assert.ok(stored, 'an auth outage must not clear the session cookie');
+  const claims = authTokens.decode(stored.access_token);
+  assert.ok(claims, 'the surviving session must carry a JWT');
+  assert.strictEqual(
+    claims.payload.sub,
+    state.auth && state.auth.primaryUserId,
+    'the surviving session must still be the signed-in landlord’s'
+  );
+  assert.ok(
+    state.auth && state.auth.primaryEmail,
+    'the harness must know the signed-in landlord'
+  );
+  await shell.expectSignedInAs(page, state.auth.primaryEmail);
+  assert.ok(!signInPage.isSignInUrl(page), 'an auth outage must not send the landlord to sign-in');
+
+  // The probe API is this scenario's; stop it and prove its port is free.
+  this.probeApis = this.probeApis.filter((probe) => probe !== this.outageProbe);
+  const stopped = await stopProbeApi(this.outageProbe);
+  assert.strictEqual(stopped, true, `the outage API's port ${this.outageProbe.port} must be free after the scenario`);
+  assert.strictEqual(await probeTcpPort(this.outageProbe.port), false, 'nothing may still listen on the outage API port');
+  console.log('[web-app] a 503 auth outage mounts the unreachable state and leaves the session intact');
+});
+
+// ---------------------------------------------------------------------------
+// Sign-out clears the visible state
+// ---------------------------------------------------------------------------
+
+// The next account's documents carry a MutationObserver that records any
+// sighting of the previous landlord's markers. It starts at document creation,
+// so even a pre-hydration flash is caught; the record survives navigations in
+// sessionStorage.
+async function installFlashDetector(context, markers) {
+  await context.addInitScript(
+    ({ key, markers: watched }) => {
+      try {
+        const record = () => {
+          const text = document.body ? document.body.innerText : '';
+          if (!text) return;
+          let seen = [];
+          try {
+            seen = JSON.parse(window.sessionStorage.getItem(key) || '[]');
+          } catch {
+            seen = [];
+          }
+          let changed = false;
+          for (const marker of watched) {
+            if (text.includes(marker) && !seen.includes(marker)) {
+              seen.push(marker);
+              changed = true;
+            }
+          }
+          if (changed) window.sessionStorage.setItem(key, JSON.stringify(seen));
+        };
+        const start = () => {
+          record();
+          const observer = new MutationObserver(record);
+          observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', start, { once: true });
+        } else {
+          start();
+        }
+      } catch {
+        /* storage unavailable: nothing to record through */
+      }
+    },
+    { key: FLASH_STORAGE_KEY, markers }
+  );
+}
+
+async function flashSeen(page) {
+  return page.evaluate((key) => {
+    try {
+      const raw = window.sessionStorage.getItem(key);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }, FLASH_STORAGE_KEY);
+}
+
+Given('a signed-in landlord with properties and a ledger on screen', async function () {
+  this.landlord = await this.createDisposableIdentity({ confirmed: true });
+  const session = await authState.newSignedInContext({
+    browser: state.browser,
+    origin: state.webBaseUrl,
+    email: this.landlord.email,
+    password: this.landlord.password,
+  });
+  this.extraContext = session.context;
+  this.landlordPage = session.page;
+
+  const stored = authState.sessionFromStorageState(session.storageState);
+  assert.ok(stored && stored.access_token, 'the landlord must hold a real session');
+  this.landlordToken = stored.access_token;
+
+  // A property this landlord owns, created with their own token (the After
+  // hook deletes it with that token; deleting the account cascades too).
+  const owned = await api.postProperty(
+    this.probePayload({ address: 'Acceptance Probe Way Sign Out' }),
+    { token: this.landlordToken }
+  );
+  assert.ok(
+    owned.status === 201 && owned.body && owned.body.data && owned.body.data.id,
+    `arrangement failed: the landlord's property was not created (HTTP ${owned.status})`
+  );
+  this.landlordProperty = owned.body.data;
+  this.createdProperties.push({ id: this.landlordProperty.id, token: this.landlordToken });
+
+  // A ledger on screen: entries in the app's own store, then shown in the
+  // Transactions view. The description is unique so a flash is detectable.
+  this.ledgerMarker = `Acceptance previous account ledger ${Date.now()}`;
+  this.ledgerEntries = [
+    {
+      id: `probe-signout-${Date.now()}`,
+      date: '2026-11-05',
+      description: this.ledgerMarker,
+      category: 'Rent',
+      amount: 4200,
+      type: 'income',
+      property: this.landlordProperty.id,
+    },
+  ];
+  await ledgerView.seedTransactions(this.landlordPage, this.ledgerEntries);
+  await shell.reload(this.landlordPage);
+  await shell.waitForSidebarProperties(this.landlordPage);
+  await shell.expectSidebarProperty(this.landlordPage, this.landlordProperty.name);
+  await ledgerView.open(this.landlordPage);
+  await ledgerView.expectTransactionVisible(this.landlordPage, this.ledgerEntries[0]);
+
+  // The persisted property selection: choosing the property writes the store's
+  // entry, which the sign-out must remove.
+  await shell.selectProperty(this.landlordPage, this.landlordProperty.name);
+  await waitFor(
+    async () =>
+      (await ledgerView.storedSelectedProperty(this.landlordPage)) === this.landlordProperty.id,
+    {
+      timeoutMs: 10_000,
+      intervalMs: 250,
+      label: 'the property selection to be persisted before the sign-out',
+    }
+  );
+});
+
+Then('the visible ledger, property list, and cached queries are cleared', async function () {
+  const page = this.landlordPage;
+
+  // The visible ledger and property list are gone: the signed-out document is
+  // the sign-in surface and carries none of the previous landlord's content.
+  assert.ok(signInPage.isSignInUrl(page), 'sign-out must have left the ledger for sign-in');
+  assert.strictEqual(
+    await page.locator('main table tbody tr').count(),
+    0,
+    'the visible ledger must hold no rows after sign-out'
+  );
+  assert.strictEqual(
+    await page.getByText(this.ledgerMarker, { exact: false }).count(),
+    0,
+    'no ledger entry may remain on screen after sign-out'
+  );
+  assert.strictEqual(
+    await page.getByRole('button', { name: /All Properties/ }).count(),
+    0,
+    'the property list must not remain on screen after sign-out'
+  );
+
+  // The in-memory property selection's persisted entry is removed.
+  const selection = await ledgerView.storedSelectedProperty(page);
+  assert.strictEqual(
+    selection,
+    null,
+    `the selected-property storage entry (${LEDGER_PROPERTY_SELECTION_KEY}) must be removed, found "${selection}"`
+  );
+
+  // The ledger's storage is the one piece this change deliberately leaves
+  // alone: design §6 (and task 5.2) defer re-keying, importing, and retiring
+  // the local ledger to server-transactions. What must not survive is the
+  // per-account shape; the legacy device-scoped key is the recorded interim
+  // risk, and the harness clears it between scenarios.
+  const transactionKeys = await ledgerView.storedTransactionKeys(page);
+  const perAccountKeys = transactionKeys.filter((key) => key !== ledgerView.STORAGE_KEY);
+  assert.deepStrictEqual(
+    perAccountKeys,
+    [],
+    `no per-account ledger key may survive sign-out, found: ${perAccountKeys.join(', ')}`
+  );
+  if (transactionKeys.includes(ledgerView.STORAGE_KEY)) {
+    // Still there by design — assert it is the device ledger's own entry, not
+    // a half-cleared or foreign shape.
+    const deviceEntries = await ledgerView.storedTransactions(page);
+    assert.ok(
+      Array.isArray(deviceEntries),
+      'the surviving legacy ledger key must still hold the device ledger’s entry array'
+    );
+  }
+  console.log(
+    `[web-app] sign-out cleared the visible ledger, the property list, and the selected property; ` +
+      `the legacy device ledger key (${transactionKeys.join(', ') || 'none'}) is deferred to server-transactions — ` +
+      'design §6 records that a second landlord on this browser can still read it until that change lands'
+  );
+
+  // The query cache is empty: the next account's first load is a fresh server
+  // read that returns no rows — never the previous landlord's cached list. The
+  // body is read inside the handler, while the document that owns it is alive.
+  const next = await this.createDisposableIdentity({ confirmed: true });
+  await installFlashDetector(this.extraContext, [this.landlordProperty.name, this.ledgerMarker]);
+
+  const listResponse = new Promise((resolve) => {
+    const onResponse = (response) => {
+      const url = new URL(response.url());
+      if (response.request().method() !== 'GET' || !isPropertiesUrl(url)) return;
+      page.off('response', onResponse);
+      resolve(
+        response
+          .json()
+          .then((body) => ({ status: response.status(), body }))
+          .catch(() => ({ status: response.status(), body: null }))
+      );
+    };
+    page.on('response', onResponse);
+  });
+
+  await signInPage.submit(page, { email: next.email, password: next.password });
+  await page.waitForURL((url) => url.pathname === '/overview', { timeout: signInPage.WAIT_MS });
+  await shell.waitForShell(page);
+
+  const response = await listResponse;
+  assert.strictEqual(response.status, 200, 'the next account’s fresh list read must succeed');
+  assert.ok(response.body, 'the fresh list response body must be readable');
+  assert.strictEqual(response.body.success, true, 'the fresh list read must carry success true');
+  assert.deepStrictEqual(
+    response.body.data,
+    [],
+    'the next account must load an empty list — a cached previous-account list would mean the cache survived'
+  );
+  await shell.waitForSidebarProperties(page);
+  assert.strictEqual(
+    await page.getByText(this.landlordProperty.name, { exact: false }).count(),
+    0,
+    'the next account must not render the previous landlord’s property'
+  );
+});
+
+Then("the next account does not see the previous landlord's data flash on screen", async function () {
+  const page = this.landlordPage;
+  const seen = await flashSeen(page);
+  assert.deepStrictEqual(
+    seen,
+    [],
+    `the next account's documents must never render the previous landlord's data, but saw: ${seen.join(', ')}`
+  );
+
+  // The previous landlord's server rows are gone from the picker; the next
+  // account's screen shows its own empty state.
+  await shell.expectSidebarPropertyAbsent(page, this.landlordProperty.name);
+  assert.strictEqual(
+    await page.getByText(this.ledgerMarker, { exact: false }).count(),
+    0,
+    'the previous ledger must not appear on the next account’s screen'
+  );
+
+  // The detector's record is scenario state; remove it so nothing survives.
+  await page.evaluate((key) => window.sessionStorage.removeItem(key), FLASH_STORAGE_KEY);
+  console.log('[web-app] the next account’s first paint carried none of the previous landlord’s data');
+});
+

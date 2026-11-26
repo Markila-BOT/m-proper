@@ -103,11 +103,39 @@ function printCompositionReport(exclusions) {
   console.error(`[effective-spec] ${leftOut} source-of-truth scenario(s) excluded; delta versions run from openspec/changes/`);
 }
 
-function effectivePaths() {
-  const deltaPaths = globSync('.extracted/changes/*/specs/**/*.feature', {
+// The run's change scope. Unset (the default) means the full effective spec:
+// every active change's delta applied. HARNESS_CHANGE=<change-id> narrows the
+// run to the source-of-truth specs plus that one change's delta, so a change
+// can be verified before the other active changes' scenarios exist. An empty
+// value (HARNESS_CHANGE="") is the same as unset.
+function requestedChangeId() {
+  const raw = (process.env.HARNESS_CHANGE || '').trim();
+  return raw === '' ? null : raw;
+}
+
+function effectivePaths({ changeId = requestedChangeId() } = {}) {
+  const allDeltaPaths = globSync('.extracted/changes/*/specs/**/*.feature', {
     cwd: __dirname,
     posix: true,
   }).filter((p) => !p.includes('changes/archive/'));
+
+  let deltaPaths = allDeltaPaths;
+  if (changeId) {
+    deltaPaths = allDeltaPaths.filter((deltaPath) => changeIdOf(deltaPath) === changeId);
+    if (deltaPaths.length === 0) {
+      throw new Error(
+        `HARNESS_CHANGE="${changeId}" selects no active change delta: no .extracted/changes/${changeId}/specs/**/*.feature exists. ` +
+          'Check the change id (archived changes never execute).'
+      );
+    }
+    const excluded = [...new Set(allDeltaPaths.map(changeIdOf))].filter((id) => id !== changeId);
+    console.error(
+      `[effective-spec] change-scoped run: HARNESS_CHANGE=${changeId} — source-of-truth specs plus ` +
+        `${deltaPaths.length} delta feature(s) from that change only` +
+        (excluded.length > 0 ? `; other active changes excluded: ${excluded.join(', ')}` : '')
+    );
+  }
+
   const sotPaths = globSync('.extracted/specs/**/*.feature', {
     cwd: __dirname,
     posix: true,

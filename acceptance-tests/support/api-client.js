@@ -3,8 +3,16 @@
 // Thin HTTP client for the running API. No step logic lives here — the World
 // records each subject request so the Then steps can assert over exactly the
 // client behavior the scenario names.
+//
+// The API verifies a Supabase access token on every property route. By
+// default the client sends the primary owner's token from the run's signed-in
+// session (support/auth-state.js); pass `token: null` to make an
+// unauthenticated request and `token: '…'` to send a specific one. The token
+// was obtained in Node from the cookie session the browser signed in with, so
+// the harness never needs a second password grant.
 
 const { state } = require('./harness');
+const authState = require('./auth-state');
 
 function apiBaseUrl() {
   if (!state.apiBaseUrl) {
@@ -13,12 +21,32 @@ function apiBaseUrl() {
   return state.apiBaseUrl;
 }
 
-async function apiFetch(path, { method = 'GET', body } = {}) {
+function defaultAccessToken() {
+  if (!state.webBaseUrl) return null;
+  const token = authState.accessTokenForOrigin(state.webBaseUrl);
+  if (!token) {
+    throw new Error(
+      'No signed-in primary-owner session is available for API requests. The harness signs in ' +
+        'through the real sign-in page at boot; if chromium is missing, install it with ' +
+        '`npx playwright install chromium` inside acceptance-tests/.'
+    );
+  }
+  return token;
+}
+
+async function apiFetch(path, { method = 'GET', body, token } = {}) {
   const options = { method, signal: AbortSignal.timeout(20_000) };
+  const headers = {};
   if (body !== undefined) {
-    options.headers = { 'content-type': 'application/json' };
+    headers['content-type'] = 'application/json';
     options.body = JSON.stringify(body);
   }
+
+  // undefined → the primary session; null → no Authorization header.
+  const bearer = token === undefined ? defaultAccessToken() : token;
+  if (bearer) headers.authorization = `Bearer ${bearer}`;
+  if (Object.keys(headers).length > 0) options.headers = headers;
+
   const response = await fetch(`${apiBaseUrl()}${path}`, options);
   const text = await response.text();
   let parsed = null;
@@ -30,24 +58,24 @@ async function apiFetch(path, { method = 'GET', body } = {}) {
   return { status: response.status, ok: response.ok, body: parsed, text };
 }
 
-function getPropertiesList() {
-  return apiFetch('/properties');
+function getPropertiesList(options = {}) {
+  return apiFetch('/properties', options);
 }
 
-function postProperty(payload) {
-  return apiFetch('/properties', { method: 'POST', body: payload });
+function postProperty(payload, options = {}) {
+  return apiFetch('/properties', { ...options, method: 'POST', body: payload });
 }
 
-function deletePropertyById(id) {
-  return apiFetch(`/properties/${encodeURIComponent(id)}`, { method: 'DELETE' });
+function deletePropertyById(id, options = {}) {
+  return apiFetch(`/properties/${encodeURIComponent(id)}`, { ...options, method: 'DELETE' });
 }
 
-function deletePropertyWithoutId() {
-  return apiFetch('/properties', { method: 'DELETE' });
+function deletePropertyWithoutId(options = {}) {
+  return apiFetch('/properties', { ...options, method: 'DELETE' });
 }
 
-function getApiHealth() {
-  return apiFetch('/health');
+function getApiHealth(options = {}) {
+  return apiFetch('/health', options);
 }
 
 module.exports = {

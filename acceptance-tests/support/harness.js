@@ -47,6 +47,7 @@ const state = {
   spawned: [], // [{ child, label }] — everything the harness booted
   portsFreeBeforeBoot: false, // BeforeAll records that both ports were free pre-boot
   suiteMinusSelf: null, // parsed results of the self-check child run, for the later self-scenarios
+  auth: null, // primary owner session recorded at boot (email, origin, userId — never a token)
 };
 
 function logDir() {

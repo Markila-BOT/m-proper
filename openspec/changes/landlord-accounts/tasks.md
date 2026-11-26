@@ -2,7 +2,7 @@
 
 - [x] 1.1 Configure the project: asymmetric ES256 signing key and JWKS, anonymous sign-ins disabled, the Data API disabled, confirmation templates and a real SMTP provider, sign-up rate limits and a CAPTCHA provider; record which values are production-only and their owner
 - [x] 1.2 Add an idempotent seed step that uses the Auth admin API to create or find the bootstrap owner and the two test owners; keep the service key out of the web and API runtimes
-- [ ] 1.3 Verify the acceptance environment: its Postgres is the Supabase Postgres with `auth.users`, GoTrue is reachable, and the harness holds a service key that creates, confirms, and removes disposable identities. Confirmation stays enabled because the single project also serves production; CAPTCHA stays off so the browser sign-up path is drivable there
+- [x] 1.3 Verify the acceptance environment: its Postgres is the Supabase Postgres with `auth.users`, GoTrue is reachable, and the harness holds a service key that creates, confirms, and removes disposable identities. Confirmation stays enabled because the single project also serves production; CAPTCHA stays off so the browser sign-up path is drivable there
 
 ## 2. API token verification (red → green)
 
@@ -32,8 +32,8 @@
 
 ## 6. Acceptance harness and scenarios (red → green)
 
-- [ ] 6.1 Seed identities and session plumbing: sign in the primary owner once and reuse the storage state, the child run signs in on its own ports, the second owner for isolation, disposable identities for sign-out/reset, and removal of every created account
-- [ ] 6.2 Clear every `landlord-transactions:*` key between scenarios and update the existing scenarios to run signed in
+- [x] 6.1 Seed identities and session plumbing: sign in the primary owner once and reuse the storage state, the child run signs in on its own ports, the second owner for isolation, disposable identities for sign-out/reset, and removal of every created account
+- [x] 6.2 Clear every `landlord-transactions:*` key between scenarios and update the existing scenarios to run signed in
 - [ ] 6.3 Write the new scenarios: sign-up/confirmation, sign-in/out, reset, the guard and return-path rejection, 401 refresh/sign-out, cross-owner isolation, sign-out clearing the visible state, and the direct Data API refusal — red, then green
 - [ ] 6.4 Run the full suite (existing plus new): every scenario passes, zero pending or undefined, and no account or ledger key is left behind
 

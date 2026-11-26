@@ -26,7 +26,10 @@ const {
 } = require('../support/harness');
 const { parseMessages, summarizeCases } = require('../support/cucumber-messages');
 const { removeScenarioSmokeRows, clearScenarioBrowserState } = require('../support/cleanup');
+const authState = require('../support/auth-state');
+const identities = require('../support/identities');
 const { requirePage } = require('../pages/browser');
+const signInPage = require('../pages/sign-in');
 const shell = require('../pages/app-shell');
 const ledgerView = require('../pages/ledger-view');
 
@@ -400,6 +403,12 @@ When('the suite runs', async function () {
   // A dry run discovers exactly what a real run would execute — same
   // effective paths, no boots, no steps. Its message stream is joined to
   // the composition report on stderr.
+  //
+  // The probe proves the supersession mechanism itself, so it composes a
+  // change-scoped effective spec around its own throwaway delta. Running it
+  // unfiltered would let another active change's MODIFIED rule collide with
+  // the probe on the same source requirement — the probe's scope is its own
+  // change, whatever scope the caller's run uses.
   const probe = this.supersededProbe;
   const messagesPath = path.join(HARNESS_DIR, 'reports', 'superseded-check-messages.ndjson');
   let dryRun;
@@ -410,7 +419,11 @@ When('the suite runs', async function () {
     dryRun = await runCommand(
       'npx',
       ['cucumber-js', '--config', 'suite-discovery.cjs', '--dry-run'],
-      { cwd: HARNESS_DIR, timeoutMs: 120_000 }
+      {
+        cwd: HARNESS_DIR,
+        timeoutMs: 120_000,
+        env: { ...process.env, HARNESS_CHANGE: '__superseded_probe__' },
+      }
     );
     discovered = parseMessages(fs.readFileSync(messagesPath, 'utf8'));
 
@@ -422,10 +435,11 @@ When('the suite runs', async function () {
       if (entry) leftOut.push({ name: entry[1], specMd: entry[2], line: Number(entry[3]) });
     }
 
-    // Captured while the probe is still in the tree: the delta version is
-    // part of the effective set and the main version is not. The Thens
-    // compare the dry run against this snapshot after cleanup.
-    expected = scenarioSummaries(effectivePaths());
+    // Captured while the probe is still in the tree, in the same
+    // change-scoped mode the child discovered: the delta version is part of
+    // the effective set and the main version is not. The Thens compare the
+    // dry run against this snapshot after cleanup.
+    expected = scenarioSummaries(effectivePaths({ changeId: '__superseded_probe__' }));
   } finally {
     // The throwaway probe never survives the scenario — not even when an
     // assertion below fails. Re-extracting restores .extracted to the
@@ -741,11 +755,18 @@ Then('the smoke property no longer exists in the ledger', async function () {
 });
 
 Then("the browser's stored state is empty", async function () {
-  const stored = await ledgerView.storedTransactions(requirePage(this));
+  const page = requirePage(this);
+  const stored = await ledgerView.storedTransactions(page);
   assert.strictEqual(
     stored,
     null,
     'the app’s transaction storage key must be cleared after the run — the browser’s stored state is empty'
+  );
+  const surviving = await ledgerView.storedLedgerKeys(page);
+  assert.deepStrictEqual(
+    surviving,
+    [],
+    `no landlord-transactions* key may survive the run, but storage still holds: ${surviving.join(', ')}`
   );
 });
 
@@ -840,4 +861,345 @@ Then('archiving waits until the suite runs green with zero pending steps', async
     `${path.relative(REPO_ROOT, configPath)} archive guidance must carry the sync-before-archive step`
   );
   console.log('[self] the archive gate is recorded and loadable: ADR-0002 accepted, config guidance present');
+});
+
+// ---------------------------------------------------------------------------
+// The suite runs signed in
+// ---------------------------------------------------------------------------
+//
+// The harness signs the primary owner (test owner A) in once through the
+// real sign-in page at boot, caches the Playwright storage state per origin,
+// and gives every scenario context that state. These three scenarios are the
+// harness's own proof of the contract in
+// openspec/changes/landlord-accounts/specs/acceptance-suite/spec.md.
+
+Given('the suite starts', async function () {
+  assert.ok(
+    state.auth,
+    'the suite must have signed its primary owner in during BeforeAll — no scenario runs unsigned'
+  );
+  assert.ok(state.apiProcess && state.apiProcess.exitCode === null, 'the API must be the one this run booted');
+  assert.ok(state.webProcess && state.webProcess.exitCode === null, 'the web app must be the one this run booted');
+  this.primaryOwner = identities.identityFor('primary');
+});
+
+Then('it signs in the seeded test identity once', async function () {
+  const primary = this.primaryOwner;
+  const origin = authState.originOf(state.webBaseUrl);
+
+  assert.strictEqual(
+    authState.signInCount({ origin, identity: 'primary' }),
+    1,
+    'the primary owner must sign in exactly once per origin for the run — every scenario reuses the cache'
+  );
+
+  const sessionsAtThisOrigin = authState
+    .sessionSummaries()
+    .filter((session) => session.origin === origin && session.identity === 'primary');
+  assert.strictEqual(
+    sessionsAtThisOrigin.length,
+    1,
+    'the parent origin must hold exactly one primary owner session — every scenario reuses it'
+  );
+  assert.strictEqual(
+    sessionsAtThisOrigin[0].email,
+    primary.email,
+    `the cached session must belong to the seeded primary owner ${primary.email}`
+  );
+  assert.strictEqual(
+    sessionsAtThisOrigin[0].userId,
+    primary.userId,
+    'the cached session must carry the seeded primary owner id (the API scopes data by its subject)'
+  );
+  console.log(`[self] one sign-in at ${origin}, reused for the whole run`);
+});
+
+Then('every browser scenario runs as that landlord', async function () {
+  const page = requirePage(this);
+  const primary = this.primaryOwner;
+  await shell.open(page);
+
+  // The guard let the page through and the header names the landlord —
+  // the same shell every browser scenario drives.
+  await page
+    .getByText(primary.email, { exact: true })
+    .first()
+    .waitFor({ state: 'visible', timeout: 20_000 });
+
+  // The scenario's context carries the cached cookie session, not a fresh
+  // signed-out one.
+  const cookies = await page.context().cookies();
+  const sessionCookie = cookies.find((cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name));
+  assert.ok(
+    sessionCookie,
+    'the scenario context must hold the Supabase session cookie written by the one sign-in'
+  );
+  console.log(`[self] the scenario page is signed in as ${primary.email} from the cached storage state`);
+});
+
+// ---------------------------------------------------------------------------
+// The child run signs in on its own ports
+// ---------------------------------------------------------------------------
+
+Given('the suite-minus-self child run starts', async function () {
+  this.suiteMinusSelf = state.suiteMinusSelf;
+  assert.ok(
+    this.suiteMinusSelf,
+    'the suite-minus-self child run must have executed earlier in this feature ' +
+      '(scenario "One command runs every committed behavior" runs first)'
+  );
+});
+
+Then('it signs in its own test session against its own ports', async function () {
+  const run = this.suiteMinusSelf;
+  const primary = identities.identityFor('primary');
+  const parentOrigin = authState.originOf(state.webBaseUrl);
+  const childOrigin = `http://localhost:${run.childPorts.web}`;
+
+  assert.notStrictEqual(
+    childOrigin,
+    parentOrigin,
+    'the child run must use its own web port — a shared origin would hide the per-origin sign-in'
+  );
+  const childStderr = run.child.stderr || '';
+  assert.ok(
+    childStderr.includes(`[harness] signed in ${primary.email} on ${childOrigin}`),
+    'the child run must sign the primary owner in against its own web origin ' +
+      `(expected a harness log line naming ${primary.email} at ${childOrigin})`
+  );
+  console.log(`[self] the child signed in on its own origin ${childOrigin}`);
+});
+
+Then('it executes the same authenticated scenarios', async function () {
+  const run = this.suiteMinusSelf;
+  const uri = '.extracted/specs/web-app/spec.feature';
+  // The existing shell/browser scenarios the child re-ran. They only pass if
+  // its browser contexts carried a signed-in session; the guard sends an
+  // unsigned page to /sign-in.
+  const authenticatedScenarios = [
+    'View properties from API',
+    'Create property from UI',
+    'Delete property from UI',
+    'Configurable API host',
+    'The unreachable state speaks where the silent zero used to',
+  ];
+
+  for (const name of authenticatedScenarios) {
+    const found = run.cases.find((testCase) => testCase.uri === uri && testCase.name === name);
+    assert.ok(found, `the child run must have executed "${name}"`);
+    assert.strictEqual(
+      found.status,
+      'PASSED',
+      `"${name}" must pass in the child run — it is an authenticated browser scenario`
+    );
+  }
+  console.log(`[self] the child ran ${authenticatedScenarios.length} authenticated browser scenario(s)`);
+});
+
+// ---------------------------------------------------------------------------
+// Disposable accounts are removed
+// ---------------------------------------------------------------------------
+
+Given('a scenario signs up, signs out, or resets a password', async function () {
+  // Both shapes a disposable identity can take: confirmed (sign-in and
+  // sign-out flows) and unconfirmed (the confirmation refusal).
+  this.confirmedDisposable = await this.createDisposableIdentity({ confirmed: true });
+  this.unconfirmedDisposable = await this.createUnconfirmedDisposableIdentity();
+});
+
+Then('it uses a disposable identity', async function () {
+  const confirmed = this.confirmedDisposable;
+  const unconfirmed = this.unconfirmedDisposable;
+
+  for (const identity of [confirmed, unconfirmed]) {
+    assert.ok(
+      identities.isDisposableEmail(identity.email),
+      `${identity.email} must carry the disposable prefix ${identities.DISPOSABLE_EMAIL_PREFIX}`
+    );
+    assert.strictEqual(
+      identities.isSeededEmail(identity.email),
+      false,
+      `${identity.email} must not be a seeded identity`
+    );
+  }
+
+  // The confirmed account signs in through the real page, in a context of its
+  // own (never the shared owner's).
+  const signedIn = await authState.signInWithCredentials({
+    browser: state.browser,
+    origin: state.webBaseUrl,
+    email: confirmed.email,
+    password: confirmed.password,
+  });
+  assert.strictEqual(signedIn.email, confirmed.email, 'the confirmed disposable must sign in');
+
+  // The unconfirmed account is refused with the confirmation message and the
+  // resend control. Confirmation is enabled in the project.
+  const context = await state.browser.newContext();
+  const page = await context.newPage();
+  try {
+    await signInPage.open(page, state.webBaseUrl);
+    await signInPage.submit(page, { email: unconfirmed.email, password: unconfirmed.password });
+    const message = await signInPage.expectConfirmationRequired(page, unconfirmed.email);
+    assert.match(
+      message,
+      /not been confirmed/i,
+      'the unconfirmed sign-in must name the confirmation step'
+    );
+  } finally {
+    await context.close().catch(() => {});
+  }
+  console.log('[self] a confirmed disposable signs in; an unconfirmed one is refused by the confirmation rule');
+});
+
+Then('the suite removes every account it created', async function () {
+  const created = [this.confirmedDisposable, this.unconfirmedDisposable];
+
+  // Keep the guard exercised for every seeded address: a wrong argument can
+  // never remove one of the operator's accounts.
+  for (const seeded of Object.values(identities.seededIdentities())) {
+    assert.throws(
+      () => identities.assertDisposableEmail(seeded.email),
+      /seeded identity|Refusing to delete/i,
+      `the delete guard must refuse the seeded address ${seeded.email}`
+    );
+  }
+
+  // The same helper the After hook runs; it deletes each account and removes
+  // it from the run-wide registry.
+  const summary = await this.removeDisposableIdentities();
+  assert.deepStrictEqual(summary.failed, [], 'every disposable account must be removed without failure');
+  assert.strictEqual(
+    summary.deleted.length,
+    created.length,
+    'both disposable accounts must be deleted'
+  );
+
+  for (const identity of created) {
+    assert.strictEqual(
+      await identities.getAdminUser(identity.id),
+      null,
+      `the disposable account ${identity.email} must no longer exist in Auth`
+    );
+  }
+
+  // The seeded owners survived: never delete the three identities the
+  // operator provisioned.
+  for (const seeded of [identities.identityFor('primary'), identities.identityFor('second')]) {
+    const user = await identities.getAdminUser(seeded.userId);
+    assert.ok(user, `the seeded identity ${seeded.email} must still exist after cleanup`);
+    assert.strictEqual(user.email, seeded.email, 'the seeded identity must be unchanged');
+  }
+
+  assert.deepStrictEqual(
+    identities.registeredDisposableUsers(),
+    [],
+    'the run-wide registry must hold no disposable account after cleanup'
+  );
+  console.log('[self] every created account is gone; the seeded owners remain');
+});
+
+// ---------------------------------------------------------------------------
+// Every account ledger is cleared
+// ---------------------------------------------------------------------------
+//
+// The harness's per-scenario Before and After sweep every
+// `landlord-transactions*` key (the legacy key and the retired per-account
+// keys) plus the persisted property selection. This scenario writes all three
+// shapes, invokes the same cleanup helper the After hook runs, and asserts
+// nothing survives — the acceptance-suite requirement "Every account ledger is
+// cleared" proven against the real mechanism.
+
+Given('a scenario recorded browser transactions', async function () {
+  const page = requirePage(this);
+  await shell.open(page);
+
+  const primary = identities.identityFor('primary');
+  const stamp = Date.now();
+  this.ledgerKeyProbes = {
+    legacy: ledgerView.STORAGE_KEY,
+    perAccount: `${ledgerView.LEDGER_KEY_PREFIX}:${primary.userId}`,
+    selection: ledgerView.SELECTED_PROPERTY_KEY,
+  };
+  this.ledgerProbeEntries = [
+    {
+      id: `probe-ledger-sweep-${stamp}`,
+      date: '2026-11-05',
+      description: 'Probe ledger sweep transaction',
+      category: 'Rent',
+      amount: 1000,
+      type: 'income',
+      property: 'all',
+    },
+  ];
+
+  // The legacy store's shape, the retired per-account shape, and the
+  // persisted property selection — all written from the page, like the
+  // browser scenarios do.
+  await ledgerView.seedTransactions(page, this.ledgerProbeEntries);
+  await page.evaluate(
+    ({ perAccount, selection, entries }) => {
+      window.localStorage.setItem(perAccount, JSON.stringify(entries));
+      window.localStorage.setItem(selection, JSON.stringify({ state: { selectedId: 'all' }, version: 0 }));
+    },
+    {
+      perAccount: this.ledgerKeyProbes.perAccount,
+      selection: this.ledgerKeyProbes.selection,
+      entries: this.ledgerProbeEntries,
+    }
+  );
+
+  const present = await ledgerView.storedLedgerKeys(page);
+  for (const key of Object.values(this.ledgerKeyProbes)) {
+    assert.ok(present.includes(key), `the arrangement must write "${key}" before the cleanup runs`);
+  }
+});
+
+When('the scenario finishes', async function () {
+  // The very helper the After hook runs — invoked here so the assertions
+  // below prove the mechanism the suite actually uses, not a copy of it.
+  this.ledgerSweep = await clearScenarioBrowserState(this);
+});
+
+Then('every account-scoped ledger key is cleared', async function () {
+  const page = requirePage(this);
+  const surviving = await ledgerView.storedLedgerKeys(page);
+  assert.deepStrictEqual(
+    surviving,
+    [],
+    `every account-scoped ledger key must be cleared, but storage still holds: ${surviving.join(', ')}`
+  );
+  console.log(
+    `[self] cleaned ${this.ledgerSweep.removed.length} ledger key(s): ${this.ledgerSweep.removed.join(', ')}`
+  );
+});
+
+Then("no landlord's entries survive the run", async function () {
+  const page = requirePage(this);
+  const descriptions = this.ledgerProbeEntries.map((entry) => entry.description);
+  const carrying = await page.evaluate((needles) => {
+    const survivors = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      const value = window.localStorage.getItem(key) || '';
+      if (needles.some((needle) => value.includes(needle))) survivors.push(key);
+    }
+    return survivors;
+  }, descriptions);
+  assert.deepStrictEqual(
+    carrying,
+    [],
+    `no landlord's ledger entries may survive, but these storage keys still carry them: ${carrying.join(', ')}`
+  );
+  // The persisted property selection is part of the account's browser state
+  // and is gone with the ledger keys.
+  const selection = await page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    this.ledgerKeyProbes.selection
+  );
+  assert.strictEqual(
+    selection,
+    null,
+    `the persisted property selection "${this.ledgerKeyProbes.selection}" must be cleared with the ledger`
+  );
 });

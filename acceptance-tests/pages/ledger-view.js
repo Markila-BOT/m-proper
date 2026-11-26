@@ -22,8 +22,27 @@ const shell = require('./app-shell');
 
 const WAIT_MS = 20_000;
 
-// The app's own storage key (web/src/hooks/useLocalStorage.ts).
+// The app's own storage key (web/src/transactions/storage.ts).
 const STORAGE_KEY = 'landlord-transactions';
+// The retired per-account ledger design would have stored one key per
+// landlord as `landlord-transactions:<owner>`; the legacy key above has no
+// suffix. Both shapes are the suite's ledger state and both are cleared
+// between scenarios, whatever the app's current key is.
+const LEDGER_KEY_PREFIX = 'landlord-transactions';
+// The zustand property store's persisted selection (web/src/stores/propertyStore.ts).
+const SELECTED_PROPERTY_KEY = 'landlord-selected-property';
+
+// Every browser key the ledger's state can live under, in one place.
+function isLedgerStateKey(key) {
+  return (
+    typeof key === 'string' &&
+    (key.startsWith(LEDGER_KEY_PREFIX) || key === SELECTED_PROPERTY_KEY)
+  );
+}
+
+function ledgerStateKeysIn(keys) {
+  return keys.filter(isLedgerStateKey).sort();
+}
 
 async function open(page) {
   await shell.openTab(page, 'transactions');
@@ -51,8 +70,93 @@ async function storedTransactions(page) {
   );
 }
 
+// The persisted selected-property value, exactly as the app stores it (the
+// zustand persist envelope's `state.selectedProperty`), or null when no entry
+// survives. Used by the sign-out scenario: the session's scope must not
+// outlive the sign-out.
+async function storedSelectedProperty(page) {
+  return page.evaluate((key) => {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && parsed.state ? (parsed.state.selectedProperty ?? null) : null;
+    } catch {
+      return null;
+    }
+  }, SELECTED_PROPERTY_KEY);
+}
+
+// Only the ledger's own storage keys (the legacy `landlord-transactions` and
+// the retired `landlord-transactions:<owner>` shape), not the property
+// selection. Kept apart so a step can say which state it examined.
+async function storedTransactionKeys(page) {
+  const keys = await page.evaluate(() => {
+    const present = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key) present.push(key);
+    }
+    return present;
+  });
+  return keys.filter((key) => key.startsWith(LEDGER_KEY_PREFIX)).sort();
+}
+
 async function clearStoredTransactions(page) {
-  await page.evaluate((key) => window.localStorage.removeItem(key), STORAGE_KEY);
+  // Removes every ledger-state key, not only the current one: the legacy
+  // `landlord-transactions` entry, any retired `landlord-transactions:<owner>`
+  // key, and the persisted property selection. Returns what it removed so the
+  // cleanup can report it.
+  return page.evaluate(
+    ({ ledgerPrefix, selectedKey }) => {
+      const keys = [];
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        if (key && (key.startsWith(ledgerPrefix) || key === selectedKey)) keys.push(key);
+      }
+      for (const key of keys) window.localStorage.removeItem(key);
+      return keys.sort();
+    },
+    { ledgerPrefix: LEDGER_KEY_PREFIX, selectedKey: SELECTED_PROPERTY_KEY }
+  );
+}
+
+// The ledger-state keys still present, sorted. The after-cleanup assertion
+// reads this and names whatever survived.
+async function storedLedgerKeys(page) {
+  if (!page || !/^https?:/i.test(page.url())) return [];
+  try {
+    const keys = await page.evaluate(() => {
+      const present = [];
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        if (key) present.push(key);
+      }
+      return present;
+    });
+    return ledgerStateKeysIn(keys);
+  } catch (error) {
+    // No document origin yet (about:blank): there is no localStorage to read,
+    // and therefore no ledger state to survive.
+    if (/Access is denied|SecurityError/i.test(error.message)) return [];
+    throw error;
+  }
+}
+
+// Removes ledger-state keys from a Playwright storage state before a context
+// is created from it. The cached signed-in state is the only browser state
+// that crosses scenarios; stripping the ledger keys here is the Before-side
+// sweep, and it leaves later navigations alone (a scenario that seeds rows and
+// reloads must keep them until its own cleanup).
+function clearLedgerStateFromStorageState(storageState) {
+  if (!storageState || !Array.isArray(storageState.origins)) return storageState;
+  return {
+    ...storageState,
+    origins: storageState.origins.map((origin) => ({
+      ...origin,
+      localStorage: (origin.localStorage || []).filter(({ name }) => !isLedgerStateKey(name)),
+    })),
+  };
 }
 
 // The ledger's entry rows: the first tbody of the passbook table. The rows
@@ -153,10 +257,17 @@ async function expectUnreachableStripState(page) {
 }
 
 module.exports = {
+  STORAGE_KEY,
+  LEDGER_KEY_PREFIX,
+  SELECTED_PROPERTY_KEY,
   open,
   seedTransactions,
   storedTransactions,
+  storedSelectedProperty,
+  storedTransactionKeys,
   clearStoredTransactions,
+  storedLedgerKeys,
+  clearLedgerStateFromStorageState,
   entryRows,
   displayedTransactionDescriptions,
   expectTransactionVisible,

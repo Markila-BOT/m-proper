@@ -30,7 +30,16 @@ const {
   tailOf,
 } = require('./harness');
 const { assertDatabaseConnection } = require('./preflight');
-const { removeScenarioSmokeRows, clearScenarioBrowserState } = require('./cleanup');
+const { loadAcceptanceEnv, appProcessEnvironment } = require('./env');
+const authState = require('./auth-state');
+const identities = require('./identities');
+const {
+  prepareScenarioStorageState,
+  removeScenarioSmokeRows,
+  stopScenarioProbeApis,
+  clearScenarioBrowserState,
+  removeScenarioDisposableUsers,
+} = require('./cleanup');
 const api = require('./api-client');
 
 // Cucumber's default step timeout is 5000ms, which browser flows and the
@@ -57,6 +66,13 @@ async function sweepProbeProperties() {
 }
 
 BeforeAll(async function () {
+  // --- 0. Harness configuration: identities and the admin key ---
+  // acceptance-tests/.env.local is gitignored and operator-held. Loading it
+  // here means every Node-side helper (sign-in, admin calls) sees the same
+  // snapshot, and a missing file fails with an actionable message before
+  // anything boots. The key itself is never printed.
+  loadAcceptanceEnv();
+
   // --- 1. Database preflight: fail before any boot if absent ---
   // Resolves DATABASE_URL from the environment, otherwise from api/.env;
   // the resolved value is a secret and is never printed. support/preflight.js
@@ -85,7 +101,10 @@ BeforeAll(async function () {
       args: ['run'],
       cwd: path.join(REPO_ROOT, 'api'),
       env: {
-        ...process.env,
+        // The API runtime never receives the harness's admin key or seeded
+        // passwords; its own api/.env and the harness's port/CORS values are
+        // all it needs.
+        ...appProcessEnvironment(process.env),
         PORT: String(state.apiPort),
         CORS_ORIGINS: state.webBaseUrl,
       },
@@ -106,7 +125,10 @@ BeforeAll(async function () {
       ],
       cwd: path.join(REPO_ROOT, 'web'),
       env: {
-        ...process.env,
+        // The web dev server never receives the admin key or seeded
+        // passwords; only the public app configuration (web/.env) and the
+        // harness API base belong here.
+        ...appProcessEnvironment(process.env),
         VITE_API_BASE_URL: state.apiBaseUrl,
       },
     });
@@ -124,33 +146,73 @@ BeforeAll(async function () {
           '[harness] run `npx playwright install chromium` inside acceptance-tests/ once.'
       );
     }
+
+    // --- 5. Sign the primary owner in once, through the real page ---
+    // The storage state is cached per origin for the whole run; every
+    // scenario context reuses it. The suite-minus-self child runs this same
+    // hook in its own process against its own web port, so each origin signs
+    // in exactly once per run.
+    if (state.browser) {
+      const session = await authState.ensureSession({
+        browser: state.browser,
+        origin: state.webBaseUrl,
+        identity: 'primary',
+      });
+      state.auth = {
+        primaryOrigin: session.origin,
+        primaryEmail: session.email,
+        primaryUserId: session.userId,
+        signedInAt: session.signedInAt,
+      };
+    }
   } catch (error) {
-    // A failed boot must not leak what it started.
+    // A failed boot or sign-in must not leak what it started.
+    if (state.browser) {
+      await state.browser.close().catch(() => {});
+      state.browser = null;
+    }
     await stopAllSpawnedProcesses();
     throw error;
   }
 
   console.error(
-    `[harness] api ${state.apiBaseUrl} · web ${state.webBaseUrl} · chromium ${state.browser ? 'ready' : 'missing'}`
+    `[harness] api ${state.apiBaseUrl} · web ${state.webBaseUrl} · chromium ${state.browser ? 'ready' : 'missing'}` +
+      (state.auth ? ` · signed in as ${state.auth.primaryEmail}` : '')
   );
 });
 
 Before(async function () {
-  // Per-scenario fixtures: a fresh browser page (a fresh context, so
-  // browser storage starts empty) keeps scenarios isolated from each
-  // other; HTTP state lives on the (fresh) World.
+  // Per-scenario fixtures: a fresh context built from the run's cached
+  // storage state keeps scenarios isolated from each other while every one
+  // runs as the same signed-in landlord. HTTP state lives on the (fresh)
+  // World.
   if (state.browser) {
-    this.page = await state.browser.newPage();
+    // Before: the cached state is stripped of every ledger-state key before
+    // the context is created, so no scenario inherits another's rows.
+    const storageState = prepareScenarioStorageState();
+    this.context = await state.browser.newContext(
+      storageState ? { storageState } : undefined
+    );
+    this.page = await this.context.newPage();
   }
 });
 
 After(async function () {
   // Per-scenario cleanup: clear the browser-stored state this scenario
-  // seeded, close the page, then remove this scenario's smoke rows so the
-  // ledger is left as found even when an assertion failed. These are the
-  // same helpers the suite's "leaves no trace" scenario invokes to prove
-  // the mechanism.
-  await clearScenarioBrowserState(this);
+  // seeded, close the page and its context, then remove this scenario's
+  // smoke rows and disposable identities so nothing it created survives —
+  // even when an assertion failed. These are the same helpers the suite's
+  // "leaves no trace" scenario invokes to prove the mechanism.
+  //
+  // The cleanup asserts no ledger key survives. Its failure must not stop the
+  // closes and deletes below (a leaked account or page is worse than a
+  // reported storage leak), so it is captured and re-thrown last.
+  let storageLeak = null;
+  try {
+    await clearScenarioBrowserState(this);
+  } catch (error) {
+    storageLeak = error;
+  }
   // The glass scenarios measure at deviceScaleFactor 2, which needs its own
   // browser context (the harness page runs at the default scale). That
   // context is closed here whichever way the scenario ended.
@@ -162,12 +224,43 @@ After(async function () {
     await this.page.close().catch(() => {});
     this.page = null;
   }
+  if (this.context) {
+    await this.context.close().catch(() => {});
+    this.context = null;
+  }
+  await removeScenarioDisposableUsers(this);
+  // Second API instances (the key-set-outage probe) are killed here whichever
+  // way the scenario ended, before the smoke rows are swept.
+  await stopScenarioProbeApis(this).catch(() => {});
   await removeScenarioSmokeRows(this);
+  if (storageLeak) throw storageLeak;
 });
 
 AfterAll(async function () {
-  // Always: sweep leaked probes through the still-running API, close the
-  // browser, then stop both processes. Nothing may outlive the run.
+  // Always: remove every disposable account this run created, sweep leaked
+  // probes through the still-running API, close the browser, then stop both
+  // processes. Nothing may outlive the run.
+  //
+  // The identity sweep runs first and independently: a failed scenario, a
+  // failed browser close, or an API error must never leave a disposable
+  // account behind. The guard in support/identities.js cannot remove a seeded
+  // owner even if one were somehow registered.
+  try {
+    const summary = await identities.removeAllDisposableUsers();
+    if (summary.deleted.length > 0 || summary.failed.length > 0) {
+      console.error(
+        `[harness] disposable accounts removed: ${summary.deleted.length}` +
+          (summary.failed.length > 0
+            ? `; failed: ${summary.failed.map((entry) => entry.email || '(unknown)').join(', ')}`
+            : '')
+      );
+    }
+    if (summary.failed.length > 0) process.exitCode = 1;
+  } catch (error) {
+    process.exitCode = 1;
+    console.error(`[harness] disposable-account sweep failed: ${tailOf(error.message, 300)}`);
+  }
+
   try {
     await sweepProbeProperties();
   } catch (error) {

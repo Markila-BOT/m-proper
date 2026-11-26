@@ -36,8 +36,16 @@ const TOTALS = 'section[aria-label*="Totals for the displayed ledger"]';
 // per-scenario page runs at the browser default (scale 1); the measured
 // pairs need 2 device pixels per CSS pixel, because the 1px rules and the
 // 10px caption type would otherwise be sampled from single pixels.
-async function openSession(browser, viewport = VIEWPORT) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: DEVICE_SCALE });
+//
+// The context is created from the run's signed-in storage state (the shell
+// guard otherwise sends this page to /sign-in), but with its own viewport and
+// scale.
+async function openSession(browser, viewport = VIEWPORT, { storageState } = {}) {
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor: DEVICE_SCALE,
+    ...(storageState ? { storageState } : {}),
+  });
   const page = await context.newPage();
   return { context, page };
 }
