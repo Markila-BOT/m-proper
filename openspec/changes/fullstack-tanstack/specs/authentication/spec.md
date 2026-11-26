@@ -64,6 +64,6 @@ And the failure names the missing variable
 
 ```gherkin
 Given the built web bundle and its environment
-Then it carries the project URL and publishable key
-And it carries no secret or service key
+Then it carries no secret or service key
+And it carries no database URL or key-set location
 ```

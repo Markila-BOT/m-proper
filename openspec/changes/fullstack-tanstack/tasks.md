@@ -41,7 +41,7 @@
 - [x] 5.2 Convert the HTTP helpers from Bearer to a cookie session (the signed-in storage state), and keep the second owner working
 - [x] 5.3 Replace the second-API probes: spawn a second app instance with a sabotaged environment for the config-refusal and JWKS-outage scenarios, and stop it afterwards
 - [x] 5.4 Convert the forged-token scenarios to forged-cookie scenarios, and re-point the unreachable scenario at the routes rather than the removed override
-- [ ] 5.5 Run the full change-scoped suite and confirm every scenario and step passes, with no disposable users or probe rows left behind
+- [x] 5.5 Run the full change-scoped suite and confirm every scenario and step passes, with no disposable users or probe rows left behind
 
 ## 6. Deployable artifact
 
@@ -49,7 +49,7 @@
 - [x] 6.2 Prove the built app: start the production build and hit a page, `/api/properties` without a session (401), and `/api/health`; confirm the client bundle carries no secret, database URL, or JWKS location
 - [x] 6.3 Confirm the app refuses to serve with a required variable missing, naming it
 
-- [ ] 6.4 Define the acceptance steps for the `deployable-artifact` and `dependency-maintenance` scenarios: the built app serves a page and the routes, a missing variable refuses to serve, the bundle carries no secret, the properties round-trip still holds, and the type check catches a drifted shape
+- [x] 6.4 Define the acceptance steps for the `deployable-artifact` and `dependency-maintenance` scenarios: the built app serves a page and the routes, a missing variable refuses to serve, the bundle carries no secret, the properties round-trip still holds, and the type check catches a drifted shape
 
 ## 7. Delete the Rust service
 

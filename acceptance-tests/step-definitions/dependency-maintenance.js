@@ -547,7 +547,7 @@ Then('it fails and names the mismatch', function () {
 When('the TypeScript check runs', async function () {
   // The web project's own TypeScript, over web/tsconfig.json. `--noEmit` is
   // already the config; stating it keeps the gate's intent visible.
-  this.typeCheckGate = await runProjectTypeCheck();
+  this.checkGate = await runProjectTypeCheck();
 });
 
 Given('the API at its committed state', async function () {
@@ -564,11 +564,11 @@ When('the API check command runs', async function () {
 
 Then('it completes without errors', async function () {
   const { code, stdout, stderr } = this.checkGate;
-  assert.strictEqual(code, 0, `cargo check exited ${code}:\n${tailOf(stderr || stdout)}`);
+  assert.strictEqual(code, 0, `the check gate exited ${code}:\n${tailOf(stderr || stdout)}`);
   for (const line of `${stderr}\n${stdout}`.split(/\r?\n/)) {
     assert.ok(
       !/^error(\[|:)/.test(line),
-      `cargo check reported an error: ${line}`
+      `the check gate reported an error: ${line}`
     );
   }
 });

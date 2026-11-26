@@ -71,6 +71,7 @@ async function startSecondApp({ label, overrides = {}, waitForHealth = true } = 
 
   const child = spawnHarnessProcess({
     label: resolvedLabel,
+    probe: true,
     command: process.execPath,
     args: [VITE_BIN, 'dev', '--port', String(port), '--strictPort'],
     cwd: WEB_DIR,
@@ -194,6 +195,7 @@ async function startBuiltApp({ label = 'built-app', overrides = {}, waitForHealt
 
   const child = spawnHarnessProcess({
     label: resolvedLabel,
+    probe: true,
     command: process.execPath,
     // Nitro's node-server preset reads NITRO_PORT or PORT; PORT is the one the
     // harness already speaks.

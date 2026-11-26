@@ -66,7 +66,7 @@ function delay(ms) {
 // Spawns a child in its own process group so teardown can kill the whole
 // tree (cargo build children, vite workers) without leaking grandchildren.
 // Output goes to a per-label log under .extracted/ (gitignored, wiped per run).
-function spawnHarnessProcess({ label, command, args, cwd, env }) {
+function spawnHarnessProcess({ label, command, args, cwd, env, probe = false }) {
   fs.mkdirSync(logDir(), { recursive: true });
   const logStream = fs.createWriteStream(path.join(logDir(), `${label}.log`));
   const child = spawn(command, args, {
@@ -78,7 +78,7 @@ function spawnHarnessProcess({ label, command, args, cwd, env }) {
   child.stdout.pipe(logStream);
   child.stderr.pipe(logStream);
   child.on('exit', () => logStream.end());
-  state.spawned.push({ child, label });
+  state.spawned.push({ child, label, probe });
   return child;
 }
 
