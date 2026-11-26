@@ -20,10 +20,16 @@
 | Pointer affordance | The cursor and hover feedback that tell a pointer user a control is interactive. | Describing cursor or hover behavior. | "Hover effect" alone (it is both) |
 | Hover-capable pointer | A primary pointer that can hover, such as a mouse or trackpad, as distinct from touch. | Describing `@media (hover: hover)` gating. | "Desktop" |
 | Coarse pointer | A touch-style primary pointer that cannot hover. | Describing touch behavior. | "Mobile" |
-| Access token | The short-lived Supabase Auth JWT the Rust API verifies. | Describing the bearer credential. | "Session token" |
+| Access token | The short-lived Supabase Auth JWT the app verifies from the session cookie. | Describing the credential the routes verify. | "Session token" |
 | Refresh token | The long-lived credential the web rotates to obtain fresh access tokens. | Describing session renewal. | "Access token" (different lifetime) |
 | JWKS | The project's public JSON Web Key Set used to verify access tokens without the Auth server in the hot path. | Describing token verification. | "Public key" (one key of the set) |
-| Identity | The verified caller (`sub`, email, role) extracted from the access token. | Describing the authenticated principal in the API. | "User" (the database row) |
+| Identity | The verified caller (`sub`, email, role) extracted from the access token. | Describing the authenticated principal in the routes. | "User" (the database row) |
+| Server route | An HTTP handler the app's file router owns, serving the properties JSON on the app's own origin (`/api/...`). | Describing an app-owned endpoint. | "API server" (there is no separate server) |
+| Session cookie | The Supabase session the browser sends to the app's own origin (`sb-<ref>-auth-token`, base64url JSON, chunked when large). | Describing how the routes learn who is calling. | "Auth header" (the withdrawn transport) |
+| Cookie contract | The rules a route applies to that cookie: name derivation, chunk assembly, and a malformed cookie answering 401 rather than throwing. | Describing cookie parsing obligations. | "Cookie parsing" (too vague) |
+| Frozen baseline | The migration that reproduces the schema already applied by the previous migration tool and is recorded as applied rather than run as new DDL. | Describing the Drizzle cutover. | "Initial migration" (it must not re-create tables) |
+| Direct connection | The non-pooled Postgres URL used only by the migrate step. | Describing migration connections. | "Pooled connection" (the app's runtime connection) |
+| CSRF check | The rule that a state-changing request's `Origin` or `Sec-Fetch-Site` is the app's own, required because the credential is an ambient cookie. | Describing write protection. | "CORS" (never protected the server) |
 | Owner ID | The `auth.users.id` stored on a row, the database half of the owner scope. | Describing row ownership. | "User ID" (ambiguous with the caller) |
 | RLS defense | Row Level Security policies as a second authorization layer; a privileged API connection bypasses them. | Describing defense in depth. | "RLS" alone (it is the second layer) |
 | Test identity | The dedicated Supabase user the acceptance suite signs in as. | Describing the verification setup. | "Test user" |
