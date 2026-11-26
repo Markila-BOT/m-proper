@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Adds the landlord sign-in surfaces, route protection, authenticated API client, and per-account browser ledger; every existing ledger, picker, and honesty behavior stands.
+Adds the landlord sign-in surfaces, route protection, and the authenticated API client; every existing ledger, picker, and honesty behavior stands. The browser ledger's storage key and its legacy import belong to the server-transactions change, which retires the local ledger.
 
 ## ADDED Requirements
 
@@ -75,27 +75,9 @@ Then the app shows the unreachable state
 And the session is not cleared
 ```
 
-### Requirement: The local ledger is scoped to the landlord account
+### Requirement: Sign-out clears the visible state
 
-The browser transaction ledger MUST be stored per **Local ledger scope**, keyed by the signed-in account. The pre-auth legacy ledger MUST NOT be attributed to whoever signs in: it is preserved in a legacy namespace and imported only after an explicit confirmation into the signed-in account. Sign-out MUST clear the visible ledger, the query cache, and the in-memory property and filter state.
-
-#### Scenario: Two accounts on one browser do not see each other's ledger
-
-```gherkin
-Given landlord A signs in on a browser and records a transaction
-When A signs out and landlord B signs in
-Then B's ledger is empty
-And A's entries return when A signs in again
-```
-
-#### Scenario: The legacy ledger is offered, not claimed
-
-```gherkin
-Given the browser holds a ledger from before accounts existed
-When a landlord signs in
-Then the entries are not shown until the landlord confirms an import
-And another account never receives them automatically
-```
+Sign-out MUST clear the visible ledger, the query cache, and the in-memory property and filter state, so no previous landlord's data is left on screen after the session ends. Where the browser ledger is stored, and how a pre-auth ledger is offered for import, belong to the server-transactions change, which retires the local ledger in favour of the server's.
 
 #### Scenario: Sign-out clears the visible state
 

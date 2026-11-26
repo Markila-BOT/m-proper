@@ -9,12 +9,45 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness probe; answers 503 when the database is unreachable.",
+        "description": "`security()` keeps the global bearer requirement off this route: the probe\nmust answer before a caller can hold a token.",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/properties": {
       "get": {
         "tags": [
           "properties"
         ],
-        "summary": "List all properties (active first, then newest created_at).",
+        "summary": "List the signed-in owner's properties (active first, then newest created_at).",
         "operationId": "list_properties",
         "responses": {
           "200": {
@@ -23,6 +56,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiEnvelope_Vec_Property"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
                 }
               }
             }
@@ -36,14 +79,29 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Authentication is temporarily unavailable. Try again shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       },
       "post": {
         "tags": [
           "properties"
         ],
-        "summary": "Create a new property.",
+        "summary": "Create a new property owned by the signed-in account.",
         "operationId": "create_property",
         "requestBody": {
           "content": {
@@ -76,6 +134,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal server error",
             "content": {
@@ -85,8 +153,23 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Authentication is temporarily unavailable. Try again shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -104,8 +187,33 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication is temporarily unavailable. Try again shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     },
     "/properties/{id}": {
@@ -113,7 +221,7 @@
         "tags": [
           "properties"
         ],
-        "summary": "Delete a property by id.",
+        "summary": "Delete one of the signed-in owner's properties by id.",
         "operationId": "delete_property",
         "parameters": [
           {
@@ -148,6 +256,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Property not found",
             "content": {
@@ -167,8 +285,23 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Authentication is temporarily unavailable. Try again shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiEnvelope_TupleUnit"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer_auth": []
+          }
+        ]
       }
     }
   },
@@ -388,12 +521,29 @@
       "TupleUnit": {
         "default": null
       }
+    },
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase access token. Send it as `Authorization: Bearer <token>`."
+      }
     }
   },
+  "security": [
+    {
+      "bearer_auth": []
+    }
+  ],
   "tags": [
     {
       "name": "properties",
       "description": "Property management API"
+    },
+    {
+      "name": "health",
+      "description": "Liveness and database reachability"
     }
   ]
 }

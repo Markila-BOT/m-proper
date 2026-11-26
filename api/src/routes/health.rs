@@ -18,7 +18,21 @@ async fn root() -> &'static str {
     "m-proper api"
 }
 
-async fn health_check(State(state): State<AppState>) -> Response {
+/// Liveness probe; answers 503 when the database is unreachable.
+///
+/// `security()` keeps the global bearer requirement off this route: the probe
+/// must answer before a caller can hold a token.
+#[utoipa::path(
+    get,
+    path = "/health",
+    security(),
+    responses(
+        (status = 200, description = "ok", body = ApiEnvelope<utoipa::TupleUnit>),
+        (status = 503, description = "Database unreachable", body = ApiEnvelope<utoipa::TupleUnit>)
+    ),
+    tag = "health"
+)]
+pub async fn health_check(State(state): State<AppState>) -> Response {
     match db::health_check(&state.pool).await {
         Ok(()) => Json(ApiEnvelope::ok_message("ok")).into_response(),
         Err(error) => {

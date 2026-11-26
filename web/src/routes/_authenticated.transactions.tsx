@@ -15,7 +15,7 @@ import FilterControls from '../components/FilterControls'
 import TransactionList from '../components/TransactionList'
 import { TotalsLine, propertyScopeLabel } from '../components/Summary'
 
-export const Route = createFileRoute('/transactions')({
+export const Route = createFileRoute('/_authenticated/transactions')({
   component: TransactionsView,
 })
 

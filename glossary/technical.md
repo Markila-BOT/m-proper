@@ -27,7 +27,7 @@
 | Owner ID | The `auth.users.id` stored on a row, the database half of the owner scope. | Describing row ownership. | "User ID" (ambiguous with the caller) |
 | RLS defense | Row Level Security policies as a second authorization layer; a privileged API connection bypasses them. | Describing defense in depth. | "RLS" alone (it is the second layer) |
 | Test identity | The dedicated Supabase user the acceptance suite signs in as. | Describing the verification setup. | "Test user" |
-| Local ledger scope | The browser transaction storage keyed per landlord account so accounts on one device cannot see each other's entries. | Describing local privacy. | "Shared ledger" |
+| Local ledger scope | The browser transaction storage keyed per landlord account so accounts on one device cannot see each other's entries. Deferred to `server-transactions`, which retires the local ledger (ADR-0009). | Describing local privacy. | "Shared ledger" |
 | Transaction API | The owner-scoped Axum routes and Supabase table that store ledger entries. | Naming the server ledger. | "Ledger backend" |
 | Ledger restore | The undo path that re-creates a deleted entry with its original id inside the undo window. | Describing the delete undo. | "Undelete" |
 | Ledger discard | The one-time retirement of the browser ledger with no server import. | Describing the migration decision. | "Migration" (there is no data migration) |

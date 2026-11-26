@@ -8,6 +8,8 @@ Extends the register's deletion behavior: a property's payment records are remov
 
 ### Requirement: Deleting a property removes its payment records
 
+Only the property's own landlord can delete it (the owner rule from `landlord-accounts`), and the cascade removes only that landlord's reminders and occurrences.
+
 Deleting a property MUST delete its **Payment reminder**s and their **Occurrence**s in the same transaction. The property and its payment records are removed together or not at all.
 
 #### Scenario: A property's reminders and history are deleted with it

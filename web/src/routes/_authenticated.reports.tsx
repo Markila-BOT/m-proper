@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // so the absence is visible, but the nav does not point at it because it is
 // not built. The panel wears the world's paper and hairline and says what
 // exists instead — no "coming soon" promise, no card from another product.
-export const Route = createFileRoute('/reports')({
+export const Route = createFileRoute('/_authenticated/reports')({
   component: ReportsView,
 })
 

@@ -6,9 +6,40 @@ Defines the API-backed payment-reminder domain: the managed **Payment label** pi
 
 ## ADDED Requirements
 
+### Requirement: Payment records are owner-scoped
+
+Every **Payment label**, **Payment reminder**, and **Occurrence** belongs to exactly one **Landlord account**. Every reminders route MUST require a verified identity and MUST answer 401 when it is missing or invalid. The API MUST take the owner from the verified token and MUST NOT accept an owner from the request body. Listing MUST return only the caller's rows. A reminder MUST name a property and a label that the same landlord owns, enforced by the database's composite keys rather than by the route alone. Reading, editing, or deleting another landlord's label, reminder, or occurrence MUST answer 404 exactly as an unknown id does, so existence does not leak.
+
+#### Scenario: Another landlord's reminders are invisible
+
+```gherkin
+Given landlord A owns a reminder for their property
+When landlord B lists payment reminders
+Then the list does not contain A's reminder
+And reading A's reminder by id answers 404
+```
+
+#### Scenario: A reminder cannot name another landlord's property
+
+```gherkin
+Given landlord B does not own the property "Accrual Test House"
+When B creates a reminder for that property
+Then the request is refused
+And no reminder is created
+```
+
+#### Scenario: An unauthenticated request is refused
+
+```gherkin
+Given a reminders request with no access token
+When the API answers
+Then it answers 401 with the standard envelope
+And nothing is read or written
+```
+
 ### Requirement: Payment labels are a managed picklist
 
-The API MUST store **Payment label**s with a unique name and an optional expense-category name as the web app knows it, and MUST support listing, creating, renaming, and deleting them. The category name is a cross-store reference, not a foreign key: the API stores it without validating it against the web app's category list. Deleting a label that any reminder references MUST be refused with an error that names the referencing reminders.
+The API MUST store **Payment label**s with a name unique within the landlord's own labels, and an optional expense-category name as the web app knows it, and MUST support listing, creating, renaming, and deleting them. The category name is a cross-store reference, not a foreign key: the API stores it without validating it against the web app's category list. Deleting a label that any reminder references MUST be refused with an error that names the referencing reminders.
 
 #### Scenario: A label is created and listed
 

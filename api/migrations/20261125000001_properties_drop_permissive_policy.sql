@@ -1,0 +1,27 @@
+-- Drop the out-of-band permissive policy on `properties`.
+--
+-- Before the ownership work (ADR 0008) the table carried a hand-made policy:
+--
+--   policyname: "Allow all operations on properties"
+--   cmd:        ALL
+--   roles:      {public}
+--   qual:       true
+--
+-- It was created outside the migration chain, so no migration file ever owned
+-- it and `20261125000000_properties_owner_id.sql` did not replace it. Postgres
+-- combines permissive policies with OR, so a policy for `public` whose `qual`
+-- is `true` satisfies every row: while it existed, the owner-scoped
+-- `owner_id = auth.uid()` policies decided nothing and were decorative.
+--
+-- RLS is the defence-in-depth layer behind the API's own owner scoping. That
+-- layer only means something once this policy is gone, so it is dropped now.
+-- No other policy is touched: the three owner-scoped policies from the
+-- ownership migration remain the sole answer for select, insert, and delete.
+--
+-- The direct Data API path stays closed independently (the `anon` and
+-- `authenticated` grants are revoked), so removing this policy changes nothing
+-- for the API, which connects as the table owner and bypasses RLS.
+--
+-- Idempotent: `if exists` makes this safe on a database where the policy has
+-- already been removed by hand.
+drop policy if exists "Allow all operations on properties" on properties;

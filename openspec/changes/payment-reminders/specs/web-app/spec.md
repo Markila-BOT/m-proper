@@ -6,6 +6,28 @@ Adds the Reminders and Settings surfaces, the label picklist editor, the mark-pa
 
 ## ADDED Requirements
 
+### Requirement: The reminders surfaces live inside the signed-in shell
+
+The Reminders tab, the Reminders view, and Settings MUST render only for a signed-in landlord, inside the same guard as the ledger. A visitor without a session MUST be sent to sign-in with the current location as the return target. A 401 from the reminders API after one token refresh MUST end the session; a 503 MUST render the unreachable state and MUST NOT sign the landlord out.
+
+#### Scenario: A signed-out visitor cannot open Settings
+
+```gherkin
+Given a visitor with no session
+When the visitor opens /settings
+Then the app sends them to sign-in with /settings as the return target
+And the label manager does not render
+```
+
+#### Scenario: An auth outage is not a sign-out
+
+```gherkin
+Given a signed-in landlord on the Reminders view
+When the reminders API answers 503
+Then the page shows the unreachable state
+And the session is still there
+```
+
 ### Requirement: The shell carries a Reminders tab and a Settings control
 
 The shell MUST expose a fourth section tab, Reminders, at `/reminders`, and a Settings control in the header at `/settings`. Both routes follow the URL-as-state model. `/reports` stays reachable only by direct URL as the honest placeholder, not a tab.
@@ -21,7 +43,7 @@ And the operator can reach Settings from the header control
 
 ### Requirement: The Reminders surface lists reminders and their payment history
 
-The Reminders surface MUST list the reminders with their property, label, next due date, expected amount, and status; MUST let the operator create, edit, and delete a reminder; MUST show each reminder's **Payment history** with its expected and paid amounts; MUST read a pending **Occurrence** whose due date has passed as **Overdue**; MUST offer the **Last-payment seed** when the label maps to a category and the local ledger has a matching payment; and MUST state when a paid occurrence's **Ledger link** is not in this browser's ledger. Deleting a reminder MUST warn that its payment history will be deleted.
+The Reminders surface MUST list the reminders with their property, label, next due date, expected amount, and status; MUST let the operator create, edit, and delete a reminder; MUST show each reminder's **Payment history** with its expected and paid amounts; MUST read a pending **Occurrence** whose due date has passed as **Overdue**; MUST offer the **Last-payment seed** when the label maps to a category and the ledger already holds a matching payment; and MUST state when a paid occurrence's **Ledger link** is not among the ledger entries the API returns. Deleting a reminder MUST warn that its payment history will be deleted.
 
 #### Scenario: Marking an occurrence paid offers the linked expense
 

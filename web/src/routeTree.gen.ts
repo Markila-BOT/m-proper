@@ -9,138 +9,281 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as OverviewRouteImport } from './routes/overview'
-import { Route as PropertiesRouteImport } from './routes/properties'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as TransactionsRouteImport } from './routes/transactions'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as ConfirmRouteImport } from './routes/confirm'
+import { Route as NewPasswordRouteImport } from './routes/new-password'
+import { Route as ResetRouteImport } from './routes/reset'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated.overview'
+import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated.reports'
+import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated.transactions'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmRoute = ConfirmRouteImport.update({
+  id: '/confirm',
+  path: '/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewPasswordRoute = NewPasswordRouteImport.update({
+  id: '/new-password',
+  path: '/new-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetRoute = ResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const OverviewRoute = OverviewRouteImport.update({
+const AuthenticatedOverviewRoute = AuthenticatedOverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const PropertiesRoute = PropertiesRouteImport.update({
+const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ReportsRoute = ReportsRouteImport.update({
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const TransactionsRoute = TransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedTransactionsRoute =
+  AuthenticatedTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/overview': typeof OverviewRoute
-  '/properties': typeof PropertiesRoute
-  '/reports': typeof ReportsRoute
-  '/transactions': typeof TransactionsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/confirm': typeof ConfirmRoute
+  '/new-password': typeof NewPasswordRoute
+  '/reset': typeof ResetRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/overview': typeof AuthenticatedOverviewRoute
+  '/properties': typeof AuthenticatedPropertiesRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/transactions': typeof AuthenticatedTransactionsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/overview': typeof OverviewRoute
-  '/properties': typeof PropertiesRoute
-  '/reports': typeof ReportsRoute
-  '/transactions': typeof TransactionsRoute
+  '/confirm': typeof ConfirmRoute
+  '/new-password': typeof NewPasswordRoute
+  '/reset': typeof ResetRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/overview': typeof AuthenticatedOverviewRoute
+  '/properties': typeof AuthenticatedPropertiesRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/transactions': typeof AuthenticatedTransactionsRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/overview': typeof OverviewRoute
-  '/properties': typeof PropertiesRoute
-  '/reports': typeof ReportsRoute
-  '/transactions': typeof TransactionsRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/confirm': typeof ConfirmRoute
+  '/new-password': typeof NewPasswordRoute
+  '/reset': typeof ResetRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/_authenticated/overview': typeof AuthenticatedOverviewRoute
+  '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/overview' | '/properties' | '/reports' | '/transactions'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/overview' | '/properties' | '/reports' | '/transactions'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/confirm'
+    | '/new-password'
+    | '/reset'
+    | '/sign-in'
+    | '/sign-up'
     | '/overview'
     | '/properties'
     | '/reports'
     | '/transactions'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/confirm'
+    | '/new-password'
+    | '/reset'
+    | '/sign-in'
+    | '/sign-up'
+    | '/overview'
+    | '/properties'
+    | '/reports'
+    | '/transactions'
+    | '/'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/confirm'
+    | '/new-password'
+    | '/reset'
+    | '/sign-in'
+    | '/sign-up'
+    | '/_authenticated/overview'
+    | '/_authenticated/properties'
+    | '/_authenticated/reports'
+    | '/_authenticated/transactions'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  OverviewRoute: typeof OverviewRoute
-  PropertiesRoute: typeof PropertiesRoute
-  ReportsRoute: typeof ReportsRoute
-  TransactionsRoute: typeof TransactionsRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ConfirmRoute: typeof ConfirmRoute
+  NewPasswordRoute: typeof NewPasswordRoute
+  ResetRoute: typeof ResetRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirm': {
+      id: '/confirm'
+      path: '/confirm'
+      fullPath: '/confirm'
+      preLoaderRoute: typeof ConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new-password': {
+      id: '/new-password'
+      path: '/new-password'
+      fullPath: '/new-password'
+      preLoaderRoute: typeof NewPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset': {
+      id: '/reset'
+      path: '/reset'
+      fullPath: '/reset'
+      preLoaderRoute: typeof ResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/overview': {
-      id: '/overview'
+    '/_authenticated/overview': {
+      id: '/_authenticated/overview'
       path: '/overview'
       fullPath: '/overview'
-      preLoaderRoute: typeof OverviewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedOverviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/properties': {
-      id: '/properties'
+    '/_authenticated/properties': {
+      id: '/_authenticated/properties'
       path: '/properties'
       fullPath: '/properties'
-      preLoaderRoute: typeof PropertiesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/reports': {
-      id: '/reports'
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
       path: '/reports'
       fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/transactions': {
-      id: '/transactions'
+    '/_authenticated/transactions': {
+      id: '/_authenticated/transactions'
       path: '/transactions'
       fullPath: '/transactions'
-      preLoaderRoute: typeof TransactionsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
+  AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
+  AuthenticatedPropertiesRoute: AuthenticatedPropertiesRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  OverviewRoute: OverviewRoute,
-  PropertiesRoute: PropertiesRoute,
-  ReportsRoute: ReportsRoute,
-  TransactionsRoute: TransactionsRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ConfirmRoute: ConfirmRoute,
+  NewPasswordRoute: NewPasswordRoute,
+  ResetRoute: ResetRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

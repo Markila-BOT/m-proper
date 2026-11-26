@@ -1,10 +1,10 @@
 ## Context
 
-The app already has two data homes: properties live in Supabase behind the Rust Axum API, while the transaction ledger lives in each browser's localStorage. Payment reminders are financial history the operator wants durable, so the user chose the API-backed path (ADR-0005). The shell is the Liquid Glass world (ADR-0004); the ledger's dates follow the **Local-Date Rule**.
+The app already has one data home: properties, and (after `server-transactions`) the transaction ledger, live in Supabase behind the Rust Axum API. Payment reminders are financial history the operator wants durable, so the user chose the API-backed path (ADR-0005). The shell is the Liquid Glass world (ADR-0004); the ledger's dates follow the **Local-Date Rule**.
 
-This change adds the reminders domain (labels, reminders, occurrences), a Reminders surface, a Settings surface that debuts with the label manager, and the mark-paid handshake between the server record and the local ledger. It also extends property deletion to cascade (ADR-0006).
+This change adds the reminders domain (labels, reminders, occurrences), a Reminders surface, a Settings surface that debuts with the label manager, and the mark-paid handshake between the server record and the ledger. It also extends property deletion to cascade (ADR-0006).
 
-Assumptions: one operator, no auth (the API's existing posture), and the reminders endpoints share the properties API's host and CORS reach.
+Assumptions: the `landlord-accounts` change has landed, so every request carries a verified **Identity** and every row belongs to a **Landlord account** (ADR-0007, ADR-0008); the reminders endpoints share the properties API's host and CORS reach. This change adds no auth of its own — it inherits the verifier, the 401/503 envelope, and the owner-scoped posture.
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,7 @@ flowchart LR
     R[Reminders surface<br/>/reminders]
     S[Settings surface<br/>/settings]
     H[API client<br/>React Query]
-    L[(Ledger<br/>localStorage)]
+    L[(Ledger<br/>transactions table)]
   end
   subgraph API[Rust Axum API]
     PR[Reminders routes<br/>labels · reminders · occurrences]
@@ -33,7 +33,7 @@ flowchart LR
   PO -. ledger link: id only .- L
 ```
 
-- The API owns labels, reminders, and materialized **Occurrence** rows; the browser owns the ledger.
+- The API owns labels, reminders, materialized **Occurrence** rows, and the ledger entries a payment links to.
 - Two cross-store references are names/ids, not foreign keys: the label's category name and the occurrence's **Ledger link**.
 - The web is the only place the two stores meet; the server never reads the ledger.
 - The gear sits in the existing header glass chrome, so no `glass-surfaces` delta is needed.
@@ -42,7 +42,7 @@ flowchart LR
 
 **Goals:** durable per-property reminders whose per-period amounts and paid history are editable and auditable; a managed label picklist; a mark-paid flow that can record the linked ledger expense without silently double-counting; honest missing-link and unreachable states; the property cascade with a warned confirmation.
 
-**Non-Goals:** auth/multi-user, notifications, income reminders, moving the ledger server-side, offline sync, multi-currency, attachments, general tagging, Settings beyond labels, Overview badges/totals, un-pay.
+**Non-Goals:** teams or sharing (one account per portfolio), notifications, income reminders, moving the ledger server-side, offline sync, multi-currency, attachments, general tagging, Settings beyond labels, Overview badges/totals, un-pay.
 
 ## Decisions
 
@@ -58,10 +58,11 @@ Generation rule:
 
 **3. Data model.** One migration adds:
 
-- `payment_labels`: `id uuid pk`, `name text not null` with a `lower(name)` unique index, `category text null`, `created_at`, `updated_at`.
-- `payment_reminders`: `id uuid pk`, `property_id uuid not null references properties(id) on delete cascade`, `label_id uuid not null references payment_labels(id) on delete restrict`, `frequency text` checked to `monthly|quarterly|annual|one_off`, `start_date date`, `end_date date null` with `end_date >= start_date`, `due_day int` 1–31, `default_amount numeric(12,2) >= 0`, `notes text null`, timestamps.
-- `payment_occurrences`: `id uuid pk`, `reminder_id uuid not null references payment_reminders(id) on delete cascade`, `due_date date`, `expected_amount numeric(12,2) >= 0`, `status text` checked to `pending|paid|skipped`, `paid_date date null`, `paid_amount numeric(12,2) null`, `linked_transaction_id text null`, timestamps, `unique (reminder_id, due_date)`.
-- Indexes: `payment_reminders(property_id)`, `payment_occurrences(reminder_id, due_date)`, `payment_labels(lower(name))`.
+- `payment_labels`: `id uuid pk`, `owner_id uuid not null references auth.users(id) on delete cascade`, `name text not null`, `category text null`, `created_at`, `updated_at`, `unique (owner_id, id)`, and a unique index on `(owner_id, lower(name))` so two landlords may each hold a label named "Realty Tax" but one landlord may not hold it twice.
+- `payment_reminders`: `id uuid pk`, `owner_id uuid not null references auth.users(id) on delete cascade`, `property_id uuid not null`, `label_id uuid not null`, `frequency text` checked to `monthly|quarterly|annual|one_off`, `start_date date`, `end_date date null` with `end_date >= start_date`, `due_day int` 1–31, `default_amount numeric(12,2) >= 0`, `notes text null`, timestamps, `unique (owner_id, id)`, `foreign key (property_id, owner_id) references properties (id, owner_id) on delete cascade`, and `foreign key (label_id, owner_id) references payment_labels (id, owner_id) on delete restrict`. The composite keys are the point: a reminder can only name a property and a label that the same landlord owns, so an unowned or cross-owner insert fails at the database rather than relying on the route to check.
+- `payment_occurrences`: `id uuid pk`, `owner_id uuid not null references auth.users(id) on delete cascade`, `reminder_id uuid not null`, `due_date date`, `expected_amount numeric(12,2) >= 0`, `status text` checked to `pending|paid|skipped`, `paid_date date null`, `paid_amount numeric(12,2) null`, `linked_transaction_id text null`, timestamps, `unique (owner_id, id)`, `unique (reminder_id, due_date)`, and `foreign key (reminder_id, owner_id) references payment_reminders (id, owner_id) on delete cascade`.
+- Indexes: `payment_reminders(owner_id)`, `payment_reminders(property_id)`, `payment_occurrences(owner_id)`, `payment_occurrences(reminder_id, due_date)`, `payment_labels(owner_id)`, `payment_labels(owner_id, lower(name))`. `properties` gains the `unique (id, owner_id)` the composite keys need.
+- RLS as the defence layer, matching `properties`: owner-scoped policies for select, insert, and delete on all three tables, and no grant to `anon` or `authenticated`, so the direct Data API path stays closed.
 
 The category and the ledger link are stored names/ids, deliberately without foreign keys: the category list is a web constant and the ledger is not in Postgres.
 
@@ -73,7 +74,7 @@ The category and the ledger link are stored names/ids, deliberately without fore
 - Status codes: 201 create, 200 read/update, 400 validation, 404 missing, 409 label in use. Validation names the offending field.
 - `api/openapi.json` gains the paths and schemas; `scripts/generate-api-client.ts`'s `requiredPaths` grows; the hand-maintained `web/src/lib/api-client.ts` gains the methods and `web/src/lib/domain.ts` the types.
 
-**5. The mark-paid handshake is ordered and its failures are named.** The occurrence is marked paid only after the API confirms. The linked expense is a second step: the web writes the ledger transaction locally, then PATCHes the occurrence's ledger link. If the ledger write fails, the occurrence stays paid and unlinked; if the link PATCH fails, the ledger row exists and the occurrence is unlinked. Both states are shown with a retry, never silently reconciled. The prompt prefills property from the reminder, category from the label's mapping, amount and date from the payment, and description from the label name, all editable.
+**5. The mark-paid handshake is ordered and its failures are named.** The occurrence is marked paid only after the API confirms. The linked expense is a second step: the web creates the ledger entry through the API, then PATCHes the occurrence's ledger link. If the ledger write fails, the occurrence stays paid and unlinked; if the link PATCH fails, the ledger row exists and the occurrence is unlinked. Both states are shown with a retry, never silently reconciled. The prompt prefills property from the reminder, category from the label's mapping, amount and date from the payment, and description from the label name, all editable.
 
 **6. The last-payment seed is a local-ledger convenience.** With a mapped category, the form reads expense transactions for the same property and category, prefers the latest whose description contains the label name, falls back to the latest same-property/category payment, and offers its amount/date/description. Without a mapped category, no seed is offered. This is not a server lookup.
 
@@ -90,7 +91,7 @@ The category and the ledger link are stored names/ids, deliberately without fore
 - **Cascade data loss.** A property or reminder deletion erases paid history irreversibly; both confirmations must say so.
 - **No un-pay.** A wrong paid amount is corrected by editing, not by reverting; the operator cannot clear a mistaken paid state.
 - **Horizon and timezone.** Regeneration trusts the client's `today`; a wrong device date can change which unpaid rows are replaced.
-- **Global label teardown.** Labels are global and refuse deletion while referenced; acceptance teardown must delete reminders before labels, and a mid-run failure can strand a label.
+- **Per-owner label teardown.** Labels refuse deletion while one of the same landlord's reminders references them; acceptance teardown must delete reminders before labels, and a mid-run failure can strand a label that a later run must clean up. The suite cleans within its own account, so it cannot touch another landlord's labels.
 - **Exposure.** Financial history joins an unauthenticated API; the reach is unchanged but the blast radius grows.
 
 ## Migration Plan

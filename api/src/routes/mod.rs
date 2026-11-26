@@ -1,5 +1,5 @@
 // api/src/routes/mod.rs
-mod health;
+pub mod health;
 pub mod properties;
 
 use axum::{

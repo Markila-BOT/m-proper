@@ -8,7 +8,7 @@ import {
 import { filterTransactions } from '../transactions'
 import Summary from '../components/Summary'
 
-export const Route = createFileRoute('/overview')({
+export const Route = createFileRoute('/_authenticated/overview')({
   component: OverviewView,
 })
 

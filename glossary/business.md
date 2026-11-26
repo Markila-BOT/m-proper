@@ -20,5 +20,5 @@
 | Password reset | The emailed recovery flow that lets a landlord choose a new password. | Describing recovery. | "Forgot password" (the control, not the flow) |
 | Bootstrap owner | The landlord account that receives the existing unowned records in the tenancy migration. | Describing the one-time data migration. | "Default user" |
 | Owner scope | The rule that every property and record belongs to exactly one landlord account. | Describing tenancy and isolation. | "User filter" |
-| Ledger entry | One income or expense line owned by a landlord account and stored on the server. | Describing a transaction row. | "Record" (the ledger is the record) |
+| Ledger entry | One income or expense line owned by a landlord account. | Describing a transaction row. | "Record" (the ledger is the record) |
 | Local ledger | The retired browser-only transaction store; its entries are discarded, not imported. | Describing the pre-server ledger and its retirement. | "Offline ledger" |
