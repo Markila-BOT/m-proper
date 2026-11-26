@@ -60,7 +60,7 @@
 
 ## 8. Completion
 
-- [ ] 8.1 Run the web gates: `pnpm --filter web build`, `npx tsc --noEmit`, `npx eslint src`, `npx prettier --check src`, `pnpm test:unit`
-- [ ] 8.2 Confirm no `cargo` command is required to build, test, or run the repository, and that the dependency policy covers every new package
-- [ ] 8.3 Run `openspec validate fullstack-tanstack` and resolve errors (the fenced-gherkin warnings are the validator's known style notices)
-- [ ] 8.4 Confirm ADR-0010 and ADR-0011 are current and that no in-force ADR contradicts the implementation
+- [x] 8.1 Run the web gates: `pnpm --filter web build`, `npx tsc --noEmit`, `npx eslint src`, `npx prettier --check src`, `pnpm test:unit`
+- [x] 8.2 Confirm no `cargo` command is required to build, test, or run the repository, and that the dependency policy covers every new package
+- [x] 8.3 Run `openspec validate fullstack-tanstack` and resolve errors (the fenced-gherkin warnings are the validator's known style notices)
+- [x] 8.4 Confirm ADR-0010 and ADR-0011 are current and that no in-force ADR contradicts the implementation

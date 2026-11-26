@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 // File-level scanning for the dependency-maintenance scenarios: manifest
 // concreteness, reference checks against the repository's files, lockfile
@@ -8,54 +8,51 @@
 // with the file and reason named, and every judgment call the reference scan
 // makes is reported by the caller so a run never silently weakens itself.
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { REPO_ROOT } = require('./harness');
+const fs = require("node:fs");
+const path = require("node:path");
+const { REPO_ROOT } = require("./harness");
 
-const semver = require('semver');
+const semver = require("semver");
 
 // ---------------------------------------------------------------------------
 // Manifest loading and parsing
 // ---------------------------------------------------------------------------
 
 const MANIFEST_PATHS = {
-  root: path.join(REPO_ROOT, 'package.json'),
-  web: path.join(REPO_ROOT, 'web', 'package.json'),
-  api: path.join(REPO_ROOT, 'api', 'Cargo.toml'),
+  root: path.join(REPO_ROOT, "package.json"),
+  web: path.join(REPO_ROOT, "web", "package.json"),
 };
 
 function loadManifests() {
-  const root = JSON.parse(fs.readFileSync(MANIFEST_PATHS.root, 'utf8'));
-  const web = JSON.parse(fs.readFileSync(MANIFEST_PATHS.web, 'utf8'));
-  const apiToml = fs.readFileSync(MANIFEST_PATHS.api, 'utf8');
-  return { root, web, apiToml };
+  const root = JSON.parse(fs.readFileSync(MANIFEST_PATHS.root, "utf8"));
+  const web = JSON.parse(fs.readFileSync(MANIFEST_PATHS.web, "utf8"));
+  return { root, web };
 }
 
 // Every direct dependency entry across the three manifests, with the section
 // it came from. Sections that do not exist are simply absent.
 function collectDirectEntries(manifests) {
   const entries = [];
-  for (const section of ['dependencies', 'devDependencies']) {
+  for (const section of ["dependencies", "devDependencies"]) {
     if (manifests.root[section]) {
       for (const [name, range] of Object.entries(manifests.root[section])) {
-        entries.push({ manifest: 'root', section, name, range });
+        entries.push({ manifest: "root", section, name, range });
       }
     }
     if (manifests.web[section]) {
       for (const [name, range] of Object.entries(manifests.web[section])) {
-        entries.push({ manifest: 'web', section, name, range });
+        entries.push({ manifest: "web", section, name, range });
       }
     }
-  }
-  for (const { name, range } of cargoDirectDependencies(manifests.apiToml)) {
-    entries.push({ manifest: 'api', section: 'dependencies', name, range });
   }
   return entries;
 }
 
 function extractTomlSection(tomlText, sectionName) {
   const lines = tomlText.split(/\r?\n/);
-  const start = lines.findIndex((line) => new RegExp(`^\\[${sectionName}\\]\\s*$`).test(line));
+  const start = lines.findIndex((line) =>
+    new RegExp(`^\\[${sectionName}\\]\\s*$`).test(line),
+  );
   if (start === -1) return null;
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i += 1) {
@@ -72,15 +69,15 @@ function extractTomlSection(tomlText, sectionName) {
 // version key (git/path deps) surfaces with range null and fails the
 // concreteness step, naming the entry.
 function cargoDirectDependencies(tomlText) {
-  const body = extractTomlSection(tomlText, 'dependencies');
+  const body = extractTomlSection(tomlText, "dependencies");
   if (body === null) {
-    throw new Error('api/Cargo.toml has no [dependencies] section');
+    throw new Error("api/Cargo.toml has no [dependencies] section");
   }
   const entries = [];
   for (const rawLine of body) {
-    const line = rawLine.replace(/#.*$/, '').trim();
+    const line = rawLine.replace(/#.*$/, "").trim();
     if (!line) continue;
-    const eq = line.indexOf('=');
+    const eq = line.indexOf("=");
     if (eq === -1) continue;
     const name = line.slice(0, eq).trim();
     const rest = line.slice(eq + 1).trim();
@@ -100,31 +97,31 @@ function cargoDirectDependencies(tomlText) {
 // ---------------------------------------------------------------------------
 
 const DIST_TAGS = new Set([
-  'latest',
-  'next',
-  'canary',
-  'alpha',
-  'beta',
-  'rc',
-  'stable',
-  'dev',
-  'main',
-  'master',
-  'experimental',
-  'nightly',
+  "latest",
+  "next",
+  "canary",
+  "alpha",
+  "beta",
+  "rc",
+  "stable",
+  "dev",
+  "main",
+  "master",
+  "experimental",
+  "nightly",
 ]);
 
 function isDistTag(range) {
-  if (typeof range !== 'string') return true;
+  if (typeof range !== "string") return true;
   const value = range.trim().toLowerCase();
-  return value === '' || value === '*' || value === 'x' || DIST_TAGS.has(value);
+  return value === "" || value === "*" || value === "x" || DIST_TAGS.has(value);
 }
 
 // Concrete JS range: every comparator anchors on a number (caret, tilde,
 // comparators, exact pins). Rejects dist-tag words, globs, URLs, git and
 // file pointers, and unconstrained workspace refs.
 function isConcreteJsRange(range) {
-  if (typeof range !== 'string') return false;
+  if (typeof range !== "string") return false;
   const value = range.trim();
   if (!value) return false;
   if (isDistTag(value)) return false;
@@ -133,19 +130,23 @@ function isConcreteJsRange(range) {
   const comparators = value.split(/\s+|\|\|/).filter(Boolean);
   if (comparators.length === 0) return false;
   return comparators.every((comparator) =>
-    /^(\^|~|>=|<=|>|<|=)?\d+(\.\d+){0,2}(-[0-9A-Za-z.+-]+)?(\.\*)?$/.test(comparator)
+    /^(\^|~|>=|<=|>|<|=)?\d+(\.\d+){0,2}(-[0-9A-Za-z.+-]+)?(\.\*)?$/.test(
+      comparator,
+    ),
   );
 }
 
 // Concrete cargo range: digits (major, optional minor/patch, optional
 // prerelease). The repo's manifests use plain "X" / "X.Y" caret ranges.
 function isConcreteCargoRange(range) {
-  if (typeof range !== 'string') return false;
+  if (typeof range !== "string") return false;
   return /^\d+(\.\d+){0,2}(-[0-9A-Za-z.+-]+)?$/.test(range.trim());
 }
 
 function entryIsConcrete(entry) {
-  return entry.manifest === 'api' ? isConcreteCargoRange(entry.range) : isConcreteJsRange(entry.range);
+  return entry.manifest === "api"
+    ? isConcreteCargoRange(entry.range)
+    : isConcreteJsRange(entry.range);
 }
 
 // ---------------------------------------------------------------------------
@@ -153,33 +154,33 @@ function entryIsConcrete(entry) {
 // ---------------------------------------------------------------------------
 
 const SCOPE_TEXT_EXTENSIONS = new Set([
-  '.js',
-  '.jsx',
-  '.ts',
-  '.tsx',
-  '.css',
-  '.json',
-  '.html',
-  '.mjs',
-  '.cjs',
-  '.mts',
-  '.cts',
-  '.rs',
-  '.sh',
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".css",
+  ".json",
+  ".html",
+  ".mjs",
+  ".cjs",
+  ".mts",
+  ".cts",
+  ".rs",
+  ".sh",
 ]);
 
 const SCOPE_SKIP_DIRS = new Set([
-  'node_modules',
-  'dist',
-  'build',
-  '.output',
-  '.tanstack',
-  '.impeccable',
-  '.git',
-  'coverage',
-  'target',
-  '.extracted',
-  'reports',
+  "node_modules",
+  "dist",
+  "build",
+  ".output",
+  ".tanstack",
+  ".impeccable",
+  ".git",
+  "coverage",
+  "target",
+  ".extracted",
+  "reports",
 ]);
 
 function walkScopeFiles(dir, collected = []) {
@@ -195,8 +196,14 @@ function walkScopeFiles(dir, collected = []) {
       if (!SCOPE_SKIP_DIRS.has(entry.name)) walkScopeFiles(full, collected);
       continue;
     }
-    if (entry.name === 'pnpm-lock.yaml' || entry.name === 'Cargo.lock' || /^\.env/i.test(entry.name)) continue;
-    if (SCOPE_TEXT_EXTENSIONS.has(path.extname(entry.name))) collected.push(full);
+    if (
+      entry.name === "pnpm-lock.yaml" ||
+      entry.name === "Cargo.lock" ||
+      /^\.env/i.test(entry.name)
+    )
+      continue;
+    if (SCOPE_TEXT_EXTENSIONS.has(path.extname(entry.name)))
+      collected.push(full);
   }
   return collected;
 }
@@ -204,19 +211,24 @@ function walkScopeFiles(dir, collected = []) {
 // Manifest files are in scope (scripts live there) but their own dependency
 // blocks are stripped, so an entry never references itself by declaration.
 function scopeTextFor(file) {
-  const raw = fs.readFileSync(file, 'utf8');
-  if (path.extname(file) === '.json') {
+  const raw = fs.readFileSync(file, "utf8");
+  if (path.extname(file) === ".json") {
     try {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && 'dependencies' in parsed) {
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed) &&
+        "dependencies" in parsed
+      ) {
         for (const key of [
-          'dependencies',
-          'devDependencies',
-          'peerDependencies',
-          'optionalDependencies',
-          'resolutions',
-          'overrides',
-          'pnpm',
+          "dependencies",
+          "devDependencies",
+          "peerDependencies",
+          "optionalDependencies",
+          "resolutions",
+          "overrides",
+          "pnpm",
         ]) {
           delete parsed[key];
         }
@@ -234,12 +246,15 @@ function scopeTextFor(file) {
 // scripts and workspace configuration; the api manifest's is api/src.
 function collectScopeCorpus(scope) {
   const files =
-    scope === 'web'
-      ? [MANIFEST_PATHS.web, ...walkScopeFiles(path.join(REPO_ROOT, 'web'))]
-      : scope === 'root'
-        ? [MANIFEST_PATHS.root, ...walkScopeFiles(path.join(REPO_ROOT, 'scripts'))]
-        : scope === 'api'
-          ? walkScopeFiles(path.join(REPO_ROOT, 'api', 'src'))
+    scope === "web"
+      ? [MANIFEST_PATHS.web, ...walkScopeFiles(path.join(REPO_ROOT, "web"))]
+      : scope === "root"
+        ? [
+            MANIFEST_PATHS.root,
+            ...walkScopeFiles(path.join(REPO_ROOT, "scripts")),
+          ]
+        : scope === "api"
+          ? walkScopeFiles(path.join(REPO_ROOT, "api", "src"))
           : (() => {
               throw new Error(`unknown reference-scan scope "${scope}"`);
             })();
@@ -247,7 +262,7 @@ function collectScopeCorpus(scope) {
 }
 
 function escapeRegExp(text) {
-  return text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return text.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 
 // Word-safe matcher: an identifier-continuation (word char or hyphen) before
@@ -260,15 +275,21 @@ function buildNameMatcher(name) {
 
 // Cargo crates are referenced by their underscore form in `use` paths.
 function buildCrateMatcher(name) {
-  return buildNameMatcher(name.replace(/-/g, '_'));
+  return buildNameMatcher(name.replace(/-/g, "_"));
 }
 
 function packageBinNames(packageName, installRoot) {
-  const manifestPath = path.join(installRoot, 'node_modules', packageName, 'package.json');
+  const manifestPath = path.join(
+    installRoot,
+    "node_modules",
+    packageName,
+    "package.json",
+  );
   try {
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    if (typeof manifest.bin === 'string') return [path.basename(manifest.bin)];
-    if (manifest.bin && typeof manifest.bin === 'object') return Object.keys(manifest.bin);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (typeof manifest.bin === "string") return [path.basename(manifest.bin)];
+    if (manifest.bin && typeof manifest.bin === "object")
+      return Object.keys(manifest.bin);
   } catch {
     /* not installed or unreadable — the rule simply does not apply */
   }
@@ -280,20 +301,21 @@ function packageBinNames(packageName, installRoot) {
 // unreferenced dependency (the fixture scenario proves the catch).
 const REFERENCE_RULES = [
   {
-    id: 'scoped-types-ride-their-runtime-package',
+    id: "scoped-types-ride-their-runtime-package",
     applies: (entry) => /^@types\/(.+)$/.exec(entry.name) !== null,
     reason: (entry, corpus) => {
-      const base = entry.name.slice('@types/'.length);
+      const base = entry.name.slice("@types/".length);
       const matcher = buildNameMatcher(base);
       const hit = corpus.some(({ text }) => matcher.test(text));
       return hit ? `types for ${base}, which is referenced in scope` : null;
     },
   },
   {
-    id: 'script-invokes-its-bin',
+    id: "script-invokes-its-bin",
     applies: () => true,
     reason: (entry, corpus) => {
-      const installRoot = entry.manifest === 'web' ? path.join(REPO_ROOT, 'web') : REPO_ROOT;
+      const installRoot =
+        entry.manifest === "web" ? path.join(REPO_ROOT, "web") : REPO_ROOT;
       for (const bin of packageBinNames(entry.name, installRoot)) {
         const matcher = buildNameMatcher(bin);
         if (corpus.some(({ text }) => matcher.test(text))) {
@@ -308,15 +330,16 @@ const REFERENCE_RULES = [
 // Explicit, per-package allowances. Each is printed on every run; two are
 // flagged as removal candidates for a later review.
 const REFERENCE_ALLOWANCES = {
-  'web:react-dom':
-    'framework hydration pair: TanStack Start (referenced) imports react-dom during SSR/hydration; app code imports react only',
-  'web:@types/react-dom': 'types for react-dom (see the react-dom judgment above)',
-  'web:@types/node':
-    'ambient node types for toolchain configs; no direct name reference in the web scope — removal candidate',
-  'web:typescript':
-    'the compiler/type-checker for the .ts/.tsx corpus (referenced via @typescript-eslint rules in eslint.config.js); its exact 6.0.3 pin is ADR-0001\'s deferred-TypeScript-7 record',
-  'api:serde_json':
-    'implicit serialization backend for axum::Json and the { success, message, data } envelope; no name reference in api/src — removal candidate',
+  "web:react-dom":
+    "framework hydration pair: TanStack Start (referenced) imports react-dom during SSR/hydration; app code imports react only",
+  "web:@types/react-dom":
+    "types for react-dom (see the react-dom judgment above)",
+  "web:@types/node":
+    "ambient node types for toolchain configs; no direct name reference in the web scope — removal candidate",
+  "web:typescript":
+    "the compiler/type-checker for the .ts/.tsx corpus (referenced via @typescript-eslint rules in eslint.config.js); its exact 6.0.3 pin is ADR-0001's deferred-TypeScript-7 record",
+  "api:serde_json":
+    "implicit serialization backend for axum::Json and the { success, message, data } envelope; no name reference in api/src — removal candidate",
 };
 
 // Scans one manifest's entries against its scope corpus.
@@ -329,7 +352,9 @@ function scanManifestReferences(manifestName, entries, { corpus } = {}) {
 
   for (const entry of entries) {
     const matcher =
-      manifestName === 'api' ? buildCrateMatcher(entry.name) : buildNameMatcher(entry.name);
+      manifestName === "api"
+        ? buildCrateMatcher(entry.name)
+        : buildNameMatcher(entry.name);
     if (scopeCorpus.some(({ text }) => matcher.test(text))) {
       referenced.push(entry.name);
       continue;
@@ -368,8 +393,8 @@ function parsePnpmImporters(lockText) {
   let section = null;
   let pkg = null;
 
-  const unkey = (text) => text.replace(/:$/, '').replace(/^['"]|['"]$/g, '');
-  const unquote = (text) => text.trim().replace(/^['"]|['"]$/g, '');
+  const unkey = (text) => text.replace(/:$/, "").replace(/^['"]|['"]$/g, "");
+  const unquote = (text) => text.trim().replace(/^['"]|['"]$/g, "");
 
   for (const line of lines) {
     if (!inImporters) {
@@ -381,31 +406,44 @@ function parsePnpmImporters(lockText) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    if (indent === 2 && trimmed.endsWith(':')) {
+    if (indent === 2 && /:\s*\{\}\s*$/.test(trimmed)) {
+      // An importer with no dependencies at all (the root, once it stopped
+      // declaring any) is written inline as `.: {}`.
+      importer = trimmed.slice(0, trimmed.indexOf(":")).trim();
+      importers[importer] = {};
+      section = null;
+      pkg = null;
+    } else if (indent === 2 && trimmed.endsWith(":")) {
       importer = unkey(trimmed);
       importers[importer] = {};
       section = null;
       pkg = null;
-    } else if (indent === 4 && trimmed.endsWith(':')) {
+    } else if (indent === 4 && trimmed.endsWith(":")) {
       section = unkey(trimmed);
       if (!importers[importer]) importers[importer] = {};
       importers[importer][section] = {};
       pkg = null;
-    } else if (indent === 6 && trimmed.endsWith(':')) {
+    } else if (indent === 6 && trimmed.endsWith(":")) {
       pkg = unkey(trimmed);
       importers[importer][section][pkg] = {};
     } else if (indent === 8) {
       const field = /^(\w+):\s*(.*)$/.exec(trimmed);
       if (!pkg || !field) {
-        throw new Error(`parsePnpmImporters: unexpected pnpm-lock.yaml line: "${line}"`);
+        throw new Error(
+          `parsePnpmImporters: unexpected pnpm-lock.yaml line: "${line}"`,
+        );
       }
       importers[importer][section][pkg][field[1]] = unquote(field[2]);
     } else {
-      throw new Error(`parsePnpmImporters: unexpected pnpm-lock.yaml line: "${line}"`);
+      throw new Error(
+        `parsePnpmImporters: unexpected pnpm-lock.yaml line: "${line}"`,
+      );
     }
   }
   if (!inImporters) {
-    throw new Error('parsePnpmImporters: no importers: block in pnpm-lock.yaml');
+    throw new Error(
+      "parsePnpmImporters: no importers: block in pnpm-lock.yaml",
+    );
   }
   return importers;
 }
@@ -413,7 +451,7 @@ function parsePnpmImporters(lockText) {
 // pnpm records resolved versions with peer-suffix annotations:
 // `1.3.2(react@19.3.1)` — strip everything from the first '('.
 function stripPnpmPeerSuffix(version) {
-  return version.replace(/\(.*/, '').trim();
+  return version.replace(/\(.*/, "").trim();
 }
 
 // Cargo caret semantics, as the repo uses them: declared "X" →
@@ -444,7 +482,7 @@ function parseCargoLockPackages(lockText) {
       current = null;
       continue;
     }
-    if (line.startsWith('[')) {
+    if (line.startsWith("[")) {
       inPackage = false;
       continue;
     }
@@ -468,16 +506,16 @@ function parseCargoLockPackages(lockText) {
 // ---------------------------------------------------------------------------
 
 function loadAcceptedAdrs() {
-  const adrDir = path.join(REPO_ROOT, 'adr');
+  const adrDir = path.join(REPO_ROOT, "adr");
   const files = fs
     .readdirSync(adrDir)
-    .filter((name) => name.endsWith('.md'))
+    .filter((name) => name.endsWith(".md"))
     .map((name) => path.join(adrDir, name));
   const accepted = [];
   for (const file of files) {
-    const text = fs.readFileSync(file, 'utf8');
+    const text = fs.readFileSync(file, "utf8");
     const status = /^[-*]\s*Status:\s*(\w+)/im.exec(text);
-    if (status && status[1].toLowerCase() === 'accepted') {
+    if (status && status[1].toLowerCase() === "accepted") {
       accepted.push({ file: path.relative(REPO_ROOT, file), text });
     }
   }
@@ -491,12 +529,16 @@ function scanDependencyPolicyAdr() {
   const accepted = loadAcceptedAdrs();
   const report = { acceptedCount: accepted.length, record: null, majors: [] };
 
-  const explicitRange = /explicit (?:caret )?(?:constraint|range)|names an explicit constraint/i;
+  const explicitRange =
+    /explicit (?:caret )?(?:constraint|range)|names an explicit constraint/i;
   const noDistTag = /No `latest` or other dist-tag/i;
   const perMajorReview = /major upgrade is its own reviewed step/i;
 
   for (const adr of accepted) {
-    if ((explicitRange.test(adr.text) || noDistTag.test(adr.text)) && perMajorReview.test(adr.text)) {
+    if (
+      (explicitRange.test(adr.text) || noDistTag.test(adr.text)) &&
+      perMajorReview.test(adr.text)
+    ) {
       report.record = adr;
       break;
     }
@@ -504,9 +546,11 @@ function scanDependencyPolicyAdr() {
   if (!report.record) return report;
 
   // Every deferred major must appear with the condition that reopens it.
-  const conditionMarker = /adopted in|dedicated|reopen|revisit|condition|until|when|before/i;
+  const conditionMarker =
+    /adopted in|dedicated|reopen|revisit|condition|until|when|before/i;
   const seen = new Set();
-  const deferralPattern = /([A-Za-z][\w.+#]*(?:\s+[A-Za-z][\w.+#]*)*?\s+\d+(?:\.\d+)?)\s+is deferred/gi;
+  const deferralPattern =
+    /([A-Za-z][\w.+#]*(?:\s+[A-Za-z][\w.+#]*)*?\s+\d+(?:\.\d+)?)\s+is deferred/gi;
   let match;
   while ((match = deferralPattern.exec(report.record.text)) !== null) {
     const major = match[1];
@@ -514,10 +558,12 @@ function scanDependencyPolicyAdr() {
     seen.add(major);
     // The condition must live in the same sentence (split at the period).
     const after = report.record.text.slice(match.index);
-    const sentence = after.split('.')[0];
+    const sentence = after.split(".")[0];
     report.majors.push({
       major,
-      reopeningCondition: conditionMarker.test(sentence) ? sentence.trim() : null,
+      reopeningCondition: conditionMarker.test(sentence)
+        ? sentence.trim()
+        : null,
     });
   }
   return report;
