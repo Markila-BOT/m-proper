@@ -26,6 +26,7 @@ const {
 } = require('../support/harness');
 const { parseMessages, summarizeCases } = require('../support/cucumber-messages');
 const { removeScenarioSmokeRows, clearScenarioBrowserState } = require('../support/cleanup');
+const { acceptanceEnv } = require('../support/env');
 const authState = require('../support/auth-state');
 const identities = require('../support/identities');
 const { requirePage } = require('../pages/browser');
@@ -129,9 +130,7 @@ When('the landlord runs the single test command', async function () {
   // collide with this parent run. suite-minus-self.cjs holds the exact
   // composition; the README documents the doubled runtime cost.
   const childPorts = {
-    api: state.apiPort + 10,
     web: state.webPort + 10,
-    openapi: state.openapiPort + 10,
   };
   const startedAt = Date.now();
   const child = await runCommand('npx', ['cucumber-js', '--config', 'suite-minus-self.cjs'], {
@@ -139,9 +138,7 @@ When('the landlord runs the single test command', async function () {
     timeoutMs: 20 * 60_000,
     env: {
       ...process.env,
-      HARNESS_API_PORT: String(childPorts.api),
       HARNESS_WEB_PORT: String(childPorts.web),
-      HARNESS_OPENAPI_PORT: String(childPorts.openapi),
     },
   });
   const messagesPath = path.join(HARNESS_DIR, 'reports', 'suite-minus-self-messages.ndjson');
@@ -155,7 +152,7 @@ When('the landlord runs the single test command', async function () {
   console.log(
     `[self] suite-minus-self child run: ${summarizeCases(cases)} in ` +
       `${Math.round(this.suiteMinusSelfRun.durationMs / 1000)}s ` +
-      `(parent ports ${state.apiPort}/${state.webPort}, child ports ${childPorts.api}/${childPorts.web})`
+      `(parent port ${state.webPort}, child port ${childPorts.web})`
   );
 });
 
@@ -537,36 +534,32 @@ Then('it is not reported as skipped', async function () {
 // The app is alive for the scenarios and gone after
 // ---------------------------------------------------------------------------
 
-Given('the API and the web application are not running', async function () {
-  // Before this suite booted anything, its BeforeAll recorded that both
-  // harness ports were free: the apps were not running, and what runs now
-  // is this suite's own, booted from scratch.
+Given('the web application is not running', async function () {
+  // Before this suite booted anything, its BeforeAll recorded that the harness
+  // port was free: the app was not running, and what runs now is this suite's
+  // own, booted from scratch.
   assert.strictEqual(
     state.portsFreeBeforeBoot,
     true,
-    'the harness must have found both ports free before boot — something was already ' +
-      'listening on a harness port when the suite started'
-  );
-  assert.ok(
-    state.apiProcess && state.apiProcess.exitCode === null,
-    'the API running now must be this suite’s own process'
+    'the harness must have found its port free before boot — something was already ' +
+      'listening on the harness port when the suite started'
   );
   assert.ok(
     state.webProcess && state.webProcess.exitCode === null,
-    'the web app running now must be this suite’s own process'
+    'the app running now must be this suite’s own process'
   );
   this.suiteStartMode = 'current-run';
 });
 
 // Shared between the lifecycle scenario (this very run is the started
-// suite) and the missing-connection scenario (a child suite with no
-// database configured). Each Given records which start this is.
+// suite) and the missing-configuration scenarios (a child suite with an
+// incomplete server environment). Each Given records which start this is.
 When('the landlord starts the acceptance suite', async function () {
   if (this.suiteStartMode === 'preflight-child') {
     // The suite's pre-boot gate as a child process: the same preflight the
-    // suite's own BeforeAll runs, with no DATABASE_URL in the child's
-    // environment and its .env fallback aimed at a file that does not
-    // exist. It must fail before any scenario and before any boot.
+    // suite's own BeforeAll runs, with the chosen configuration removed from
+    // the child's environment and its .env fallback aimed at a file that does
+    // not exist. It must fail before any scenario and before any boot.
     this.preflightProbe = await runCommand(
       process.execPath,
       ['support/preflight.js', this.preflightEnvFile],
@@ -579,47 +572,62 @@ When('the landlord starts the acceptance suite', async function () {
     'current-run',
     'this When needs a recorded suite start (one of the Given steps must set the mode)'
   );
-  // This run is the started suite: the BeforeAll booted both applications,
-  // and the Then below asserts they answer right now.
+  // This run is the started suite: the BeforeAll booted the app, and the Then
+  // below asserts it answers right now.
 });
 
-Then('both are running while the scenarios execute', async function () {
-  // Right now, mid-suite: the API's health tells the truth about the
-  // database, and the web app serves its document root.
-  const health = await fetch(`${state.apiBaseUrl}/health`, { signal: AbortSignal.timeout(10_000) });
-  assert.strictEqual(health.status, 200, `expected /health to answer 200 mid-suite, got ${health.status}`);
+Then('the app is running while the scenarios execute', async function () {
+  // Right now, mid-suite: one process serves /api/health (which tells the
+  // truth about the database) and the document root.
+  const health = await fetch(`${state.webBaseUrl}/api/health`, { signal: AbortSignal.timeout(10_000) });
+  assert.strictEqual(health.status, 200, `expected /api/health to answer 200 mid-suite, got ${health.status}`);
   const healthBody = await health.json();
-  assert.strictEqual(healthBody.success, true, 'the API must be healthy while the scenarios execute');
+  assert.strictEqual(healthBody.success, true, 'the app must be healthy while the scenarios execute');
 
   const web = await fetch(state.webBaseUrl, { signal: AbortSignal.timeout(10_000) });
-  assert.strictEqual(web.status, 200, `the web app at ${state.webBaseUrl} must answer 200 mid-suite, got ${web.status}`);
+  assert.strictEqual(web.status, 200, `the app at ${state.webBaseUrl} must answer 200 mid-suite, got ${web.status}`);
   const webBody = await web.text();
   assert.ok(
     /^<!DOCTYPE html>/i.test(webBody.trim()),
-    'the web app must serve its document root while the scenarios execute'
+    'the app must serve its document root while the scenarios execute'
   );
 });
 
-Then('both are shut down when the run finishes', async function () {
+Then('it is shut down when the run finishes', async function () {
   // The proof lands after the last scenario: this step registers a
-  // post-teardown check the harness runs once AfterAll has stopped both
-  // processes. It PASSes only when both ports are closed after the
-  // teardown; a FAIL prints and marks the run's exit code non-zero (see
-  // support/harness.js and the README's post-run verification note).
+  // post-teardown check the harness runs once AfterAll has stopped the app. It
+  // PASSes only when the port is closed after the teardown; a FAIL prints and
+  // marks the run's exit code non-zero (see support/harness.js and the
+  // README's post-run verification note).
   registerPostTeardownCheck({
-    label: `after teardown both harness ports are closed (${state.apiPort} api, ${state.webPort} web)`,
+    label: `after teardown the harness port is closed (${state.webPort} web)`,
     check: async () => {
       const deadline = Date.now() + 5000;
       while (Date.now() < deadline) {
-        const apiClosed = !(await probeTcpPort(state.apiPort));
-        const webClosed = !(await probeTcpPort(state.webPort));
-        if (apiClosed && webClosed) return true;
+        if (!(await probeTcpPort(state.webPort))) return true;
         await delay(250);
       }
       return false;
     },
   });
   console.log('[self] registered the post-teardown port check — the harness prints PASS after the run');
+});
+
+Then('no separate API process is started or stopped', async function () {
+  // One process serves the pages and /api. The harness booted exactly one
+  // child, labelled "web"; no process exists for a second service.
+  const labels = state.spawned.map((entry) => entry.label);
+  assert.deepStrictEqual(
+    labels,
+    ['web'],
+    `the harness must boot exactly one app process, saw: ${labels.join(', ') || '(none)'}`
+  );
+  assert.strictEqual(
+    Object.prototype.hasOwnProperty.call(state, 'apiProcess'),
+    false,
+    'the harness state must carry no separate API process handle'
+  );
+  console.log('[self] one process under test; no separate API process was started or stopped');
 });
 
 // ---------------------------------------------------------------------------
@@ -642,7 +650,7 @@ Given('scenarios that record and reload transactions in the browser', async func
     'Create property from UI',
     'Delete property from UI',
     'Transactions survive reload',
-    'Configurable API host',
+    'Same-origin calls need no configured host',
   ];
   for (const name of this.browserScenarioNames) {
     assert.ok(
@@ -689,13 +697,13 @@ Then('no browser session remains open after the run', async function () {
   const deadline = Date.now() + 5000;
   let closed = false;
   while (Date.now() < deadline) {
-    closed = !(await probeTcpPort(childPorts.api)) && !(await probeTcpPort(childPorts.web));
+    closed = !(await probeTcpPort(childPorts.web));
     if (closed) break;
     await delay(250);
   }
   assert.ok(
     closed,
-    `the child run must leave no listener behind (api ${childPorts.api}, web ${childPorts.web}) — ` +
+    `the child run must leave no listener behind (port ${childPorts.web}) — ` +
       'a browser session or dev server survived the child run'
   );
 });
@@ -771,10 +779,21 @@ Then("the browser's stored state is empty", async function () {
 });
 
 // ---------------------------------------------------------------------------
-// A missing database connection is named and nothing runs
+// Missing configuration fails before any scenario
 // ---------------------------------------------------------------------------
+//
+// Both scenarios run the suite's own pre-boot gate as a child process. The
+// child inherits the complete environment except the one variable the scenario
+// removes, and its env-file fallback points at a path that does not exist, so
+// the removed value cannot be supplied silently.
 
-Given('the API has no database connection configured', async function () {
+function preflightChildEnvironmentWithout(variables) {
+  const env = { ...process.env };
+  for (const name of variables) delete env[name];
+  return env;
+}
+
+Given('the web application has no database connection configured', async function () {
   // The contrast: this suite itself resolved a connection at boot. The child
   // below gets none — DATABASE_URL absent, and its .env fallback aimed at a
   // file that does not exist.
@@ -782,11 +801,22 @@ Given('the API has no database connection configured', async function () {
     state.databaseUrl,
     'this suite resolved a database connection at boot — the contrast that makes the child failure meaningful'
   );
-  this.preflightEnvFile = path.join(HARNESS_DIR, '.extracted', 'no-such-api.env');
+  this.preflightEnvFile = path.join(HARNESS_DIR, '.extracted', 'no-such-app.env');
   assert.ok(!fs.existsSync(this.preflightEnvFile), 'the probe env-file path must not exist');
-  const { DATABASE_URL, ...envWithoutDatabaseUrl } = process.env;
-  this.preflightChildEnv = envWithoutDatabaseUrl;
+  this.preflightChildEnv = preflightChildEnvironmentWithout(['DATABASE_URL']);
   assert.ok(!this.preflightChildEnv.DATABASE_URL, 'the child environment must carry no DATABASE_URL');
+  this.suiteStartMode = 'preflight-child';
+});
+
+Given('the app has a database connection but no JWKS location configured', async function () {
+  // The same pre-boot gate, with the connection intact and the JWKS location
+  // removed. The failure must name the variable, not the unrelated database.
+  const env = acceptanceEnv();
+  assert.ok(env.DATABASE_URL, 'the contrast needs a database connection to be configured');
+  this.preflightEnvFile = path.join(HARNESS_DIR, '.extracted', 'no-such-app-jwks.env');
+  assert.ok(!fs.existsSync(this.preflightEnvFile), 'the probe env-file path must not exist');
+  this.preflightChildEnv = preflightChildEnvironmentWithout(['SUPABASE_JWKS_URL']);
+  assert.ok(!this.preflightChildEnv.SUPABASE_JWKS_URL, 'the child environment must carry no SUPABASE_JWKS_URL');
   this.suiteStartMode = 'preflight-child';
 });
 
@@ -795,7 +825,7 @@ Then('the run fails before any scenario executes', async function () {
   assert.notStrictEqual(
     code,
     0,
-    'the preflight must fail the run when no database connection is configured'
+    'the preflight must fail the run when configuration is missing'
   );
   assert.ok(
     /refuses to run any scenario/i.test(stderr),
@@ -878,8 +908,7 @@ Given('the suite starts', async function () {
     state.auth,
     'the suite must have signed its primary owner in during BeforeAll — no scenario runs unsigned'
   );
-  assert.ok(state.apiProcess && state.apiProcess.exitCode === null, 'the API must be the one this run booted');
-  assert.ok(state.webProcess && state.webProcess.exitCode === null, 'the web app must be the one this run booted');
+  assert.ok(state.webProcess && state.webProcess.exitCode === null, 'the app must be the one this run booted');
   this.primaryOwner = identities.identityFor('primary');
 });
 
@@ -980,7 +1009,7 @@ Then('it executes the same authenticated scenarios', async function () {
     'View properties from API',
     'Create property from UI',
     'Delete property from UI',
-    'Configurable API host',
+    'Same-origin calls need no configured host',
     'The unreachable state speaks where the silent zero used to',
   ];
 

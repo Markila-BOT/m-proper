@@ -4,15 +4,14 @@
 //
 // hooks.js owns the lifecycle; the World, step definitions, and the
 // dependency-maintenance steps read the state from here. The harness picks
-// its own ports (the machine's dev-default 3000/3001 are squatted by other
-// work today) and never logs the resolved database URL.
+// its own port (the machine's dev-default 3001 is squatted by other work
+// today) and never logs the resolved database URL.
 
 const fs = require('node:fs');
 const net = require('node:net');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
-const DEFAULT_API_PORT = 3021;
 const DEFAULT_WEB_PORT = 3022;
 const DEFAULT_OPENAPI_PORT = 3023;
 
@@ -34,18 +33,15 @@ function portFromEnv(name, fallback) {
 }
 
 const state = {
-  apiPort: portFromEnv('HARNESS_API_PORT', DEFAULT_API_PORT),
   webPort: portFromEnv('HARNESS_WEB_PORT', DEFAULT_WEB_PORT),
   openapiPort: portFromEnv('HARNESS_OPENAPI_PORT', DEFAULT_OPENAPI_PORT),
-  apiBaseUrl: null, // set at boot
   webBaseUrl: null, // set at boot
   databaseUrl: null, // resolved secret — never printed or logged
-  apiProcess: null,
   webProcess: null,
   browser: null, // one Playwright chromium for the whole suite
   browserLaunchError: null,
   spawned: [], // [{ child, label }] — everything the harness booted
-  portsFreeBeforeBoot: false, // BeforeAll records that both ports were free pre-boot
+  portsFreeBeforeBoot: false, // BeforeAll records that the web port was free pre-boot
   suiteMinusSelf: null, // parsed results of the self-check child run, for the later self-scenarios
   auth: null, // primary owner session recorded at boot (email, origin, userId — never a token)
 };
@@ -150,7 +146,7 @@ function stopSpawnedProcess(child, label, timeoutMs = 8000) {
 async function stopAllSpawnedProcesses() {
   const stops = state.spawned
     .slice()
-    .reverse() // stop the most recently booted first (web before api)
+    .reverse() // stop the most recently booted first
     .map(({ child, label }) => stopSpawnedProcess(child, label));
   await Promise.all(stops);
   state.spawned.length = 0;
@@ -174,17 +170,18 @@ async function waitFor(fn, { timeoutMs, intervalMs = 250, label }) {
   throw new Error(`${label} not ready within ${Math.round(timeoutMs / 1000)}s${detail}.`);
 }
 
-// The API logs "Listening on ..." once up; /health tells the truth about the
-// database. A rebuild may kick in under `cargo run`, so the window is generous.
-async function waitForApiHealth(baseUrl, timeoutMs) {
+// The app logs its listening line once up; `/api/health` tells the truth about
+// the database. One process serves the pages and the routes, so this is the
+// boot wait for the whole app.
+async function waitForAppHealth(baseUrl, timeoutMs) {
   await waitFor(
     async () => {
-      const response = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) });
+      const response = await fetch(`${baseUrl}/api/health`, { signal: AbortSignal.timeout(2000) });
       if (response.status !== 200) return false;
       const body = await response.json().catch(() => null);
       return Boolean(body && body.success === true);
     },
-    { timeoutMs, intervalMs: 500, label: `API health at ${baseUrl}/health` }
+    { timeoutMs, intervalMs: 500, label: `app health at ${baseUrl}/api/health` }
   );
 }
 
@@ -313,7 +310,7 @@ module.exports = {
   stopSpawnedProcess,
   stopAllSpawnedProcesses,
   waitFor,
-  waitForApiHealth,
+  waitForAppHealth,
   probeTcpPort,
   waitForTcpPort,
   runCommand,

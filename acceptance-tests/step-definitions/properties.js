@@ -202,17 +202,17 @@ Given('a client calls delete without a property id', async function () {
 // landlord-accounts: the owner-scoped list, delete, and create rules
 // ===========================================================================
 //
-// Every scenario runs as a real owner with a real token. Test owner A is the
-// suite's signed-in primary landlord; test owner B is the second seeded owner
-// (design §9). Cross-owner assertions use both owners' tokens from their own
-// sign-ins — never a forged token, and never the service key.
+// Every scenario runs as a real owner with a real cookie session. Test owner A
+// is the suite's signed-in primary landlord; test owner B is the second seeded
+// owner (design §9). Cross-owner assertions use both owners' storage states
+// from their own sign-ins — never a forged cookie, and never the service key.
 
 // The landlord whose list the scenario examines. The Given steps set it; the
 // list step reads it, so "the client" is the signed-in owner the scenario
 // arranged rather than an implicit default.
 async function requestPropertiesListAsSubject(world) {
-  const token = world.listSubjectToken || (await world.seededToken('primary'));
-  return world.getPropertiesListAs(token);
+  const subject = world.listSubject || (await world.seededSubject('primary'));
+  return world.getPropertiesListAs(subject);
 }
 
 // Every row in a list response, with the shape assertions every property row
@@ -246,16 +246,16 @@ function assertListOrder(rows, label) {
 }
 
 async function rowsOwnedBy(world, identity) {
-  const token = await world.seededToken(identity);
-  const response = await world.fetchPropertiesListAsQuiet(token);
+  const subject = await world.seededSubject(identity);
+  const response = await world.fetchPropertiesListAsQuiet(subject);
   return listedRows(response, `the ${identity} owner's list`);
 }
 
 Given('a signed-in landlord owns properties', async function () {
-  // Three owned rows arranged through the authenticated API as test owner A:
-  // two active (so newest-first is observable) and one inactive (so "active
+  // Three owned rows arranged through the authenticated routes as test owner
+  // A: two active (so newest-first is observable) and one inactive (so "active
   // first" is observable). The After hook deletes all three.
-  this.listSubjectToken = await this.seededToken('primary');
+  this.listSubject = await this.seededSubject('primary');
   const activeFirst = await this.postProbeProperty({ address: 'Acceptance Probe Way List A', units: 2 });
   const inactive = await this.postProbeProperty({
     address: 'Acceptance Probe Way List B',
@@ -293,11 +293,11 @@ Given('a signed-in landlord owns no properties', async function () {
 
   const stored = authState.sessionFromStorageState(session.storageState);
   assert.ok(stored && stored.access_token, 'the new landlord must be signed in with a real session');
-  this.listSubjectToken = stored.access_token;
+  this.listSubject = { storageState: session.storageState };
 
   // The state the scenario names is observable before the subject request: the
   // brand-new owner's list is empty.
-  const before = await this.fetchPropertiesListAsQuiet(this.listSubjectToken);
+  const before = await this.fetchPropertiesListAsQuiet(this.listSubject);
   const beforeRows = listedRows(before, 'the new landlord’s list');
   assert.deepStrictEqual(
     beforeRows,
@@ -353,13 +353,13 @@ Given('two landlord accounts own different properties', async function () {
   }
   this.firstOwnerRow = ownedByFirst.body.data;
   this.secondOwnerRow = ownedBySecond.body.data;
-  this.secondOwnerToken = await this.seededToken('second');
+  this.secondOwnerSubject = await this.seededSubject('second');
 });
 
 When('one landlord requests the properties list', async function () {
-  // The first landlord (test owner A), with A's real token.
-  this.listSubjectToken = await this.seededToken('primary');
-  await this.getPropertiesListAs(this.listSubjectToken);
+  // The first landlord (test owner A), with A's real cookie session.
+  this.listSubject = await this.seededSubject('primary');
+  await this.getPropertiesListAs(this.listSubject);
 });
 
 Then("the response contains only that landlord's rows", async function () {
@@ -373,11 +373,11 @@ Then("the response contains only that landlord's rows", async function () {
   );
 
   // The second owner still owns their row: the row exists, it is simply scoped
-  // away from the first owner. Both requests carried real tokens.
+  // away from the first owner. Both requests carried real sessions.
   const otherRows = await rowsOwnedBy(this, 'second');
   assert.ok(
     otherRows.some((row) => row.id === this.secondOwnerRow.id),
-    'the other landlord must still see their own row with their own token'
+    'the other landlord must still see their own row with their own cookie session'
   );
   for (const row of rows) {
     assert.ok(
@@ -398,7 +398,7 @@ Then("the other landlord's rows are absent", async function () {
     'the raw response must not carry the other landlord’s row'
   );
   console.log(
-    '[properties] two owners, two real tokens: each list holds only its own rows'
+    '[properties] two owners, two real cookie sessions: each list holds only its own rows'
   );
 });
 
@@ -429,12 +429,12 @@ Given('a property belongs to another landlord', async function () {
     `arrangement failed: the other owner’s property was not created (HTTP ${created.status})`
   );
   this.subjectPropertyId = created.body.data.id;
-  this.secondOwnerToken = await this.seededToken('second');
+  this.secondOwnerSubject = await this.seededSubject('second');
 });
 
 When('the signed-in landlord deletes that id', async function () {
   // The primary owner attempts to delete the other owner's id with their own
-  // real token.
+  // real cookie session.
   await this.deletePropertyById(this.subjectPropertyId);
 });
 
@@ -511,14 +511,14 @@ Given('a signed-in client posts a valid property payload whose units value is be
 });
 
 Given('a request has no access token', async function () {
-  // The next request is sent without an Authorization header.
+  // The next request is sent with no session cookie at all.
   this.requestWithoutToken = true;
 });
 
 When('the client posts a valid property payload', async function () {
   this.validPayload = this.probePayload({ units: 1 });
   assert.strictEqual(this.requestWithoutToken, true, 'the scenario must have removed the token first');
-  await this.postProperty(this.validPayload, { token: null });
+  await this.postProperty(this.validPayload, { session: false });
 });
 
 Then('the response is HTTP 401 with success false', async function () {

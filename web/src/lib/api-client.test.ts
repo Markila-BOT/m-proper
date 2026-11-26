@@ -1,216 +1,151 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { TestContext } from 'node:test'
 
-import { authorizedFetch } from './api-client.ts'
-import type { AuthorizedFetchDeps } from './api-client.ts'
+import { propertiesApi } from './api-client.ts'
 
-// The authenticated fetch's decision table (design §8, web-app spec "API
-// requests carry the landlord's access token"): every call carries the
-// bearer, a 401 gets exactly one refresh-and-retry, a second 401 or a
-// failed refresh signs out, and a 503 stays the unreachable response so an
-// auth outage never clears the session.
+// The client's wire contract after the routes moved beside the pages (web-app
+// spec "Property calls stay on the app's origin"): every properties call is a
+// same-origin `/api` request whose session cookie the browser sends, no token
+// is attached, a successful envelope is read, and a failed or unreadable
+// answer rejects instead of passing for an empty record.
 
 type FetchCall = {
   url: string
   init: RequestInit | undefined
-  authorization: string | null
 }
 
-type FakeOptions = {
-  token?: string | null
-  refreshed?: string | null
-  refreshThrows?: boolean
-  responses: ReadonlyArray<number>
-}
-
-function respond(status: number): Response {
-  return new Response(
-    JSON.stringify({
-      message: status < 400 ? 'ok' : 'refused',
-      success: status < 400,
-    }),
-    { status, headers: { 'Content-Type': 'application/json' } },
-  )
-}
-
-function fakeDeps(options: FakeOptions): {
-  deps: AuthorizedFetchDeps
-  calls: FetchCall[]
-  counts: { refreshes: number; signOuts: number }
-} {
+function stubFetch(
+  t: TestContext,
+  respond: () => Response | Promise<Response>,
+): FetchCall[] {
   const calls: FetchCall[] = []
-  const counts = { refreshes: 0, signOuts: 0 }
-  const responses = [...options.responses]
 
-  const deps: AuthorizedFetchDeps = {
-    getToken: async () =>
-      options.token === undefined ? 'current-token' : options.token,
-    refresh: async () => {
-      counts.refreshes += 1
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push({ url: String(url), init })
 
-      if (options.refreshThrows) {
-        throw new Error('refresh failed')
-      }
-
-      return options.refreshed ?? null
+      return respond()
     },
-    signOut: async () => {
-      counts.signOuts += 1
-    },
-    fetch: async (url, init) => {
-      calls.push({
-        url,
-        init,
-        authorization: new Headers(init?.headers).get('Authorization'),
-      })
+  )
 
-      const status = responses.shift()
-
-      if (status === undefined) {
-        throw new Error('unexpected fetch call')
-      }
-
-      return respond(status)
-    },
-  }
-
-  return { deps, calls, counts }
+  return calls
 }
 
-test('sends the access token as a bearer credential', async () => {
-  const { deps, calls, counts } = fakeDeps({
-    token: 'token-one',
-    responses: [200],
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
   })
+}
 
-  const response = await authorizedFetch(
-    'http://api.test/properties',
-    undefined,
-    deps,
-  )
+function success<T>(data: T, status = 200): Response {
+  return json({ message: 'ok', success: true, data }, status)
+}
 
-  assert.equal(response.status, 200)
-  assert.equal(calls.length, 1)
-  assert.equal(calls[0]?.authorization, 'Bearer token-one')
-  assert.deepEqual(counts, { refreshes: 0, signOuts: 0 })
-})
+const property = {
+  id: 'property-one',
+  name: 'One',
+  address: '1 Main St',
+  type: 'residential',
+  units: 2,
+  isActive: true,
+  createdAt: '2026-11-26T00:00:00.000Z',
+} as const
 
-test('refreshes once and retries with the new token after a 401', async () => {
-  const { deps, calls, counts } = fakeDeps({
-    token: 'stale-token',
-    refreshed: 'fresh-token',
-    responses: [401, 200],
-  })
+test("requests the properties list on the app's own origin", async (t) => {
+  const calls = stubFetch(t, () => success([]))
 
-  const response = await authorizedFetch(
-    'http://api.test/properties',
-    undefined,
-    deps,
-  )
-
-  assert.equal(response.status, 200)
-  assert.equal(calls.length, 2)
-  assert.equal(calls[1]?.authorization, 'Bearer fresh-token')
-  assert.deepEqual(counts, { refreshes: 1, signOuts: 0 })
-})
-
-test('signs out when the retried request is also a 401', async () => {
-  const { deps, calls, counts } = fakeDeps({
-    token: 'stale-token',
-    refreshed: 'fresh-token',
-    responses: [401, 401],
-  })
-
-  await assert.rejects(
-    authorizedFetch('http://api.test/properties', undefined, deps),
-    Error,
-  )
-
-  assert.equal(calls.length, 2)
-  assert.deepEqual(counts, { refreshes: 1, signOuts: 1 })
-})
-
-test('signs out when the refresh returns no session', async () => {
-  const { deps, calls, counts } = fakeDeps({
-    token: 'stale-token',
-    refreshed: null,
-    responses: [401],
-  })
-
-  await assert.rejects(
-    authorizedFetch('http://api.test/properties', undefined, deps),
-    Error,
-  )
+  await propertiesApi.getAll()
 
   assert.equal(calls.length, 1)
-  assert.deepEqual(counts, { refreshes: 1, signOuts: 1 })
+  assert.equal(calls[0]?.url, '/api/properties')
+  assert.equal(calls[0]?.init?.credentials, 'same-origin')
 })
 
-test('signs out when the refresh throws', async () => {
-  const { deps, calls, counts } = fakeDeps({
-    token: 'stale-token',
-    refreshThrows: true,
-    responses: [401],
+test('sends no Authorization header', async (t) => {
+  const calls = stubFetch(t, () => success([]))
+
+  await propertiesApi.getAll()
+
+  const headers = new Headers(calls[0]?.init?.headers)
+
+  assert.equal(headers.get('Authorization'), null)
+})
+
+test('creates a property through the same-origin collection route', async (t) => {
+  const calls = stubFetch(t, () => success(property, 201))
+
+  await propertiesApi.create({
+    name: 'One',
+    address: '1 Main St',
+    type: 'residential',
   })
 
-  await assert.rejects(
-    authorizedFetch('http://api.test/properties', undefined, deps),
-    Error,
-  )
-
-  assert.equal(calls.length, 1)
-  assert.deepEqual(counts, { refreshes: 1, signOuts: 1 })
+  assert.equal(calls[0]?.url, '/api/properties')
+  assert.equal(calls[0]?.init?.method, 'POST')
 })
 
-test('keeps a 503 as the unreachable response without signing out', async () => {
-  const { deps, calls, counts } = fakeDeps({ responses: [503] })
+test('deletes a property through the same-origin item route', async (t) => {
+  const calls = stubFetch(t, () => success(undefined))
 
-  const response = await authorizedFetch(
-    'http://api.test/properties',
-    undefined,
-    deps,
-  )
+  await propertiesApi.delete('property-one')
 
-  assert.equal(response.status, 503)
-  assert.equal(calls.length, 1)
-  assert.deepEqual(counts, { refreshes: 0, signOuts: 0 })
+  assert.equal(calls[0]?.url, '/api/properties/property-one')
+  assert.equal(calls[0]?.init?.method, 'DELETE')
 })
 
-test('rejects without a network call when there is no session', async () => {
-  const { deps, calls, counts } = fakeDeps({ token: null, responses: [] })
+test('returns the data from a successful envelope', async (t) => {
+  stubFetch(t, () => success([property]))
 
-  await assert.rejects(
-    authorizedFetch('http://api.test/properties', undefined, deps),
-    Error,
-  )
+  const properties = await propertiesApi.getAll()
 
-  assert.equal(calls.length, 0)
-  assert.deepEqual(counts, { refreshes: 0, signOuts: 0 })
+  assert.deepEqual(properties, [property])
 })
 
-test('keeps the request method, body, and headers beside the credential', async () => {
-  const { deps, calls } = fakeDeps({ token: 'token-one', responses: [200] })
-
-  await authorizedFetch(
-    'http://api.test/properties',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{"name":"One"}',
-    },
-    deps,
+test('rejects with the envelope message when the call is unsuccessful', async (t) => {
+  stubFetch(t, () =>
+    json(
+      {
+        message: 'The database is temporarily unavailable. Try again shortly.',
+        success: false,
+      },
+      503,
+    ),
   )
 
-  const init = calls[0].init
+  await assert.rejects(propertiesApi.getAll(), {
+    message: 'The database is temporarily unavailable. Try again shortly.',
+  })
+})
 
-  if (!init) {
-    throw new Error('expected the request init')
-  }
+test('rejects a non-JSON response with the app message', async (t) => {
+  stubFetch(
+    t,
+    () =>
+      new Response('<html>Not found</html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      }),
+  )
 
-  const headers = new Headers(init.headers)
+  await assert.rejects(propertiesApi.getAll(), (error: unknown) => {
+    assert.ok(error instanceof Error)
+    assert.equal(
+      error.message,
+      'The server sent an unreadable response. Try again shortly.',
+    )
 
-  assert.equal(init.method, 'POST')
-  assert.equal(init.body, '{"name":"One"}')
-  assert.equal(headers.get('Content-Type'), 'application/json')
-  assert.equal(headers.get('Authorization'), 'Bearer token-one')
+    return true
+  })
+})
+
+test('rejects when the network request fails', async (t) => {
+  stubFetch(t, () => {
+    throw new TypeError('fetch failed')
+  })
+
+  await assert.rejects(propertiesApi.getAll(), TypeError)
 })

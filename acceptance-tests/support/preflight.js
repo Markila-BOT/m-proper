@@ -1,75 +1,49 @@
 'use strict';
 
-// Database preflight for the acceptance suite: resolves the connection the
-// API scenarios need — the DATABASE_URL environment variable when set,
-// otherwise the DATABASE_URL line of api/.env — and names the missing
-// configuration when neither resolves.
+// The acceptance suite's pre-boot gate: the app under test serves the pages
+// and `/api` from one process, so it cannot boot without its database
+// connection, JWKS location, issuer, and audience. The gate resolves them
+// from the harness's own env file (acceptance-tests/.env.local) — never
+// `api/.env`, which no longer configures anything the app reads — and names
+// every missing variable at once.
 //
 // The resolution inputs are injectable ({ env, envFile }) so the suite's own
-// "A missing database connection is named" scenario can prove the failure
-// with a standalone child process, without touching the real configuration.
-// The defaults are exactly what the suite's BeforeAll uses. The resolved
-// value is a secret: it is never printed or logged.
+// missing-configuration scenarios can prove the failure with a standalone
+// child process, without touching the real configuration. The resolved
+// values include secrets: they are never printed or logged.
 
-const fs = require('node:fs');
 const path = require('node:path');
 
-const DEFAULT_ENV_FILE = path.resolve(__dirname, '..', '..', 'api', '.env');
+const {
+  ACCEPTANCE_ENV_FILE,
+  SERVER_VARIABLES,
+  resolveServerEnvironment,
+  serverPreflightError,
+} = require('./env');
 
-function resolveDatabaseUrl({ env = process.env, envFile = DEFAULT_ENV_FILE } = {}) {
-  if (env.DATABASE_URL) return env.DATABASE_URL;
-
-  if (fs.existsSync(envFile)) {
-    const envFileText = fs.readFileSync(envFile, 'utf8');
-    for (const rawLine of envFileText.split(/\r?\n/)) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith('#')) continue;
-      const eq = line.indexOf('=');
-      if (eq === -1) continue;
-      const key = line.slice(0, eq).trim();
-      const value = line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      if (key === 'DATABASE_URL' && value) return value;
-    }
-  }
-  return null;
-}
-
-function databasePreflightError() {
-  return new Error(
-    'Acceptance suite preflight: no database connection is configured. ' +
-      'Set DATABASE_URL to a postgresql:// URI (Supabase Database settings, ' +
-      'not the project https URL), or put DATABASE_URL in api/.env. ' +
-      'The suite refuses to run any scenario without it.'
-  );
-}
-
-// The suite's pre-boot gate: throws the named error when no connection is
-// resolvable, so nothing boots and no scenario runs.
-function assertDatabaseConnection(inputs = {}) {
-  const databaseUrl = resolveDatabaseUrl(inputs);
-  if (!databaseUrl) throw databasePreflightError();
-  return databaseUrl;
-}
+const DEFAULT_ENV_FILE = ACCEPTANCE_ENV_FILE;
 
 module.exports = {
   DEFAULT_ENV_FILE,
-  resolveDatabaseUrl,
-  assertDatabaseConnection,
-  databasePreflightError,
+  SERVER_VARIABLES,
+  resolveServerEnvironment,
+  assertServerEnvironment: require('./env').assertServerEnvironment,
+  resolveDatabaseUrl: require('./env').resolveDatabaseUrl,
+  assertDatabaseConnection: require('./env').assertDatabaseConnection,
+  serverPreflightError,
 };
 
 // CLI: node support/preflight.js [envFileOverride]
 //
 // The suite's pre-boot gate as a standalone process — this is the entry the
-// missing-connection scenario spawns. Exits 0 when a connection is
-// resolvable (without printing it), exits 1 naming the missing
-// configuration otherwise — before any scenario runs and before anything is
-// booted.
+// missing-configuration scenarios spawn. Exits 0 when every server name is
+// resolvable (without printing any value), exits 1 naming every missing one
+// otherwise — before any scenario runs and before anything is booted.
 if (require.main === module) {
   try {
-    assertDatabaseConnection({
-      envFile: process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ENV_FILE,
-    });
+    const envFile = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_ENV_FILE;
+    const { missing } = resolveServerEnvironment({ env: process.env, envFile });
+    if (missing.length > 0) throw serverPreflightError(missing, { envFile });
     process.exit(0);
   } catch (error) {
     console.error(error.message);

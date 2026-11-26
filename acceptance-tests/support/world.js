@@ -19,11 +19,12 @@ class AcceptanceWorld extends World {
     this.harness = state;
     this.responses = []; // this scenario's subject requests
     this.createdPropertyIds = []; // smoke rows to delete in After (the primary owner's)
-    this.createdProperties = []; // smoke rows created as a named owner: { id, token }
+    this.createdProperties = []; // smoke rows created as a named owner: { id, subject }
     this.probeNames = []; // probe names this scenario used
     this.subjectPropertyId = null; // the property the scenario's steps focus on
     this.disposableIdentities = []; // Auth users created for this scenario
-    this.probeApis = []; // second API instances this scenario started
+    this.probeApps = []; // second app instances this scenario started
+    this.httpContexts = []; // request contexts this scenario opened (forged cookies)
   }
 
   // ---- recorded (subject) requests ----
@@ -34,23 +35,24 @@ class AcceptanceWorld extends World {
     return response;
   }
 
-  // A list request made with an explicit token: the cross-owner scenarios send
-  // each landlord's real access token, never a forged one.
-  async getPropertiesListAs(token) {
-    const response = await api.getPropertiesList({ token });
+  // A list request made as an explicit subject: `{ identity }` for a seeded
+  // owner, `{ storageState }` for a disposable or forged cookie, or
+  // `{ session: false }` for no cookie at all. Never an Authorization header.
+  async getPropertiesListAs(subject) {
+    const response = await api.getPropertiesList(subject);
     this.responses.push(response);
     return response;
   }
 
-  async postProperty(payload, { token } = {}) {
-    const response = await api.postProperty(payload, token === undefined ? {} : { token });
+  async postProperty(payload, subject = {}) {
+    const response = await api.postProperty(payload, subject);
     this.responses.push(response);
-    this.rememberCreated(response, token);
+    this.rememberCreated(response, subject);
     return response;
   }
 
-  async deletePropertyById(id, { token } = {}) {
-    const response = await api.deletePropertyById(id, token === undefined ? {} : { token });
+  async deletePropertyById(id, subject = {}) {
+    const response = await api.deletePropertyById(id, subject);
     this.responses.push(response);
     return response;
   }
@@ -71,6 +73,13 @@ class AcceptanceWorld extends World {
       origin: state.webBaseUrl,
       identity,
     });
+  }
+
+  // The HTTP subject for a seeded owner: the client resolves the same signed-in
+  // storage state the browser holds and carries it in a request context.
+  async seededSubject(identity = 'primary') {
+    await this.seededSession(identity);
+    return { identity };
   }
 
   async seededToken(identity = 'primary') {
@@ -103,24 +112,24 @@ class AcceptanceWorld extends World {
   }
 
   // Arrangement for another seeded owner: the row is created with that owner's
-  // real access token, never the primary's, and remembered with that token so
-  // the After hook deletes it as the owner who actually holds it.
+  // real cookie session, never the primary's, and remembered with that subject
+  // so the After hook deletes it as the owner who actually holds it.
   async postProbePropertyAs(identity, overrides = {}) {
-    const token = await this.seededToken(identity);
+    const subject = await this.seededSubject(identity);
     const payload = this.probePayload(overrides);
-    const response = await api.postProperty(payload, { token });
-    this.rememberCreated(response, token);
+    const response = await api.postProperty(payload, subject);
+    this.rememberCreated(response, subject);
     return response;
   }
 
-  rememberCreated(response, token) {
+  rememberCreated(response, subject) {
     if (!response || response.status !== 201 || !response.body || !response.body.data) return;
     const id = response.body.data.id;
     if (!id) return;
-    if (token === undefined) {
-      this.createdPropertyIds.push(id);
+    if (subject && (subject.identity || subject.storageState)) {
+      this.createdProperties.push({ id, subject });
     } else {
-      this.createdProperties.push({ id, token });
+      this.createdPropertyIds.push(id);
     }
   }
 
@@ -130,8 +139,8 @@ class AcceptanceWorld extends World {
   }
 
   // Internal verification read as another owner (not recorded).
-  async fetchPropertiesListAsQuiet(token) {
-    return api.getPropertiesList({ token });
+  async fetchPropertiesListAsQuiet(subject) {
+    return api.getPropertiesList(subject);
   }
 
   async checkApiHealth() {

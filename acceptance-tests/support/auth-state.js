@@ -151,6 +151,52 @@ function encodeAuthCookieGroup(base, session) {
   return chunks;
 }
 
+// Rewrites the session inside a Playwright storage state without touching a
+// browser context. The forged-cookie scenarios use this: they take the real
+// signed-in state and change one fact about the access token, then hand the
+// result to a headless request context — the same cookie jar the browser
+// would carry.
+function rewriteStorageStateSession(storageState, mutate) {
+  if (!storageState || !Array.isArray(storageState.cookies)) {
+    throw new Error('Cannot rewrite the session: the storage state carries no cookies.');
+  }
+  const groups = authCookieGroups(storageState.cookies);
+  if (groups.length === 0) {
+    throw new Error('No Supabase session cookie is stored; the browser is signed out.');
+  }
+  if (groups.length > 1) {
+    throw new Error(
+      `The storage state holds ${groups.length} Supabase session cookie groups; expected one.`
+    );
+  }
+
+  const group = groups[0];
+  const session = decodeAuthCookieGroup(group);
+  mutate(session);
+
+  const template = group.cookies[0];
+  const names = new Set(group.cookies.map((cookie) => cookie.name));
+  const replacement = encodeAuthCookieGroup(group.base, session);
+  const others = storageState.cookies.filter((cookie) => !names.has(cookie.name));
+
+  return {
+    ...storageState,
+    cookies: [
+      ...others,
+      ...replacement.map(({ name, value }) => ({
+        name,
+        value,
+        domain: template.domain,
+        path: template.path,
+        expires: template.expires,
+        httpOnly: template.httpOnly,
+        secure: template.secure,
+        sameSite: template.sameSite,
+      })),
+    ],
+  };
+}
+
 // The session the browser currently holds, decoded from its cookie, or null
 // when the origin is signed out.
 async function storedSession(context, origin) {
@@ -221,8 +267,8 @@ async function expireStoredSession(context, { origin, secondsAgo = 3600 } = {}) 
   });
 }
 
-// Replace the stored access token while keeping the refresh token: the API
-// answers the next request with 401 exactly as it would for a rejected token.
+// Replace the stored access token while keeping the refresh token: the app
+// answers the next request exactly as it would for a rejected cookie.
 // Used where a refresh must be attempted (the project key cannot mint one).
 async function replaceStoredAccessToken(context, { origin, token } = {}) {
   if (!token) throw new Error('replaceStoredAccessToken needs the token to store.');
@@ -444,6 +490,7 @@ module.exports = {
   accessTokenFromStorageState,
   storedSession,
   rewriteStoredSession,
+  rewriteStorageStateSession,
   expireStoredSession,
   replaceStoredAccessToken,
   assertNoServiceKeyInStorageState,

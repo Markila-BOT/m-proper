@@ -29,7 +29,8 @@ const authState = require('../support/auth-state');
 const authTokens = require('../support/auth-tokens');
 const identities = require('../support/identities');
 const api = require('../support/api-client');
-const { startApiWithUnreachableJwks, stopProbeApi } = require('../support/second-api');
+const { startAppWithUnreachableJwks, stopProbeApp } = require('../support/second-app');
+const webBundle = require('../support/web-bundle');
 
 // --- View properties from API ---
 //
@@ -40,11 +41,11 @@ const { startApiWithUnreachableJwks, stopProbeApi } = require('../support/second
 
 Given('the user opens the application with the properties API available', async function () {
   const health = await this.checkApiHealth();
-  assert.strictEqual(health.status, 200, `expected the running API's /health to answer 200, got ${health.status}`);
+  assert.strictEqual(health.status, 200, `expected the running app's /api/health to answer 200, got ${health.status}`);
   assert.strictEqual(
     health.body && health.body.success,
     true,
-    'expected /health success true — the properties API must be available to the application'
+    'expected /api/health success true — the properties routes must be available to the application'
   );
 
   // Accounts own their rows now, so the landlord the suite signs in as starts
@@ -188,72 +189,25 @@ Then('those transactions are still available in the UI', async function () {
   );
 });
 
-// --- Configurable API host ---
+// --- Same-origin calls need no configured host ---
 
-Given('the API base URL is configured for the environment', async function () {
-  // The harness booted the web dev server with VITE_API_BASE_URL pointing
-  // at this run's API — the wiring this scenario proves. Both bases must be
-  // live facts of the boot before the app is watched.
-  assert.ok(state.apiBaseUrl, 'the harness must have booted the API and recorded its base URL');
-  assert.ok(state.webBaseUrl, 'the harness must have booted the web app and recorded its base URL');
+Given('the web application is deployed at its production origin', async function () {
+  // The harness boots one process: the pages and /api share this origin. There
+  // is no separate API host, port, or runtime override to configure.
+  assert.ok(state.webBaseUrl, 'the harness must have booted the app and recorded its base URL');
+  this.deployedOrigin = new URL(state.webBaseUrl).origin;
   const web = await fetch(state.webBaseUrl, { signal: AbortSignal.timeout(10_000) });
-  assert.strictEqual(web.status, 200, `the web app at ${state.webBaseUrl} must answer 200, got ${web.status}`);
+  assert.strictEqual(web.status, 200, `the app at ${state.webBaseUrl} must answer 200, got ${web.status}`);
 
-  // Record every request the page sends, so the Then can prove which host
+  // Record every request the page sends, so the Then can prove which origin
   // the app's property operations actually target.
   this.pageRequests = [];
   const page = requirePage(this);
-  await shell.open(page);
+  this.landlordPage = page;
   page.on('request', (request) => {
     this.pageRequests.push({ method: request.method(), url: request.url() });
   });
-});
-
-Then('property list, create, and delete requests target that base URL', async function () {
-  const page = requirePage(this);
-  const base = state.apiBaseUrl;
-
-  // The list fetch: reloading the app re-requests the properties list.
-  await shell.reload(page);
-  await shell.waitForSidebarProperties(page);
-
-  // Create and delete through the same UI flows the other scenarios drive,
-  // so all three request kinds pass while the listener records.
-  const payload = this.probePayload({ address: 'Acceptance Probe Way 4', type: 'lot', units: 1 });
-  await addPropertyModal.submitProperty(page, payload);
-  const list = await this.fetchPropertiesListQuiet();
-  const rows = list.body && Array.isArray(list.body.data) ? list.body.data : [];
-  const created = rows.find((row) => row.name === payload.name);
-  assert.ok(created, 'the UI create must reach the API through the configured base');
-  this.createdPropertyIds.push(created.id); // After-hook cleanup if the UI delete below fails
-  await propertiesView.open(page);
-  await propertiesView.deleteProperty(page, payload.name);
-
-  // Every property request the app sent — list, create, delete — targeted
-  // the configured base, and none targeted anything else.
-  const propertyRequests = this.pageRequests.filter(
-    (request) => /\/properties($|\/)/.test(new URL(request.url).pathname)
-  );
-  assert.ok(
-    propertyRequests.some((request) => request.method === 'GET' && request.url === `${base}/properties`),
-    `no property list request targeted ${base}/properties (observed: ${JSON.stringify(this.pageRequests)})`
-  );
-  assert.ok(
-    propertyRequests.some((request) => request.method === 'POST' && request.url === `${base}/properties`),
-    'no create request targeted the configured base URL'
-  );
-  assert.ok(
-    propertyRequests.some(
-      (request) => request.method === 'DELETE' && request.url.startsWith(`${base}/properties/`)
-    ),
-    'no delete request targeted the configured base URL'
-  );
-  assert.ok(
-    propertyRequests.every((request) => request.url.startsWith(base)),
-    `every property request must target the configured base ${base}, saw: ${propertyRequests
-      .map((request) => `${request.method} ${request.url}`)
-      .join(', ')}`
-  );
+  await shell.open(page);
 });
 
 // --- The ledger shows a running balance (red until redesign-ledger-passbook lands) ---
@@ -434,57 +388,50 @@ function signedDateOf(entries, description) {
 // --- The unreachable state speaks where the silent zero used to ---
 //
 // surface-api-unreachable-state: the harness boots exactly as every other
-// scenario (API up, web up), but this page's base URL points at an
-// unbound port before any app code runs — the runtime override seam the
-// api-client honors ahead of its baked env. The fetch rejects on contact;
-// the one shared state the three silent-zero surfaces carry is asserted
-// structurally (the marker, the role), never on prose.
-
-// The design's dead base: a port nothing may answer on.
-const DEAD_API_BASE_URL = 'http://localhost:9';
+// scenario, and the test breaks reachability from its own side — every
+// `/api/properties` request the page makes is aborted before it leaves the
+// browser. That is the network failure the shared state names; no product
+// affordance points the client at a dead host any more. The route is lifted
+// when the scenario's page closes (and explicitly by the After hook).
 
 Given('the web application is open and the properties API is unreachable', async function () {
-  // The dead base must actually be dead, or the scenario proves the wrong
-  // thing: nothing may answer on the port the page is about to target.
-  const deadPort = Number(new URL(DEAD_API_BASE_URL).port);
-  const answers = await probeTcpPort(deadPort);
-  assert.strictEqual(
-    answers,
-    false,
-    `the scenario's dead base ${DEAD_API_BASE_URL} must answer nothing — something is listening on port ${deadPort}`
-  );
-
   const page = requirePage(this);
-  this.deadApiBaseUrl = DEAD_API_BASE_URL;
-  // The rejection must be an observable fact, not an assumption: record
-  // every request the page sends and every one that fails.
+  // The rejection must be an observable fact, not an assumption: record every
+  // request the page sends, every one that fails, and every one the test
+  // aborted.
   this.pageRequests = [];
   this.failedPageRequests = [];
+  this.abortedApiRequests = [];
   page.on('request', (request) => {
     this.pageRequests.push({ method: request.method(), url: request.url() });
   });
   page.on('requestfailed', (request) => {
     this.failedPageRequests.push({ url: request.url() });
   });
-  await shell.openWithApiBaseUrl(page, DEAD_API_BASE_URL);
+  await shell.breakPropertiesReachability(page, (url) => this.abortedApiRequests.push(url));
+  await shell.open(page);
 });
 
 When('the properties fetch rejects', async function () {
-  const dead = this.deadApiBaseUrl;
-  // The properties fetch, rejected on contact with the dead base — the
-  // fact the shared state keys on. The query retries once; the first
-  // failure is already the proof.
-  await waitFor(
-    () => this.failedPageRequests.some((request) => request.url === `${dead}/properties`),
-    { timeoutMs: 15_000, intervalMs: 250, label: `a properties fetch rejected against ${dead}` }
-  );
-  const targeted = this.pageRequests.filter((request) => request.url.startsWith(dead));
+  // The properties fetch, aborted by the test's own route handler — the fact
+  // the shared state keys on. The query retries once; the first failure is
+  // already the proof.
+  await waitFor(() => this.abortedApiRequests.length > 0, {
+    timeoutMs: 15_000,
+    intervalMs: 250,
+    label: 'a properties request aborted by the test',
+  });
+  const aborted = this.abortedApiRequests.slice();
   assert.ok(
-    targeted.length > 0,
-    `the page must have sent its property requests at the dead base ${dead}`
+    aborted.every((url) => new URL(url).pathname.startsWith('/api/properties')),
+    `the aborted requests must be the properties route, saw: ${aborted.join(', ')}`
+  );
+  assert.ok(
+    this.failedPageRequests.some((request) => new URL(request.url).pathname.startsWith('/api/properties')),
+    'the page must observe the properties fetch fail'
   );
   console.log(
-    `[web-app] the properties fetch rejected against ${dead} (${targeted.length} request(s) targeted it)`
+    `[web-app] the properties fetch rejected (${aborted.length} request(s) aborted by the test)`
   );
 });
 
@@ -569,28 +516,24 @@ Then("the empty ledger's zeroed figures do not render as though the ledger were 
 const LEDGER_PROPERTY_SELECTION_KEY = 'landlord-selected-property';
 // Where the flash detector records the previous landlord's markers it saw.
 const FLASH_STORAGE_KEY = 'acceptance-previous-account-flash';
-const REFRESH_URL_PATTERN = /\/auth\/v1\/token\?grant_type=refresh_token/;
-
-function apiOrigin() {
-  return new URL(state.apiBaseUrl).origin;
-}
 
 function webOrigin() {
   return new URL(state.webBaseUrl).origin;
 }
 
+// The properties routes live under /api on the app's own origin. A page on a
+// second app instance (the JWKS-outage probe) reaches them on its own port, so
+// the path identifies the route, not a separate API origin.
 function isPropertiesUrl(url) {
-  return url.origin === apiOrigin() && /^\/properties(\/|$)/.test(url.pathname);
+  return /^\/api\/properties(\/|$)/.test(url.pathname);
 }
 
-// Records every token-refresh request the page makes, and every property
-// request/response the app sends. A scenario owns its listeners through its
-// page, and the After hook closes that page.
-function watchAuthAndApi(page, sink) {
+// Records every property request/response the app sends. A scenario owns its
+// listeners through its page, and the After hook closes that page. The server
+// refreshes the session at the route boundary, so there is no browser-issued
+// refresh request to observe.
+function watchApi(page, sink) {
   page.on('request', (request) => {
-    if (REFRESH_URL_PATTERN.test(request.url())) {
-      sink.refreshes.push({ method: request.method(), url: request.url() });
-    }
     const url = new URL(request.url());
     if (isPropertiesUrl(url)) {
       sink.propertyRequests.push({ method: request.method(), url: request.url() });
@@ -609,7 +552,7 @@ function watchAuthAndApi(page, sink) {
 }
 
 function emptyRequestSink() {
-  return { refreshes: [], propertyRequests: [], propertyResponses: [] };
+  return { propertyRequests: [], propertyResponses: [] };
 }
 
 // The app makes an authenticated request through the real Add Property flow:
@@ -772,7 +715,7 @@ When('the app requests the properties list', async function () {
 
   const matchesList = (urlString, method) => {
     const url = new URL(urlString);
-    return method === 'GET' && isPropertiesUrl(url) && url.pathname === '/properties';
+    return method === 'GET' && isPropertiesUrl(url) && url.pathname === '/api/properties';
   };
 
   // The list request the app makes after a successful UI create: the create
@@ -801,25 +744,41 @@ When('the app requests the properties list', async function () {
   await addPropertyModal.submitProperty(page, this.triggerPayload);
 
   const [request, response] = await Promise.all([requestSeen, responseSeen]);
-  const authorization = request.headers.authorization || request.headers.Authorization;
-  const tokenMatch = /^Bearer\s+(.+)$/i.exec(authorization || '');
-  this.observedListRequest = { url: request.url, token: tokenMatch ? tokenMatch[1] : null };
+  this.observedListRequest = { url: request.url, headers: request.headers };
   assert.ok(response.body, `the list response body must be readable (status ${response.status})`);
   this.observedListResponse = response;
   await shell.waitForSidebarProperties(page);
 });
 
-Then('the request carries the access token', async function () {
+Then('the request carries the session cookie', async function () {
   const observed = this.observedListRequest;
   assert.ok(observed, 'the app must have made a properties request first');
-  assert.ok(observed.token, `the request must carry a Bearer token (saw ${observed.url})`);
 
-  const claims = authTokens.decode(observed.token);
-  assert.ok(claims, 'the Bearer credential must be a JWT');
+  const headers = observed.headers || {};
+  const authorization = headers.authorization || headers.Authorization;
+  assert.strictEqual(
+    authorization,
+    undefined,
+    `no Authorization header may be sent to the app (saw ${authorization})`
+  );
+
+  const cookie = headers.cookie || headers.Cookie || '';
+  assert.match(
+    cookie,
+    /(?:^|;\s*)sb-[^=;]+-auth-token(?:\.\d+)?=/,
+    `the request must carry the Supabase session cookie (saw ${observed.url})`
+  );
+
+  // And it is the signed-in landlord's own session: the cookie's token subject
+  // is the landlord behind the page.
+  const stored = await authState.storedSession(this.landlordPage.context(), state.webBaseUrl);
+  assert.ok(stored, 'the page context must hold the session the request carried');
+  const claims = authTokens.decode(stored.access_token);
+  assert.ok(claims, 'the session cookie token must be a JWT');
   assert.strictEqual(
     claims.payload.sub,
     this.landlord.id,
-    'the request must carry the signed-in landlord’s own access token'
+    'the request must carry the signed-in landlord’s own session'
   );
   assert.ok(
     claims.payload.exp * 1000 > Date.now(),
@@ -829,13 +788,44 @@ Then('the request carries the access token', async function () {
 
 Then('the response is accepted', async function () {
   const observed = this.observedListResponse;
-  assert.strictEqual(observed.status, 200, `the API must accept the token (got ${observed.status})`);
+  assert.strictEqual(observed.status, 200, `the app must accept the cookie (got ${observed.status})`);
   assert.strictEqual(observed.body.success, true, 'the accepted response must carry success true');
   assert.ok(Array.isArray(observed.body.data), 'the accepted response must carry the property list');
-  console.log('[web-app] the app sent the landlord’s access token and the API accepted the list request');
+  console.log('[web-app] the app sent the landlord’s session cookie and the app accepted the list request');
 });
 
-Given('the access token has expired and the refresh token is valid', async function () {
+Then('the request targets the same origin', async function () {
+  const observed = this.observedListRequest;
+  assert.ok(observed, 'the app must have made a properties request first');
+  const url = new URL(observed.url);
+  assert.strictEqual(
+    url.origin,
+    this.deployedOrigin || webOrigin(),
+    `the properties request must target the app's own origin (saw ${url.origin})`
+  );
+  assert.strictEqual(url.pathname, '/api/properties', `the route must be /api/properties (saw ${url.pathname})`);
+});
+
+Then('no separate API base URL was configured', async function () {
+  assert.strictEqual(
+    process.env.VITE_API_BASE_URL,
+    undefined,
+    'the harness must not configure a separate API base URL for the app'
+  );
+  const webEnv = webBundle.readPublicWebEnv();
+  assert.ok(
+    !('VITE_API_BASE_URL' in webEnv),
+    'web/.env must not configure a separate API base URL'
+  );
+  const override = await shell.retiredApiBaseUrlOverride(this.landlordPage);
+  assert.strictEqual(
+    override,
+    null,
+    'the retired runtime override must not redirect the calls (and nothing writes it)'
+  );
+});
+
+Given("the session's access token has expired and the refresh token is valid", async function () {
   this.landlord = await this.createDisposableIdentity({ confirmed: true });
   const session = await authState.newSignedInContext({
     browser: state.browser,
@@ -884,8 +874,7 @@ Given('the session can no longer be refreshed', async function () {
   this.revocationForced = true;
 
   // Revoke the session for real: the Auth admin API deletes the account, so
-  // the stored refresh token can no longer be exchanged. The After hook's
-  // deletion tolerates the account already being gone.
+  // the stored refresh token can no longer be exchanged.
   await identities.deleteDisposableUser(this.landlord);
   assert.strictEqual(
     await identities.getAdminUser(this.landlord.id),
@@ -893,25 +882,27 @@ Given('the session can no longer be refreshed', async function () {
     'the disposable account must be gone before its session is used'
   );
 
-  // The access token is still a signed JWT the API would accept for up to an
-  // hour, so no refresh would be attempted. Replace only its signature
-  // (header and claims kept) so the API answers the 401 a rejected token
-  // would — the closest a harness without the project key can get, stated
-  // here rather than implied.
-  await authState.replaceStoredAccessToken(session.context, {
+  // Move the stored expiry into the past so the server's boundary refresh runs
+  // on the next request. The refresh token is dead, so the refresh fails
+  // exactly as a genuinely revoked session's would — nothing is stubbed.
+  const rewritten = await authState.expireStoredSession(session.context, {
     origin: state.webBaseUrl,
-    token: authTokens.replaceSignature(before.access_token),
   });
+  assert.ok(
+    rewritten.expires_at * 1000 < Date.now(),
+    'the stored session must say the access token has already expired'
+  );
+  assert.strictEqual(rewritten.access_token, before.access_token, 'the access token itself is the real one');
 });
 
 When('the app makes a request', async function () {
   if (this.outageProbe) {
-    // The page's own load-time fetch already targeted the key-set-outage API.
+    // The page's own load-time fetch already targeted the key-set-outage app.
     await waitFor(
-      () => this.outageResponses.some((response) => response.path === '/properties' && response.status === 503),
+      () => this.outageResponses.some((response) => response.path === '/api/properties' && response.status === 503),
       {
         timeoutMs: 30_000,
-        label: 'the app’s properties request reached the key-set-outage API and was refused with 503',
+        label: 'the app’s properties request reached the key-set-outage app and was refused with 503',
       }
     );
     return;
@@ -919,7 +910,23 @@ When('the app makes a request', async function () {
 
   const page = this.landlordPage;
   this.requestSink = emptyRequestSink();
-  watchAuthAndApi(page, this.requestSink);
+  watchApi(page, this.requestSink);
+
+  if (this.revocationForced) {
+    // The app makes a document request. Its boundary refresh tries the dead
+    // refresh token, fails, and clears the session cookies on the response;
+    // the guard then has no identity and sends the landlord to sign-in.
+    await page.reload({ waitUntil: 'networkidle' });
+    await waitFor(
+      async () => !authState.hasSessionCookie(await this.extraContext.storageState()),
+      {
+        timeoutMs: 60_000,
+        intervalMs: 500,
+        label: 'the server’s failed refresh to clear the session',
+      }
+    );
+    return;
+  }
 
   this.triggerPayload = this.probePayload({ address: 'Acceptance Probe Way Token Refresh' });
   const postSeen = page.waitForResponse(
@@ -931,94 +938,94 @@ When('the app makes a request', async function () {
   await triggerAuthenticatedRequest(this, this.triggerPayload);
 
   if (this.expiryForced) {
-    // The proactive refresh happens before the request goes out; wait for the
-    // POST to settle and record its envelope.
+    // The server refreshes the session at the route boundary before serving
+    // the request; the browser makes no refresh call of its own. Wait for the
+    // POST to settle and record its envelope and any rotated cookies.
     const response = await postSeen;
-    assert.ok(response, 'the app’s POST must have reached the API after the refresh');
-    this.triggerResponse = { status: response.status(), body: await response.json() };
-  } else if (this.revocationForced) {
-    // The 401 starts the refresh; the failed refresh signs the landlord out.
-    // Wait for the session to disappear rather than for a response the flow
-    // is designed to abandon.
-    await waitFor(
-      async () => !authState.hasSessionCookie(await this.extraContext.storageState()),
-      {
-        timeoutMs: 60_000,
-        intervalMs: 500,
-        label: 'the app’s sign-out to clear the session after the failed refresh',
-      }
-    );
+    assert.ok(response, 'the app’s POST must have reached the route boundary');
+    const headers = await response.allHeaders();
+    this.triggerResponse = {
+      status: response.status(),
+      body: await response.json().catch(() => null),
+      setCookie: headers['set-cookie'] || '',
+    };
   }
 });
 
-Then('the client refreshes once and retries', async function () {
+Then('the server refreshes the session once and answers with rotated cookies', async function () {
   const sink = this.requestSink;
   assert.ok(sink, 'the app must have made a request first');
+  const posts = () => sink.propertyRequests.filter((request) => request.method === 'POST');
   assert.strictEqual(
-    sink.refreshes.length,
+    posts().length,
     1,
-    `the client must refresh exactly once, saw ${sink.refreshes.length}: ${JSON.stringify(sink.refreshes)}`
+    `the app must make exactly one POST — no client retry (saw ${posts().length})`
   );
 
-  // A second refresh would be a loop. The successful flow ends at the API
-  // response, so the count cannot grow afterwards either.
-  await this.landlordPage.waitForTimeout(750);
-  assert.strictEqual(
-    sink.refreshes.length,
-    1,
-    `the client must not refresh again (saw ${sink.refreshes.length})`
+  // The response carried the rotated session cookies.
+  assert.match(
+    this.triggerResponse.setCookie || '',
+    /sb-[^=;]+-auth-token(?:\.\d+)?=/,
+    `the response must carry the rotated session cookie (saw "${this.triggerResponse.setCookie}")`
   );
-  assert.ok(
-    sink.propertyRequests.some((request) => request.method === 'POST'),
-    'the client must retry the API request after refreshing'
-  );
-  console.log('[web-app] the expired stored session forced exactly one token refresh before the retried POST');
-});
 
-Then('the retried request succeeds', async function () {
-  const observed = this.triggerResponse;
-  assert.ok(observed, 'the retried request must have completed');
-  assert.strictEqual(observed.status, 201, `the retried POST must succeed (got ${observed.status})`);
-  assert.strictEqual(observed.body.success, true, 'the retried response must carry success true');
-
-  // The refresh really rotated the session: the stored access token differs and
-  // is valid again, and the retried request carried it.
-  const after = await authState.storedSession(this.extraContext, state.webBaseUrl);
-  assert.ok(after, 'the refreshed session must be stored in the browser');
+  // The stored session really rotated and is valid again: a second refresh
+  // would rotate it again, so the value must stay put.
+  const rotated = await authState.storedSession(this.extraContext, state.webBaseUrl);
+  assert.ok(rotated, 'the refreshed session must be stored in the browser');
   assert.notStrictEqual(
-    after.access_token,
+    rotated.access_token,
     this.sessionBeforeExpiry.access_token,
     'the refresh must have rotated the access token'
   );
-  assert.ok(after.expires_at * 1000 > Date.now(), 'the refreshed session must be valid again');
-  const claims = authTokens.decode(after.access_token);
-  assert.ok(claims, 'the refreshed access token must be a JWT');
-  assert.strictEqual(claims.payload.sub, this.landlord.id, 'the refreshed token must belong to the landlord');
+  assert.ok(rotated.expires_at * 1000 > Date.now(), 'the refreshed session must be valid again');
+
+  await this.landlordPage.waitForTimeout(750);
+  const stable = await authState.storedSession(this.extraContext, state.webBaseUrl);
+  assert.strictEqual(
+    stable.access_token,
+    rotated.access_token,
+    'the server must refresh once, not in a loop — the rotated token must not change again'
+  );
+  assert.strictEqual(posts().length, 1, 'no second client round trip may be made');
+  console.log('[web-app] the server refreshed the expired session once and rotated the cookies on the response');
+});
+
+Then('the request succeeds without a second client round trip', async function () {
+  const observed = this.triggerResponse;
+  assert.ok(observed, 'the request must have completed');
+  assert.strictEqual(observed.status, 201, `the POST must succeed after the boundary refresh (got ${observed.status})`);
+  assert.strictEqual(observed.body.success, true, 'the response must carry success true');
+
+  const sink = this.requestSink;
+  assert.strictEqual(
+    sink.propertyRequests.filter((request) => request.method === 'POST').length,
+    1,
+    'the request must succeed in one round trip — no retry after the server-side refresh'
+  );
 
   if (observed.body.data && observed.body.data.id) {
-    this.createdProperties.push({ id: observed.body.data.id, token: after.access_token });
+    this.createdProperties.push({
+      id: observed.body.data.id,
+      subject: { storageState: await this.extraContext.storageState() },
+    });
   }
 });
 
 Then('the landlord is signed out and sent to sign in', async function () {
-  const sink = this.requestSink;
-  assert.ok(sink, 'the app must have made a request first');
-
-  // One failed refresh, not a loop: the first 401 triggers exactly one
-  // exchange, and the failure ends the session.
-  assert.strictEqual(
-    sink.refreshes.length,
-    1,
-    `a revoked session must refresh once and then sign out, saw ${sink.refreshes.length} refresh(es)`
-  );
-  assert.ok(
-    sink.propertyResponses.some((response) => response.method === 'POST' && response.status === 401),
-    'the API must have refused the tampered/expired credential with 401'
-  );
+  // The server's boundary refresh tried the dead refresh token once and
+  // failed; its response cleared the session cookies, which is the sign-out.
+  // The browser holds no session now, and the guard refuses the next
+  // protected screen.
   assert.strictEqual(
     authState.hasSessionCookie(await this.extraContext.storageState()),
     false,
     'the failed refresh must clear the session cookie (the landlord is signed out)'
+  );
+  assert.strictEqual(
+    await authState.storedSession(this.extraContext, state.webBaseUrl),
+    null,
+    'the browser must hold no Supabase session after the failed refresh'
   );
 
   // The app's documented path: the guard sends the signed-out visitor to
@@ -1029,27 +1036,28 @@ Then('the landlord is signed out and sent to sign in', async function () {
     '/overview',
     'the guard must carry the protected screen as the return target'
   );
-  console.log('[web-app] one failed refresh signed the landlord out; the guard then sent them to sign in');
+  console.log('[web-app] the failed server-side refresh signed the landlord out; the guard then sent them to sign in');
 });
 
 Given('the API cannot verify tokens because the key set is unavailable', async function () {
-  // A real second API whose JWKS location is a closed port: every verification
-  // fails to fetch a key and fails closed with 503. The page's base URL is
-  // pointed at it through the existing runtime override, so the app's own
-  // client — not a stub — receives the 503.
+  // A real second app whose JWKS location is a closed port: every verification
+  // fails to fetch a key and fails closed with 503. The page is opened on that
+  // instance's own origin, so the app's own client — not a stub — receives the
+  // 503. The session cookie is host-scoped, so the signed-in landlord is still
+  // signed in there.
   const page = requirePage(this);
-  this.outageProbe = await startApiWithUnreachableJwks();
-  this.probeApis.push(this.outageProbe);
+  this.outageProbe = await startAppWithUnreachableJwks();
+  this.probeApps.push(this.outageProbe);
 
   this.outageResponses = [];
   page.on('response', (response) => {
     const url = new URL(response.url());
-    if (url.origin === new URL(this.outageProbe.baseUrl).origin) {
+    if (/^\/api\/properties(\/|$)/.test(url.pathname)) {
       this.outageResponses.push({ path: url.pathname, status: response.status() });
     }
   });
 
-  await shell.openWithApiBaseUrl(page, this.outageProbe.baseUrl);
+  await shell.openAt(page, this.outageProbe.baseUrl);
   assert.ok(!signInPage.isSignInUrl(page), 'the signed-in landlord must still reach the shell');
 });
 
@@ -1061,20 +1069,10 @@ Then('the app shows the unreachable state', async function () {
     'status',
     'the shared state must announce itself as a status'
   );
-  const refused = await (async () => {
-    try {
-      return (await fetch(`${this.outageProbe.baseUrl}/properties`, {
-        headers: { authorization: 'Bearer probe' },
-        signal: AbortSignal.timeout(5000),
-      })).status;
-    } catch {
-      return null;
-    }
-  })();
   assert.ok(
-    this.outageResponses.some((response) => response.path === '/properties' && response.status === 503),
-    `the app's properties request must have been refused by the outage API with 503 ` +
-      `(observed: ${JSON.stringify(this.outageResponses)}, direct probe: ${refused})`
+    this.outageResponses.some((response) => response.path === '/api/properties' && response.status === 503),
+    `the app's properties request must have been refused by the outage app with 503 ` +
+      `(observed: ${JSON.stringify(this.outageResponses)})`
   );
 });
 
@@ -1096,11 +1094,11 @@ Then('the session is not cleared', async function () {
   await shell.expectSignedInAs(page, state.auth.primaryEmail);
   assert.ok(!signInPage.isSignInUrl(page), 'an auth outage must not send the landlord to sign-in');
 
-  // The probe API is this scenario's; stop it and prove its port is free.
-  this.probeApis = this.probeApis.filter((probe) => probe !== this.outageProbe);
-  const stopped = await stopProbeApi(this.outageProbe);
-  assert.strictEqual(stopped, true, `the outage API's port ${this.outageProbe.port} must be free after the scenario`);
-  assert.strictEqual(await probeTcpPort(this.outageProbe.port), false, 'nothing may still listen on the outage API port');
+  // The probe app is this scenario's; stop it and prove its port is free.
+  this.probeApps = this.probeApps.filter((probe) => probe !== this.outageProbe);
+  const stopped = await stopProbeApp(this.outageProbe);
+  assert.strictEqual(stopped, true, `the outage app's port ${this.outageProbe.port} must be free after the scenario`);
+  assert.strictEqual(await probeTcpPort(this.outageProbe.port), false, 'nothing may still listen on the outage app port');
   console.log('[web-app] a 503 auth outage mounts the unreachable state and leaves the session intact');
 });
 
@@ -1178,18 +1176,18 @@ Given('a signed-in landlord with properties and a ledger on screen', async funct
   assert.ok(stored && stored.access_token, 'the landlord must hold a real session');
   this.landlordToken = stored.access_token;
 
-  // A property this landlord owns, created with their own token (the After
-  // hook deletes it with that token; deleting the account cascades too).
+  // A property this landlord owns, created with their own cookie session (the
+  // After hook deletes it with that state; deleting the account cascades too).
   const owned = await api.postProperty(
     this.probePayload({ address: 'Acceptance Probe Way Sign Out' }),
-    { token: this.landlordToken }
+    { storageState: session.storageState }
   );
   assert.ok(
     owned.status === 201 && owned.body && owned.body.data && owned.body.data.id,
     `arrangement failed: the landlord's property was not created (HTTP ${owned.status})`
   );
   this.landlordProperty = owned.body.data;
-  this.createdProperties.push({ id: this.landlordProperty.id, token: this.landlordToken });
+  this.createdProperties.push({ id: this.landlordProperty.id, subject: { storageState: session.storageState } });
 
   // A ledger on screen: entries in the app's own store, then shown in the
   // Transactions view. The description is unique so a flash is detectable.

@@ -26,9 +26,10 @@ const shell = require('../pages/app-shell');
 // ledger is left as found even when an assertion failed mid-scenario.
 //
 // Rows are deleted as the owner who holds them: the primary owner's rows go
-// through the default (primary) session, and a row arranged for the second
-// owner carries its owner's token. A cross-owner delete would answer 404 and
-// leave the row behind.
+// through the default (primary) session, a row arranged for the second owner
+// carries that owner's subject, and a row created by a disposable landlord
+// carries the browser state that landlord signed in with. A cross-owner
+// delete would answer 404 and leave the row behind.
 async function removeScenarioSmokeRows(world) {
   const attempted = new Set();
 
@@ -36,7 +37,7 @@ async function removeScenarioSmokeRows(world) {
     if (!entry || !entry.id || attempted.has(entry.id)) continue;
     attempted.add(entry.id);
     await api
-      .deletePropertyById(entry.id, entry.token ? { token: entry.token } : undefined)
+      .deletePropertyById(entry.id, entry.subject || undefined)
       .catch(() => {});
   }
 
@@ -50,18 +51,19 @@ async function removeScenarioSmokeRows(world) {
   world.createdPropertyIds = [];
 }
 
-// Stops every second API instance the scenario started, then proves nothing is
-// still listening on its port. The 503/outage probes must not outlive the
-// scenario even when an assertion failed. second-api is required lazily so this
-// module stays free of a load-order dependency on the API process plumbing.
-async function stopScenarioProbeApis(world) {
-  const probes = world.probeApis || [];
-  world.probeApis = [];
+// Stops every second app instance the scenario started, then proves nothing is
+// still listening on its port. The outage and config-refusal probes must not
+// outlive the scenario even when an assertion failed. second-app is required
+// lazily so this module stays free of a load-order dependency on the process
+// plumbing.
+async function stopScenarioProbeApps(world) {
+  const probes = world.probeApps || [];
+  world.probeApps = [];
   const results = [];
-  const { stopProbeApi } = require('./second-api');
+  const { stopProbeApp } = require('./second-app');
   for (const probe of probes) {
     try {
-      results.push({ port: probe.port, stopped: await stopProbeApi(probe) });
+      results.push({ port: probe.port, stopped: await stopProbeApp(probe) });
     } catch (error) {
       results.push({ port: probe && probe.port, stopped: false, error: error.message });
     }
@@ -83,9 +85,10 @@ function prepareScenarioStorageState() {
 
 // Clears the browser-stored state the scenarios seeded — every
 // `landlord-transactions*` key (the legacy key and the retired per-account
-// keys), the persisted property selection, and the base-URL override the
-// unreachable scenario pointed at a dead port — so nothing a scenario stored
-// survives the run. A no-op when this scenario never opened a page.
+// keys) and the persisted property selection — so nothing a scenario stored
+// survives the run. A no-op when this scenario never opened a page. The
+// unreachable scenario's route interception is removed with the page itself;
+// `restorePropertiesReachability` also lifts it explicitly.
 //
 // Then it asserts the sweep actually worked: a scenario that leaves a ledger
 // key behind fails with the surviving keys named. This is the per-scenario
@@ -98,7 +101,7 @@ async function clearScenarioBrowserState(world) {
   if (!/^https?:/i.test(world.page.url())) return { removed: [], remaining: [] };
 
   const removed = await ledgerView.clearStoredTransactions(world.page).catch(() => []);
-  await shell.clearApiBaseUrlOverride(world.page).catch(() => {});
+  await shell.restorePropertiesReachability(world.page).catch(() => {});
 
   const remaining = await ledgerView.storedLedgerKeys(world.page).catch((error) => {
     throw new Error(`could not verify the browser's ledger keys after cleanup: ${error.message}`);
@@ -134,7 +137,7 @@ async function removeScenarioDisposableUsers(world) {
 module.exports = {
   prepareScenarioStorageState,
   removeScenarioSmokeRows,
-  stopScenarioProbeApis,
+  stopScenarioProbeApps,
   clearScenarioBrowserState,
   removeScenarioDisposableUsers,
 };

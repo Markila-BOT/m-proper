@@ -10,10 +10,10 @@
 // left out, so the child run proves every *other* committed behavior without
 // recursing into itself.
 //
-// A child run booted from this config must use its own ports (the parent sets
-// HARNESS_API_PORT / HARNESS_WEB_PORT / HARNESS_OPENAPI_PORT in its
-// environment) and writes its own report and message streams, so it can never
-// collide with the parent run that spawned it.
+// A child run booted from this config must use its own port (the parent sets
+// HARNESS_WEB_PORT in its environment) and writes its own report and message
+// streams, so it can never collide with the parent run that spawned it. One
+// process serves the pages and /api, so one port is the whole child.
 
 const { extractAll } = require('./extract-gherkin.cjs');
 const { effectivePaths } = require('./openspec-effective-paths.cjs');

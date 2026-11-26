@@ -22,20 +22,22 @@ npm install                        # harness dependencies
 npx playwright install chromium    # one-time Playwright browser binary
 ```
 
-The suite boots on harness-chosen ports (API 3021, web 3022) so it never
-collides with dev servers on the machine's squatted 3000/3001; override with
-`HARNESS_API_PORT` / `HARNESS_WEB_PORT` when needed.
+The suite boots one harness-owned port (web 3022) so it never collides with
+dev servers on the machine's squatted 3000/3001; override with
+`HARNESS_WEB_PORT` when needed.
 
-The single test command is the whole workflow: it boots the API and the web
-dev server, runs every effective scenario, writes an HTML report, and shuts
-both apps down again. The harness owns the app lifecycle — nothing else
-needs to be started by hand.
+The single test command is the whole workflow: it runs the migration step,
+boots the app (pages and `/api` on one origin), runs every effective scenario,
+writes an HTML report, and shuts the app down again. The harness owns the app
+lifecycle — nothing else needs to be started by hand.
 
-A database connection is mandatory: the suite preflights `DATABASE_URL`
-(resolving it from `api/.env` when the environment variable is not set) and
-refuses to run any scenario when no connection is resolvable, naming the
-missing configuration. Use the `postgresql://` URI from the Supabase
-Database settings, not the project `https` URL.
+The app's server environment is mandatory: the suite preflights every required
+variable at once — `DATABASE_URL`, `DIRECT_DATABASE_URL`, `SUPABASE_JWKS_URL`,
+`SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUD` — reading
+`acceptance-tests/.env.local` when the shell has not exported them, and refuses
+to run any scenario when one is missing, naming each absent variable. Use the
+`postgresql://` URI from the Supabase Database settings, not the project
+`https` URL.
 
 Browser scenarios drive a real Playwright chromium (one browser for the
 whole suite, a fresh context per scenario, closed after the run). The browser
@@ -163,9 +165,8 @@ that describe the harness itself. Three of them spawn child processes:
   `npx cucumber-js --config suite-minus-self.cjs`. cucumber-js merges CLI
   paths into the profile's paths instead of replacing them, so the
   exclusion lives in that second config file — the feature-list mechanism.
-  The child boots its own API and web dev server on offset ports
-  (`HARNESS_API_PORT`/`HARNESS_WEB_PORT`/`HARNESS_OPENAPI_PORT`, +10), so it
-  cannot collide with the parent run, and writes its own report to
+  The child boots its own app on an offset port (`HARNESS_WEB_PORT`, +10), so
+  it cannot collide with the parent run, and writes its own report to
   `reports/suite-minus-self-report.html`. The later self-scenarios ("The
   ledger's browser scenarios run for real", "Archive waits for green") read
   that child run's parsed results.
@@ -180,62 +181,14 @@ that describe the harness itself. Three of them spawn child processes:
   standalone too: `node support/preflight.js [envFileOverride]`.
 
 **Runtime cost**: the suite-minus-self child run repeats every check-gate
-scenario (cargo check, web build, OpenAPI regeneration) with its own app
-boot, so a full `npm test` costs roughly twice a non-self-verifying run.
+scenario (web build, type check) with its own app boot, so a full `npm test` costs roughly twice a non-self-verifying run.
 Measured warm (all caches hot, remote Supabase database): ~67s total, of
 which the child run was ~32s — about 1.9× the ~35s the parent's own
 scenarios take.
 
-## Red by design
+## A red scenario is a work item
 
-The effective spec includes redesign-ledger-passbook's two new ledger
-scenarios — the running balance and the column sorting. The web app does
-not implement them yet, so those two scenarios fail every run, with failure
-messages that name the missing feature, and `npm test` exits non-zero. That
-red is the change's work list, documented and expected: the suite goes
-green — and its exit code drops to 0 — only when the redesign lands. Do not
-delete, skip, or weaken those scenarios to make the suite pass. The child
-run's step asserts the failures are exactly this pair and nothing else, so
-any other failure is reported as a regression.
-
-## Post-run verification
-
-The harness proves its own cleanup:
-
-- After every scenario the Before-side sweep clears every
-  `landlord-transactions*` key and the persisted property selection before the
-  scenario's first page script, and the After hook clears them again, asserts
-  none survived (naming any that did), and deletes its smoke rows through the
-  API; AfterAll sweeps any leftover probe rows through the still-running API
-  before shutting down.
-- The scenario "The app is alive for the scenarios and gone after" records
-  that both harness ports were free before boot and registers a
-  post-teardown check; after AfterAll stops both apps, the harness prints
-  `[harness] PASS (after teardown): after teardown both harness ports are
-  closed (…)`. A FAIL prints and marks the run's exit code non-zero.
-- The suite-minus-self child run checks its own ports the same way through
-  its own AfterAll; the parent verifies the child's ports are closed.
-
-To verify by hand after a run (nothing should answer):
-
-```sh
-lsof -ti :3021 ; lsof -ti :3022   # no pids
-curl -s http://localhost:3021/health   # connection refused
-```
-
-## Runner files are pack files
-
-`extract-gherkin.cjs`, `cucumber.cjs`, `openspec-effective-paths.cjs`, and
-`.gherkin-lintrc` are copied verbatim from the acceptance-test-authoring
-skill pack. Their destination filenames are load-bearing (`cucumber.cjs`
-is discovered by name; the extractor is required by `cucumber.cjs`) — do not
-rename or modify them; improvements belong in the pack, not here.
-
-One deliberate local extension: `openspec-effective-paths.cjs` carries the
-opt-in `HARNESS_CHANGE` scope documented above. It is a superset of the pack
-file (unset behaves exactly as the pack does), and it should be folded back
-into the pack before the pack is re-copied over it.
-
-`suite-minus-self.cjs` and `suite-discovery.cjs` are not pack files: they
-are this harness's own child-run configurations (same extraction and
-composition, different paths and output files), maintained here.
+A scenario that fails is the change's work list, documented and expected. Do
+not delete, skip, or weaken a scenario to make the suite pass: the archive
+gate refuses a failing, pending, or undefined step, and the child run reports
+any failure other than the one under work as a regression.

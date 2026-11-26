@@ -1,19 +1,20 @@
 'use strict';
 
-// Acceptance-suite lifecycle: preflight, app boot, browser, teardown.
+// Acceptance-suite lifecycle: preflight, migration, app boot, browser, teardown.
 //
-// 1. Preflight FIRST: no database connection resolvable → the suite refuses
-//    to boot anything, naming the missing configuration.
-// 2. Boot the API (`cargo run` from api/, harness-chosen PORT, CORS wired to
-//    the harness web origin) and wait for /health to tell the truth.
-// 3. Boot the web dev server (vite, harness-chosen port, VITE_API_BASE_URL
-//    pointing at the API) and wait for its port to accept connections.
+// 1. Preflight FIRST: no complete server environment → the suite refuses to
+//    boot anything, naming every missing variable at once.
+// 2. Migrate once: `pnpm --filter web db:migrate` over the direct connection.
+//    A failed migration stops the run before any scenario.
+// 3. Boot the web app — one process, which also serves /api/properties and
+//    /api/health — on a harness-chosen port, and wait for /api/health to tell
+//    the truth about the database.
 // 4. Launch one headless Playwright chromium for the whole suite.
 //
-// AfterAll always runs: smoke probes swept through the API, browser closed,
-// both processes killed (SIGTERM → SIGKILL on their process groups). A
-// process 'exit' handler SIGKILLs the groups even if the runner crashes, so
-// nothing the harness booted can outlive the run.
+// AfterAll always runs: disposable accounts and smoke probes swept through the
+// still-running app, browser closed, the process killed (SIGTERM → SIGKILL on
+// its process group). A process 'exit' handler SIGKILLs the group even if the
+// runner crashes, so nothing the harness booted can outlive the run.
 
 const path = require('node:path');
 const { BeforeAll, Before, After, AfterAll, setDefaultTimeout } = require('@cucumber/cucumber');
@@ -23,20 +24,20 @@ const {
   isProbeName,
   spawnHarnessProcess,
   stopAllSpawnedProcesses,
-  waitForApiHealth,
-  waitForTcpPort,
+  waitForAppHealth,
   probeTcpPort,
+  runCommand,
   runPostTeardownChecks,
   tailOf,
 } = require('./harness');
-const { assertDatabaseConnection } = require('./preflight');
-const { loadAcceptanceEnv, appProcessEnvironment } = require('./env');
+const { assertServerEnvironment } = require('./preflight');
+const { loadAcceptanceEnv, webProcessEnvironment } = require('./env');
 const authState = require('./auth-state');
 const identities = require('./identities');
 const {
   prepareScenarioStorageState,
   removeScenarioSmokeRows,
-  stopScenarioProbeApis,
+  stopScenarioProbeApps,
   clearScenarioBrowserState,
   removeScenarioDisposableUsers,
 } = require('./cleanup');
@@ -65,54 +66,65 @@ async function sweepProbeProperties() {
   }
 }
 
+// Applies the Drizzle migrations once, before any scenario. The app never
+// migrates: it connects pooled and only reads, so a fresh database would serve
+// nothing until this step ran. A non-zero exit stops the run here.
+async function migrateDatabase(env) {
+  const startedAt = Date.now();
+  const result = await runCommand('pnpm', ['--filter', 'web', 'db:migrate'], {
+    cwd: REPO_ROOT,
+    timeoutMs: 300_000,
+    env,
+  });
+  if (result.code !== 0) {
+    throw new Error(
+      `The migrate step failed (exit ${result.code}); the suite stops before any scenario.\n` +
+        tailOf(`${result.stdout}\n${result.stderr}`, 4000)
+    );
+  }
+  console.error(`[harness] migrations applied in ${Date.now() - startedAt}ms`);
+}
+
 BeforeAll(async function () {
-  // --- 0. Harness configuration: identities and the admin key ---
+  // --- 0. Harness configuration: identities, admin key, server env ---
   // acceptance-tests/.env.local is gitignored and operator-held. Loading it
   // here means every Node-side helper (sign-in, admin calls) sees the same
   // snapshot, and a missing file fails with an actionable message before
-  // anything boots. The key itself is never printed.
+  // anything boots. Secrets are never printed.
   loadAcceptanceEnv();
 
-  // --- 1. Database preflight: fail before any boot if absent ---
-  // Resolves DATABASE_URL from the environment, otherwise from api/.env;
-  // the resolved value is a secret and is never printed. support/preflight.js
-  // is the same gate the suite's missing-connection scenario spawns as a
-  // child process.
-  const databaseUrl = assertDatabaseConnection();
-  // Expose the resolved connection to the app-boot phase. Never log it.
-  process.env.DATABASE_URL = databaseUrl;
-  state.databaseUrl = databaseUrl;
+  // --- 1. Server-environment preflight: fail before any boot if incomplete ---
+  // The app serves the pages and /api from one process, so it needs the
+  // database connection, the JWKS location, the issuer, and the audience.
+  // support/preflight.js is the same gate the suite's missing-configuration
+  // scenarios spawn as a child process. Values are secrets and never printed.
+  const serverEnv = assertServerEnvironment();
+  for (const name of [
+    'DATABASE_URL',
+    'DIRECT_DATABASE_URL',
+    'SUPABASE_URL',
+    'SUPABASE_JWKS_URL',
+    'SUPABASE_JWT_ISSUER',
+    'SUPABASE_JWT_AUD',
+  ]) {
+    if (serverEnv[name] !== undefined) process.env[name] = serverEnv[name];
+  }
+  state.databaseUrl = serverEnv.DATABASE_URL;
 
-  state.apiBaseUrl = `http://localhost:${state.apiPort}`;
+  const appEnv = webProcessEnvironment();
+
+  // --- 2. Migrate before anything serves ---
+  await migrateDatabase(appEnv);
+
   state.webBaseUrl = `http://localhost:${state.webPort}`;
 
-  // The apps are not running before the suite starts: record that both
-  // harness ports were free, then boot from scratch. The lifecycle scenario
-  // ("The app is alive for the scenarios and gone after") asserts this
+  // The app is not running before the suite starts: record that the harness
+  // port was free, then boot from scratch. The lifecycle scenario asserts this
   // recorded fact.
-  state.portsFreeBeforeBoot =
-    !(await probeTcpPort(state.apiPort)) && !(await probeTcpPort(state.webPort));
+  state.portsFreeBeforeBoot = !(await probeTcpPort(state.webPort));
 
   try {
-    // --- 2. Boot the API on a harness-chosen port ---
-    state.apiProcess = spawnHarnessProcess({
-      label: 'api',
-      command: 'cargo',
-      args: ['run'],
-      cwd: path.join(REPO_ROOT, 'api'),
-      env: {
-        // The API runtime never receives the harness's admin key or seeded
-        // passwords; its own api/.env and the harness's port/CORS values are
-        // all it needs.
-        ...appProcessEnvironment(process.env),
-        PORT: String(state.apiPort),
-        CORS_ORIGINS: state.webBaseUrl,
-      },
-    });
-    // `cargo run` may rebuild first, so the readiness window is generous.
-    await waitForApiHealth(state.apiBaseUrl, 90_000);
-
-    // --- 3. Boot the web dev server wired to the API ---
+    // --- 3. Boot the one process: pages + /api on the same port ---
     state.webProcess = spawnHarnessProcess({
       label: 'web',
       command: process.execPath,
@@ -124,15 +136,12 @@ BeforeAll(async function () {
         '--strictPort',
       ],
       cwd: path.join(REPO_ROOT, 'web'),
-      env: {
-        // The web dev server never receives the admin key or seeded
-        // passwords; only the public app configuration (web/.env) and the
-        // harness API base belong here.
-        ...appProcessEnvironment(process.env),
-        VITE_API_BASE_URL: state.apiBaseUrl,
-      },
+      // The complete server environment (database URLs, JWKS location,
+      // issuer, audience) plus the public VITE_ values; neither the admin key
+      // nor the seeded passwords reach this child.
+      env: appEnv,
     });
-    await waitForTcpPort(state.webPort, 60_000, `web dev server on port ${state.webPort}`);
+    await waitForAppHealth(state.webBaseUrl, 120_000);
 
     // --- 4. One headless chromium for the whole suite ---
     try {
@@ -176,7 +185,7 @@ BeforeAll(async function () {
   }
 
   console.error(
-    `[harness] api ${state.apiBaseUrl} · web ${state.webBaseUrl} · chromium ${state.browser ? 'ready' : 'missing'}` +
+    `[harness] app ${state.webBaseUrl} (pages + /api) · chromium ${state.browser ? 'ready' : 'missing'}` +
       (state.auth ? ` · signed in as ${state.auth.primaryEmail}` : '')
   );
 });
@@ -229,20 +238,25 @@ After(async function () {
     this.context = null;
   }
   await removeScenarioDisposableUsers(this);
-  // Second API instances (the key-set-outage probe) are killed here whichever
-  // way the scenario ended, before the smoke rows are swept.
-  await stopScenarioProbeApis(this).catch(() => {});
+  // Second app instances (the key-set-outage probe and the config refusal)
+  // are killed here whichever way the scenario ended, before the smoke rows
+  // are swept. Forged cookie jars are closed too.
+  await stopScenarioProbeApps(this).catch(() => {});
+  for (const context of this.httpContexts || []) {
+    await api.closeContext(context);
+  }
+  this.httpContexts = [];
   await removeScenarioSmokeRows(this);
   if (storageLeak) throw storageLeak;
 });
 
 AfterAll(async function () {
   // Always: remove every disposable account this run created, sweep leaked
-  // probes through the still-running API, close the browser, then stop both
-  // processes. Nothing may outlive the run.
+  // probes through the still-running app, close the browser, then stop the
+  // app. Nothing may outlive the run.
   //
   // The identity sweep runs first and independently: a failed scenario, a
-  // failed browser close, or an API error must never leave a disposable
+  // failed browser close, or an app error must never leave a disposable
   // account behind. The guard in support/identities.js cannot remove a seeded
   // owner even if one were somehow registered.
   try {
@@ -272,8 +286,9 @@ AfterAll(async function () {
     /* closing an already-closed browser is fine */
   }
   state.browser = null;
+  await api.closeAllContexts();
   await stopAllSpawnedProcesses();
-  console.error('[harness] both processes stopped; nothing left listening on the harness ports');
+  console.error('[harness] the app is stopped; nothing left listening on the harness port');
   // Registered post-teardown checks ("gone after the run" contracts): each
   // prints PASS, or prints FAIL and marks the run's exit code non-zero.
   await runPostTeardownChecks();

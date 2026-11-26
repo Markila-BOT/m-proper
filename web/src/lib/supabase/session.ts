@@ -95,8 +95,10 @@ async function refreshSession(): Promise<SessionRefreshResult> {
 
 function readRequestSession(): SessionRefreshResult | null {
   try {
-    const context: { session?: SessionRefreshResult } | undefined =
-      getGlobalStartContext()
+    // `getGlobalStartContext` is typed as `never` until a Register provides a
+    // request context; the cast states the shape this middleware stores.
+    const context = getGlobalStartContext() as
+      { session?: SessionRefreshResult } | undefined
 
     return context?.session ?? null
   } catch {

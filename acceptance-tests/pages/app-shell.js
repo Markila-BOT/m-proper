@@ -18,11 +18,18 @@ const TABS = {
 const WAIT_MS = 20_000;
 
 async function open(page) {
+  await openAt(page, state.webBaseUrl);
+}
+
+// Opens the app on a named origin — the harness instance, or a second app a
+// hostile scenario owns. The session cookie is host-scoped, so the same
+// signed-in context reaches a probe instance on another port.
+async function openAt(page, baseUrl) {
   // networkidle, not just domcontentloaded: the shell is server-rendered,
   // and a tab click that lands before React hydrates is silently dropped.
   // The app's load-time API fetches fire only once hydrated, so waiting for
   // the network to settle is a deterministic interactivity signal.
-  await page.goto(state.webBaseUrl, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await waitForShell(page);
 }
 
@@ -77,29 +84,31 @@ async function selectProperty(page, name) {
 
 // --- the shared unreachable state (surface-api-unreachable-state) ---
 
-// The app's runtime base-URL override key (web/src/lib/api-client.ts): a
-// dev/test affordance the api-client honors ahead of the baked env base.
-// Nothing in the product writes it; the unreachable scenario's page load
-// does, so the suite never needs a second harness boot to point one page
-// at a dead port.
-const API_BASE_URL_OVERRIDE_KEY = 'landlord-api-base-url-override';
+// The properties routes are on the app's own origin now, so the unreachable
+// state is driven from the test side: the page's `/api/properties` requests
+// are aborted before the app mounts them, which is exactly the network failure
+// the shared state names. Nothing in the product writes a base-URL override.
+const PROPERTIES_ROUTE_PATTERN = '**/api/properties';
 
-async function openWithApiBaseUrl(page, baseUrl) {
-  // A scenario-local page load with the base URL pointed where the
-  // scenario needs it: the override is written before any app code runs,
-  // so the page's very first property fetch targets the given base.
-  await page.addInitScript(
-    ({ key, value }) => window.localStorage.setItem(key, value),
-    { key: API_BASE_URL_OVERRIDE_KEY, value: baseUrl }
-  );
-  await open(page);
+// The key the retired runtime override used. It is asserted absent, never
+// written: the app has no base URL to redirect.
+const RETIRED_API_BASE_URL_OVERRIDE_KEY = 'landlord-api-base-url-override';
+
+async function breakPropertiesReachability(page, onAbort = () => {}) {
+  await page.route(PROPERTIES_ROUTE_PATTERN, async (route) => {
+    onAbort(route.request().url());
+    await route.abort('failed');
+  });
 }
 
-async function clearApiBaseUrlOverride(page) {
-  // The After-hook cleanup: the override never outlives its scenario.
-  await page.evaluate(
-    (key) => window.localStorage.removeItem(key),
-    API_BASE_URL_OVERRIDE_KEY
+async function restorePropertiesReachability(page) {
+  await page.unroute(PROPERTIES_ROUTE_PATTERN);
+}
+
+async function retiredApiBaseUrlOverride(page) {
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    RETIRED_API_BASE_URL_OVERRIDE_KEY
   );
 }
 
@@ -143,6 +152,7 @@ async function openProtectedPageExpectingSignIn(page, path = '/overview') {
 
 module.exports = {
   open,
+  openAt,
   reload,
   waitForShell,
   openTab,
@@ -150,8 +160,9 @@ module.exports = {
   expectSidebarProperty,
   expectSidebarPropertyAbsent,
   selectProperty,
-  openWithApiBaseUrl,
-  clearApiBaseUrlOverride,
+  breakPropertiesReachability,
+  restorePropertiesReachability,
+  retiredApiBaseUrlOverride,
   expectUnreachableRailState,
   expectSignedInAs,
   signOut,

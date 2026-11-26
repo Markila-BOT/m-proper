@@ -38,6 +38,12 @@ const {
   scanDependencyPolicyAdr,
 } = require('../support/dep-scan');
 const { assertEnvelope, assertPropertyRow } = require('../support/api-shapes');
+const {
+  runProjectTypeCheck,
+  writeDriftedPropertyFixture,
+  runFixtureTypeCheck,
+  removeFixture,
+} = require('../support/typecheck');
 
 // ---------------------------------------------------------------------------
 // git helpers — the "committed state" preconditions and the openapi restore
@@ -440,8 +446,109 @@ Then('the property is gone from the list after the delete', async function () {
 });
 
 // ---------------------------------------------------------------------------
-// Build and check commands stay green
+// Properties round-trip through the running app (the shared-type contract)
 // ---------------------------------------------------------------------------
+//
+// The effective scenario's wording ("the app", "the routes") is pinned to the
+// same running process and the same recorded-response assertions as the older
+// API wording above. It creates and deletes its own row, so the ledger is left
+// as found even when an assertion fails.
+
+Given('the app running against the configured database', async function () {
+  const health = await this.checkApiHealth();
+  assert.strictEqual(
+    health.status,
+    200,
+    `expected the running app's /api/health to answer 200, got ${health.status}`
+  );
+  assert.strictEqual(
+    health.body && health.body.success,
+    true,
+    'expected /api/health success true against the configured database'
+  );
+});
+
+When('a property is created, listed, and deleted through the routes', async function () {
+  // The same three subject requests, in the same order, the envelope step
+  // asserts over: create (201), list (200), delete (200).
+  this.roundTripPayload = this.probePayload({ units: 2 });
+  await this.postProperty(this.roundTripPayload);
+  const created = this.lastResponse().body && this.lastResponse().body.data;
+  assert.ok(created && created.id, 'the create step must return the created property in data');
+  this.subjectPropertyId = created.id;
+
+  await this.getPropertiesList();
+
+  await this.deletePropertyById(this.subjectPropertyId);
+});
+
+// ---------------------------------------------------------------------------
+// A drifted response shape fails the type check
+// ---------------------------------------------------------------------------
+//
+// The fixture lives under the harness scratch area (.extracted/typecheck/…),
+// never in web/src, and is removed as soon as TypeScript has run. It imports
+// the shared domain type the route handlers and the client both use, so a
+// response shape that drifts from that type cannot type-check.
+
+Given('a route response no longer matches the shared domain type', function () {
+  this.driftedFixture = writeDriftedPropertyFixture();
+  console.log(
+    `[type-check] drifted-shape fixture written under ${path.relative(
+      REPO_ROOT,
+      this.driftedFixture.dir
+    )} (never in web/src)`
+  );
+});
+
+When('the type check runs', async function () {
+  assert.ok(this.driftedFixture, 'the drifted-shape fixture was never written');
+  try {
+    this.driftedCheck = await runFixtureTypeCheck(this.driftedFixture);
+  } finally {
+    // Whatever the compiler said, the throwaway fixture does not survive.
+    removeFixture(this.driftedFixture);
+  }
+});
+
+Then('it fails and names the mismatch', function () {
+  assert.ok(this.driftedCheck, 'the type check has not run');
+  const { code, stdout, stderr } = this.driftedCheck;
+  const output = `${stdout}\n${stderr}`;
+
+  assert.notStrictEqual(
+    code,
+    0,
+    `the type check must fail when a response shape drifts from the domain type, but it passed:\n${tailOf(output)}`
+  );
+  assert.ok(
+    /created_at|createdAt/.test(output),
+    `the failure must name the drifted field (created_at/createdAt), got:\n${tailOf(output)}`
+  );
+  assert.match(
+    output,
+    /error TS\d+/,
+    `the failure must be a TypeScript diagnostic naming the mismatch, got:\n${tailOf(output)}`
+  );
+  assert.strictEqual(
+    fs.existsSync(this.driftedFixture.dir),
+    false,
+    'the throwaway fixture must be removed after the check'
+  );
+  console.log(
+    `[type-check] the drifted shape failed the type check, naming the field:\n${tailOf(output, 600)}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Node check and build gates stay green
+// ---------------------------------------------------------------------------
+
+When('the TypeScript check runs', async function () {
+  // The web project's own TypeScript, over web/tsconfig.json. `--noEmit` is
+  // already the config; stating it keeps the gate's intent visible.
+  this.typeCheckGate = await runProjectTypeCheck();
+});
 
 Given('the API at its committed state', async function () {
   const dirty = await gitStatusPorcelain(['api/']);

@@ -20,6 +20,9 @@ import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated.reports'
 import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated.transactions'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiPropertiesRouteImport } from './routes/api/properties'
+import { Route as ApiPropertiesIdRouteImport } from './routes/api/properties.$id'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -76,6 +79,21 @@ const AuthenticatedTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPropertiesRoute = ApiPropertiesRouteImport.update({
+  id: '/api/properties',
+  path: '/api/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPropertiesIdRoute = ApiPropertiesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPropertiesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -88,6 +106,9 @@ export interface FileRoutesByFullPath {
   '/properties': typeof AuthenticatedPropertiesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/properties': typeof ApiPropertiesRouteWithChildren
+  '/api/properties/$id': typeof ApiPropertiesIdRoute
 }
 export interface FileRoutesByTo {
   '/confirm': typeof ConfirmRoute
@@ -99,7 +120,10 @@ export interface FileRoutesByTo {
   '/properties': typeof AuthenticatedPropertiesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/properties': typeof ApiPropertiesRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
+  '/api/properties/$id': typeof ApiPropertiesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,7 +137,10 @@ export interface FileRoutesById {
   '/_authenticated/properties': typeof AuthenticatedPropertiesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
+  '/api/health': typeof ApiHealthRoute
+  '/api/properties': typeof ApiPropertiesRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/properties/$id': typeof ApiPropertiesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +155,9 @@ export interface FileRouteTypes {
     | '/properties'
     | '/reports'
     | '/transactions'
+    | '/api/health'
+    | '/api/properties'
+    | '/api/properties/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/confirm'
@@ -139,7 +169,10 @@ export interface FileRouteTypes {
     | '/properties'
     | '/reports'
     | '/transactions'
+    | '/api/health'
+    | '/api/properties'
     | '/'
+    | '/api/properties/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -152,7 +185,10 @@ export interface FileRouteTypes {
     | '/_authenticated/properties'
     | '/_authenticated/reports'
     | '/_authenticated/transactions'
+    | '/api/health'
+    | '/api/properties'
     | '/_authenticated/'
+    | '/api/properties/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -162,6 +198,8 @@ export interface RootRouteChildren {
   ResetRoute: typeof ResetRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  ApiHealthRoute: typeof ApiHealthRoute
+  ApiPropertiesRoute: typeof ApiPropertiesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -243,6 +281,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransactionsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/properties': {
+      id: '/api/properties'
+      path: '/api/properties'
+      fullPath: '/api/properties'
+      preLoaderRoute: typeof ApiPropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/properties/$id': {
+      id: '/api/properties/$id'
+      path: '/$id'
+      fullPath: '/api/properties/$id'
+      preLoaderRoute: typeof ApiPropertiesIdRouteImport
+      parentRoute: typeof ApiPropertiesRoute
+    }
   }
 }
 
@@ -266,6 +325,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiPropertiesRouteChildren {
+  ApiPropertiesIdRoute: typeof ApiPropertiesIdRoute
+}
+
+const ApiPropertiesRouteChildren: ApiPropertiesRouteChildren = {
+  ApiPropertiesIdRoute: ApiPropertiesIdRoute,
+}
+
+const ApiPropertiesRouteWithChildren = ApiPropertiesRoute._addFileChildren(
+  ApiPropertiesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ConfirmRoute: ConfirmRoute,
@@ -273,6 +344,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetRoute: ResetRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  ApiHealthRoute: ApiHealthRoute,
+  ApiPropertiesRoute: ApiPropertiesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
