@@ -34,8 +34,8 @@
 
 - [x] 6.1 Seed identities and session plumbing: sign in the primary owner once and reuse the storage state, the child run signs in on its own ports, the second owner for isolation, disposable identities for sign-out/reset, and removal of every created account
 - [x] 6.2 Clear every `landlord-transactions:*` key between scenarios and update the existing scenarios to run signed in
-- [ ] 6.3 Write the new scenarios: sign-up/confirmation, sign-in/out, reset, the guard and return-path rejection, 401 refresh/sign-out, cross-owner isolation, sign-out clearing the visible state, and the direct Data API refusal — red, then green
-- [ ] 6.4 Run the full suite (existing plus new): every scenario passes, zero pending or undefined, and no account or ledger key is left behind
+- [x] 6.3 Write the new scenarios: sign-up/confirmation, sign-in/out, reset, the guard and return-path rejection, 401 refresh/sign-out, cross-owner isolation, sign-out clearing the visible state, and the direct Data API refusal — red, then green
+- [x] 6.4 Run the full suite (existing plus new): every scenario passes, zero pending or undefined, and no account or ledger key is left behind
 
 ## 7. Completion
 
