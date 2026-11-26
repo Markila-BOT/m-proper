@@ -2,6 +2,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { getRequestUrl } from '@tanstack/react-start/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
+import {
+  optionalString,
+  parseLinkPayload,
+  requireString,
+} from '../auth-payload'
+import type { LinkPayload } from '../auth-payload'
 import { isAuthSessionMissing, isSupabaseUnavailable } from './errors'
 import { createServerSupabaseClient } from './server'
 
@@ -236,8 +242,7 @@ export const confirmEmail = createServerFn({ method: 'POST' })
     (
       data: unknown,
     ): { code?: string; tokenHash?: string; type: EmailOtpType } => ({
-      code: optionalString(data, 'code'),
-      tokenHash: optionalString(data, 'token_hash'),
+      ...parseLinkPayload(data),
       type: readOtpType(optionalString(data, 'type')),
     }),
   )
@@ -263,10 +268,7 @@ export const confirmEmail = createServerFn({ method: 'POST' })
 // The recovery link's half of the same contract: establish the recovery
 // session, then let the new-password form update it.
 export const startRecovery = createServerFn({ method: 'POST' })
-  .validator((data: unknown): { code?: string; tokenHash?: string } => ({
-    code: optionalString(data, 'code'),
-    tokenHash: optionalString(data, 'token_hash'),
-  }))
+  .validator((data: unknown): LinkPayload => parseLinkPayload(data))
   .handler(async ({ data }): Promise<LinkResult> => {
     const supabase = createServerSupabaseClient()
 
@@ -326,28 +328,4 @@ function toLinkResult(result: { error: unknown }): LinkResult {
 // origin the request actually arrived on.
 function requestOrigin(): string {
   return getRequestUrl().origin
-}
-
-function requireString(data: unknown, field: string): string {
-  const value = asPayload(data)[field]
-
-  if (typeof value !== 'string') {
-    throw new Error(`Invalid auth payload: ${field} must be a string`)
-  }
-
-  return value
-}
-
-function optionalString(data: unknown, field: string): string | undefined {
-  const value = asPayload(data)[field]
-
-  return typeof value === 'string' && value.length > 0 ? value : undefined
-}
-
-function asPayload(data: unknown): Record<string, unknown> {
-  if (typeof data !== 'object' || data === null) {
-    throw new Error('Invalid auth payload')
-  }
-
-  return data as Record<string, unknown>
 }
