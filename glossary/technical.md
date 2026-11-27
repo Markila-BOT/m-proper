@@ -28,7 +28,9 @@
 | Session cookie | The Supabase session the browser sends to the app's own origin (`sb-<ref>-auth-token`, base64url JSON, chunked when large). | Describing how the routes learn who is calling. | "Auth header" (the withdrawn transport) |
 | Cookie contract | The rules a route applies to that cookie: name derivation, chunk assembly, and a malformed cookie answering 401 rather than throwing. | Describing cookie parsing obligations. | "Cookie parsing" (too vague) |
 | Frozen baseline | The migration that reproduces the schema already applied by the previous migration tool and is recorded as applied rather than run as new DDL. | Describing the Drizzle cutover. | "Initial migration" (it must not re-create tables) |
-| Direct connection | The non-pooled Postgres URL used only by the migrate step. | Describing migration connections. | "Pooled connection" (the app's runtime connection) |
+| Direct connection | The session-mode Postgres connection on port 5432 used only by the migrate step; on the Free plan it is the session pooler, not the IPv6-only direct host. | Describing migration connections. | "Transaction pooler" (the runtime connection) |
+| Session pooler | The IPv4-reachable Supabase pooler on port 5432 that preserves session state for migrations. | Describing the migration connection on the Free plan. | "Transaction pooler" (port 6543, the runtime mode) |
+| Pre-release backup | The logical `pg_dump` taken over the session connection before a release and stored off-machine. | Describing the release's backup step. | "Snapshot" (a different mechanism) |
 | CSRF check | The rule that a state-changing request's `Origin` or `Sec-Fetch-Site` is the app's own, required because the credential is an ambient cookie. | Describing write protection. | "CORS" (never protected the server) |
 | Owner ID | The `auth.users.id` stored on a row, the database half of the owner scope. | Describing row ownership. | "User ID" (ambiguous with the caller) |
 | RLS defense | Row Level Security policies as a second authorization layer; a privileged API connection bypasses them. | Describing defense in depth. | "RLS" alone (it is the second layer) |
@@ -37,3 +39,10 @@
 | Transaction API | The owner-scoped server routes and Supabase table that store ledger entries. | Naming the server ledger. | "Ledger backend" |
 | Ledger restore | The undo path that re-creates a deleted entry with its original id inside the undo window. | Describing the delete undo. | "Undelete" |
 | Ledger discard | The one-time retirement of the browser ledger with no server import. | Describing the migration decision. | "Migration" (there is no data migration) |
+| Production environment | The Vercel production deployment in `sin1` and its dedicated Supabase project, serving the canonical origin. | Describing the live system users reach. | "Prod", "the server" |
+| Preview deployment | A per-pull-request Vercel deployment backed by the development Supabase project, never production data. | Describing pre-merge verification. | "Staging" (there is no separate staging tier) |
+| Production origin | The exact HTTPS origin users and Supabase auth redirects use (`https://m-proper.vercel.app` until a custom domain is chosen). | Describing cookie scope, CSRF, and redirect allowlists. | "Domain" (the origin includes the scheme) |
+| Release | The gated sequence that backs up production, migrates it, advances the production branch, and runs the live smoke. | Describing how code reaches production. | "Deploy" (only the last step) |
+| Release gate | The install, lint, typecheck, unit-test, build, spec-lint, and main-spec acceptance checks that must pass before a release may back up, migrate, or deploy. | Describing pre-deploy checks. | "CI" (CI also runs on pull requests) |
+| Smoke account | A dedicated production landlord account used only by the live smoke, owning no real records. | Describing the production verification identity. | "Test user" (reserved for the acceptance suite's identity) |
+| Transaction pooler | The Supabase pooler mode on port 6543 that multiplexes short-lived serverless connections and requires prepared statements to be disabled. | Describing the production runtime connection. | "Session pooler" (port 5432, a different mode) |
