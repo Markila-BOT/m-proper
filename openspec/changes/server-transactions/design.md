@@ -4,20 +4,18 @@ The ledger is a browser artifact today: one `landlord-transactions` key, a `useS
 
 ```mermaid
 flowchart LR
-  subgraph Web[TanStack Start web]
+  subgraph App[App · TanStack Start]
     L[Ledger UI<br/>filters · sort · balance · export]
     Q[Query hooks<br/>owner rows]
-  end
-  subgraph API[Rust Axum API]
-    T[Transactions<br/>list · create · delete]
+    T[Transaction routes<br/>list · create · delete]
   end
   subgraph DB[Supabase Postgres]
     X[(transactions<br/>owner_id · property_id)]
     P[(properties)]
   end
   L --> Q
-  Q -->|Bearer token| T
-  T -->|sqlx · privileged| X
+  Q -->|session cookie| T
+  T -->|Drizzle · privileged| X
   X -->|FK cascade| P
   L -. legacy export only .-> B[(old browser key)]
 ```
@@ -44,7 +42,7 @@ flowchart LR
 
 The composite key makes an id owner-scoped: a client id cannot collide with another owner's row, and a repeat create for one owner is idempotent. The property FK is the cascade. The owner/property consistency is checked in the API: the property must be the caller's, and the owner is the token's subject.
 
-**2. API.** The owner-scoped endpoints are `GET /transactions` (list the caller's rows, ordered date then id), `POST /transactions` (create; optional `id` for restore; 201 new, 200 existing), and `DELETE /transactions/{id}` (404 for missing or not-owned). The envelope and camelCase rules are the existing ones. Validation: a missing `propertyId` is 400; an unknown or not-owned property is 404; an impossible date, a non-positive or over-precision amount, an empty description/category, or an invalid type is 400; no token is 401. The create accepts the client's UUID only when it is a valid UUID; the server assigns one otherwise. The response carries `id`, `propertyId`, `date`, `description`, `category`, `type`, `amount`, `createdAt`; the owner is never exposed. OpenAPI gains the bearer scheme and the new paths; the hand-maintained client gains the methods.
+**2. API.** The owner-scoped server routes are `GET /api/transactions` (list the caller's rows, ordered date then id), `POST /api/transactions` (create; optional `id` for restore; 201 new, 200 existing), and `DELETE /api/transactions/{id}` (404 for missing or not-owned). The envelope and camelCase rules are the existing ones. Validation: a missing `propertyId` is 400; an unknown or not-owned property is 404; an impossible date, a non-positive or over-precision amount, an empty description/category, or an invalid type is 400; no session is 401. The create accepts the client's UUID only when it is a valid UUID; the server assigns one otherwise. The response carries `id`, `propertyId`, `date`, `description`, `category`, `type`, `amount`, `createdAt`; the owner is never exposed. There is no OpenAPI document: the routes and the client share the domain types, and the client gains the methods.
 
 **3. The web ledger.** The local store is replaced by query hooks: fetch on mount, window focus, and after mutations. The fetched rows map `propertyId` to the existing `property` id; the property name resolves from the fetched properties list. The filters, sorting, running balance, book-authority rail, totals, and export run over the complete fetched owner set; the API order is irrelevant, with a deterministic date-then-id sort on the client. The amount keeps the number-of-pesos wire shape with two decimals; the display, totals, and CSV are unchanged. No pagination: the running balance is only correct over the complete owner set, and a future pagination must preserve that.
 
@@ -71,7 +69,7 @@ The composite key makes an id owner-scoped: a client id cannot collide with anot
 
 1. Amend the pending `landlord-accounts` plan to drop its local-ledger requirement and per-account ledger task; apply and archive it first.
 2. Add the transactions migration (table, FKs, composite key, indexes, RLS, no grants, Data API closed).
-3. Add the API routes, validation, idempotent restore, and OpenAPI/client.
+3. Add the routes, validation, idempotent restore, and the client methods over shared types.
 4. Replace the local store with the API client and query hooks; add the legacy reader/notice/discard.
 5. Update the ledger UI states and the property confirmation; run the acceptance suite; add the API seeding and the new scenarios.
 

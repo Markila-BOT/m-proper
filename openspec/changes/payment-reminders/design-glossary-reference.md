@@ -15,7 +15,7 @@
 | Last-payment seed | `glossary/business.md` | The local-ledger amount prefill. |
 | Payment history | `glossary/business.md` | The occurrence record the surfaces show. |
 | Occurrence horizon | `glossary/technical.md` | The ten-year forward bound that extends on read. |
-| Ledger link | `glossary/technical.md` | The occurrence's id reference into the local ledger. |
+| Ledger link | `glossary/technical.md` | The occurrence's id reference into the ledger. |
 | Materialized occurrence | `glossary/technical.md` | Why generation stores rows instead of computing them. |
 | Local-Date Rule | `glossary/technical.md` | The calendar-date discipline for generation, overdue, and seeds. |
 | Cascade deletion (payment history) | `glossary/technical.md` | The property deletion behavior. |

@@ -26,7 +26,7 @@ Every clickable control in the web app should announce itself before it is click
 ## Impact
 
 - **Code:** the base style layer in `web/src/styles.css` (the new pointer rule plus the gated link hover); shared primitives in `web/src/components/ui/` — `button`, `select`, `searchable-select`, `calendar`, `date-picker`, `dialog`, `label`; and the chrome and routes carrying raw buttons or labels — `AppHeader` (the export and primary controls, hover at `:51` and `:64`), `FilterControls`, `PropertiesList`, `PropertySidebar`, `TransactionList` (sort headers, row delete, confirm), `routes/transactions` (undo), `TransactionForm` (radio labels), `PropertyModal` (the sibling checkbox label).
-- **APIs:** none. No endpoint, envelope, or Rust change.
+- **APIs:** none. No endpoint, envelope, or server change.
 - **Dependencies:** none.
 - **Docs:** `web/DESIGN.md` records the pointer contract beside the Owned Browser Chrome Rule.
 - **Tests:** the acceptance suite is the verification surface, and it is currently green at 44 scenarios; this change adds scenarios for the pointer on representative controls, the no-pointer boundary on a description cell, the gated hover on a coarse-pointer context (the suite's existing `extraContext` pattern), a disabled probe, and a focus regression. `acceptance-tests/support/hooks.js` and a new page object/steps are touched.

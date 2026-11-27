@@ -12,9 +12,9 @@
 | Overdue | `glossary/business.md` | The derived past-due state. |
 | Skipped occurrence | `glossary/business.md` | A deliberately unpaid due date kept in history. |
 | Linked expense | `glossary/business.md` | The optional ledger record of a payment. |
-| Last-payment seed | `glossary/business.md` | The form's amount prefill from the local ledger. |
+| Last-payment seed | `glossary/business.md` | The form's amount prefill from the ledger. |
 | Payment history | `glossary/business.md` | The auditable occurrence record. |
 | Occurrence horizon | `glossary/technical.md` | The bound on how far ahead occurrences are generated. |
-| Ledger link | `glossary/technical.md` | The occurrence's id reference into the browser ledger. |
+| Ledger link | `glossary/technical.md` | The occurrence's id reference into the ledger. |
 | Materialized occurrence | `glossary/technical.md` | Why occurrences are stored rows rather than computed. |
 | Local-Date Rule | `glossary/technical.md` | The calendar-date discipline the new dates follow. |

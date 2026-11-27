@@ -1,8 +1,8 @@
 ## 1. Reminders schema and API foundations (code zone)
 
-- [ ] 1.1 Write the migration for `payment_labels`, `payment_reminders`, and `payment_occurrences` with a required `owner_id` on each (references `auth.users`, cascade), composite same-owner foreign keys (property cascade, label restrict, reminder cascade), the checks, unique `(reminder_id, due_date)`, unique `(owner_id, id)` on each table plus `properties (id, owner_id)`, owner-scoped RLS policies with no `anon`/`authenticated` grant, and the owner indexes; run it against the real Postgres and `cargo check`
-- [ ] 1.2 Rust models and validation for labels, reminders, and occurrences (camelCase, enums, due day 1–31, end date after start, non-negative amounts) with unit tests
-- [ ] 1.3 Export `api/openapi.json`, add the new paths to `scripts/generate-api-client.ts`, and stamp the client against the new contract
+- [ ] 1.1 Write the migration for `payment_labels`, `payment_reminders`, and `payment_occurrences` with a required `owner_id` on each (references `auth.users`, cascade), composite same-owner foreign keys (property cascade, label restrict, reminder cascade), the checks, unique `(reminder_id, due_date)`, unique `(owner_id, id)` on each table plus `properties (id, owner_id)`, owner-scoped RLS policies with no `anon`/`authenticated` grant, and the owner indexes; journal it and run it with `pnpm --filter web db:migrate` over `DIRECT_DATABASE_URL`
+- [ ] 1.2 Drizzle models and TypeScript validation for labels, reminders, and occurrences (camelCase, enums, due day 1–31, end date after start, non-negative amounts) with unit tests
+- [ ] 1.3 Add the client methods and the domain types; there is no OpenAPI document to export
 
 ## 2. Labels (red → green)
 
@@ -42,7 +42,7 @@
 - [ ] 7.1 Write the Reminders scenario steps (the tab and route, mark-paid linked expense, overdue reading, missing-ledger reading, last-payment seed, delete warning) — red
 - [ ] 7.2 Implement `/reminders` with the reminder list and the create/edit form, including the label picklist and the last-payment seed — green
 - [ ] 7.3 Implement the occurrence history (expected/paid, statuses, overdue, missing-link reading) and the reminder delete confirmation — green
-- [ ] 7.4 Implement the mark-paid dialog and the two-store handshake (API confirm, local ledger write, link PATCH, named partial-failure states with retry) — green
+- [ ] 7.4 Implement the mark-paid dialog and the handshake (API confirm, ledger entry created through the API, link PATCH, named partial-failure states with retry) — green
 - [ ] 7.5 Verify the Reminders scenarios pass; commit
 
 ## 8. Shell and property deletion (red → green)

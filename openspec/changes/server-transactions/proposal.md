@@ -34,7 +34,7 @@ Non-goals: no offline queue or cache; no import of discarded entries; no transac
 
 ## Impact
 
-- **API** — a transactions module with list/create/delete, field and ownership validation, the owner-scoped idempotent id, OpenAPI and client regeneration; the existing 401 contract.
+- **API** — a transactions module with list/create/delete, field and ownership validation, the owner-scoped idempotent id, the client methods over shared types; the existing 401 contract.
 - **Web** — the local store becomes an API client with query hooks; the ledger, totals, filters, export, property list, and delete confirmation adapt; a small legacy reader handles the one-time export and discard; the money and property-name presentation are unchanged.
 - **Data** — a `transactions` table keyed by owner and id, a property foreign key with cascade, owner/date and property indexes, RLS with no client grants, and the Data API closed.
 - **Acceptance** — API seeding and cleanup as the test identity, the second owner for isolation, the legacy-notice exception, and the new CRUD/cascade/restore/unreachable scenarios.

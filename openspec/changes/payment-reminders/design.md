@@ -1,6 +1,6 @@
 ## Context
 
-The app already has one data home: properties, and (after `server-transactions`) the transaction ledger, live in Supabase behind the Rust Axum API. Payment reminders are financial history the operator wants durable, so the user chose the API-backed path (ADR-0005). The shell is the Liquid Glass world (ADR-0004); the ledger's dates follow the **Local-Date Rule**.
+The app already has one data home: properties, and (after `server-transactions`) the transaction ledger, live in Supabase behind the app's `/api` routes. Payment reminders are financial history the operator wants durable, so the user chose the API-backed path (ADR-0005). The shell is the Liquid Glass world (ADR-0004); the ledger's dates follow the **Local-Date Rule**.
 
 This change adds the reminders domain (labels, reminders, occurrences), a Reminders surface, a Settings surface that debuts with the label manager, and the mark-paid handshake between the server record and the ledger. It also extends property deletion to cascade (ADR-0006).
 
@@ -8,14 +8,12 @@ Assumptions: the `landlord-accounts` change has landed, so every request carries
 
 ```mermaid
 flowchart LR
-  subgraph Web[TanStack Start web]
+  subgraph App[App · TanStack Start]
     R[Reminders surface<br/>/reminders]
     S[Settings surface<br/>/settings]
     H[API client<br/>React Query]
-    L[(Ledger<br/>transactions table)]
-  end
-  subgraph API[Rust Axum API]
     PR[Reminders routes<br/>labels · reminders · occurrences]
+    L[(Ledger<br/>transactions table)]
   end
   subgraph DB[Supabase Postgres]
     PL[(payment_labels)]
@@ -46,7 +44,7 @@ flowchart LR
 
 ## Decisions
 
-**1. Occurrences are materialized rows (ADR-0005), generated in Rust.** A reminder's occurrences are stored, not computed on read, so each date has a stable id for amount edits, paid/skipped status, and the ledger link.
+**1. Occurrences are materialized rows (ADR-0005), generated in the server route.** A reminder's occurrences are stored, not computed on read, so each date has a stable id for amount edits, paid/skipped status, and the ledger link.
 
 Generation rule:
 
@@ -72,13 +70,13 @@ The category and the ledger link are stored names/ids, deliberately without fore
 - `GET /payment-reminders` (summary: property/label names, rule, next pending due, horizon end), `POST /payment-reminders`, `GET /payment-reminders/{id}` (with occurrences), `PATCH /payment-reminders/{id}`, `DELETE /payment-reminders/{id}`.
 - `PATCH /payment-occurrences/{id}` for expected amount, status transition, paid amount/date, and ledger link.
 - Status codes: 201 create, 200 read/update, 400 validation, 404 missing, 409 label in use. Validation names the offending field.
-- `api/openapi.json` gains the paths and schemas; `scripts/generate-api-client.ts`'s `requiredPaths` grows; the hand-maintained `web/src/lib/api-client.ts` gains the methods and `web/src/lib/domain.ts` the types.
+- There is no OpenAPI document: `web/src/lib/api-client.ts` gains the methods and `web/src/lib/domain.ts` the types, both checked against the route handlers by TypeScript.
 
 **5. The mark-paid handshake is ordered and its failures are named.** The occurrence is marked paid only after the API confirms. The linked expense is a second step: the web creates the ledger entry through the API, then PATCHes the occurrence's ledger link. If the ledger write fails, the occurrence stays paid and unlinked; if the link PATCH fails, the ledger row exists and the occurrence is unlinked. Both states are shown with a retry, never silently reconciled. The prompt prefills property from the reminder, category from the label's mapping, amount and date from the payment, and description from the label name, all editable.
 
 **6. The last-payment seed is a local-ledger convenience.** With a mapped category, the form reads expense transactions for the same property and category, prefers the latest whose description contains the label name, falls back to the latest same-property/category payment, and offers its amount/date/description. Without a mapped category, no seed is offered. This is not a server lookup.
 
-**7. Honest readings.** The history derives **Overdue** client-side from the local date (never a server flag). A paid occurrence whose ledger id is absent reads "not in this browser's ledger" — the truth after deletion or cleared storage — and its paid status is unchanged. The Reminders and Settings surfaces reuse the named-unreachable treatment for a failed API, never an empty list or ₱0.00.
+**7. Honest readings.** The history derives **Overdue** client-side from the local date (never a server flag). A paid occurrence whose ledger id is absent reads "not in the ledger" — the truth after deletion — and its paid status is unchanged. The Reminders and Settings surfaces reuse the named-unreachable treatment for a failed API, never an empty list or ₱0.00.
 
 **8. UI and world.** `/reminders` becomes a fourth section tab; Settings is a gear in the existing header glass chrome. Reminders render as ruled rows and a history table on opaque paper, figures in tabular mono, the Local-Date Rule for every date. The reminder form and mark-paid prompt are dialogs; the label manager is a ruled list. Nothing is added to Overview, totals, or the ledger except the optional linked expense.
 
@@ -96,7 +94,7 @@ The category and the ledger link are stored names/ids, deliberately without fore
 
 ## Migration Plan
 
-1. Migration + Rust models, validation, routes, OpenAPI export.
+1. Migration + models, validation, routes.
 2. Generated client update, domain types, React Query hooks.
 3. Settings surface + label CRUD; the reminder form and list.
 4. Occurrence history, mark-paid + ledger link, seed, overdue and missing-link readings.

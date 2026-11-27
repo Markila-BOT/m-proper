@@ -8,7 +8,7 @@ Defines the owner-scoped transaction table and API: list, create, and delete of 
 
 ### Requirement: Ledger entries are owner-scoped API rows
 
-The API MUST expose list, create, and delete for **Ledger entry** rows. A row MUST carry an id, a `propertyId`, a calendar date, a description, a category, a type (`income` or `expense`), a two-decimal amount, and a creation time; the owner MUST be derived from the verified access token and MUST NOT appear in the response. The list MUST return every row the caller owns and no one else's. A request without a valid token MUST return 401 with the envelope.
+The API MUST expose list, create, and delete for **Ledger entry** rows. A row MUST carry an id, a `propertyId`, a calendar date, a description, a category, a type (`income` or `expense`), a two-decimal amount, and a creation time; the owner MUST be derived from the verified session and MUST NOT appear in the response. The list MUST return every row the caller owns and no one else's. A request without a valid session MUST return 401 with the envelope.
 
 #### Scenario: The list returns only the caller's entries
 

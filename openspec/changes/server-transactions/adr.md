@@ -15,7 +15,7 @@ ADR review completed. One durable decision is recorded; the in-force records wer
 - `adr/0004-liquid-glass-material-policy.md` — the ledger UI stays on opaque paper under the existing chrome; no material change. No conflict.
 - `adr/0005-payment-reminders-api-backed.md` — unaffected; the reminders plan still needs its owner column under ADR-0008.
 - `adr/0006-property-deletion-removes-payment-history.md` — the same property-deletion cascade now also removes ledger entries; the ownership model is consistent.
-- `adr/0007-supabase-auth-rust-jwks.md` — the transaction API uses the same verifier and owner identity.
+- `adr/0010-tanstack-server-routes-replace-rust.md` — the transaction routes use the app's `jose` verifier and the session cookie for the same owner identity; ADR-0007 is superseded.
 - `adr/0008-per-landlord-ownership.md` — the transaction table adopts the same owner column and app-level scoping; RLS stays defense.
 
 ## New Durable ADRs Created

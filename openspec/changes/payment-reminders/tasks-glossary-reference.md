@@ -12,7 +12,7 @@
 | Skipped occurrence | `glossary/business.md` | The status preserved across regeneration. |
 | Overdue | `glossary/business.md` | The reading the history derives. |
 | Linked expense | `glossary/business.md` | The ledger row the mark-paid flow creates. |
-| Last-payment seed | `glossary/business.md` | The form prefill from the local ledger. |
+| Last-payment seed | `glossary/business.md` | The form prefill from the ledger. |
 | Payment history | `glossary/business.md` | The occurrence record the surface shows. |
 | Occurrence horizon | `glossary/technical.md` | The generation bound the API extends. |
 | Ledger link | `glossary/technical.md` | The occurrence field the handshake writes. |

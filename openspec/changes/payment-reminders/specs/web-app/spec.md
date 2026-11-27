@@ -68,13 +68,13 @@ Then it reads Overdue
 Given a paid occurrence has a ledger link
 When its ledger transaction is deleted
 Then the occurrence still reads paid
-And the history says the entry is not in this browser's ledger
+And the history says the entry is not in the ledger
 ```
 
 #### Scenario: The last-payment seed offers the most recent matching payment
 
 ```gherkin
-Given the browser ledger holds a property-tax payment for this property on 2025-11-20
+Given the ledger holds a property-tax payment for this property on 2025-11-20
 And the label "Realty Tax" maps to "Property Taxes"
 When the operator opens a new reminder form for that property and label
 Then the form offers that payment's amount and date as a seed
