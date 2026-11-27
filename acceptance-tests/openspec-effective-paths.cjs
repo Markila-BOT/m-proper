@@ -113,15 +113,48 @@ function requestedChangeId() {
   return raw === '' ? null : raw;
 }
 
-function effectivePaths({ changeId = requestedChangeId() } = {}) {
+// The run's composition scope. Unset (the default, "effective") is the
+// effective spec: every source-of-truth spec with every active change delta
+// applied. HARNESS_SCOPE=specs is the main-spec composition: openspec/specs
+// exactly as committed, with no active-change delta, no supersession, and a
+// report naming every active change left out. It is what `npm run test:specs`
+// sets and what the release gate trusts. An empty value is the same as unset.
+const SCOPES = new Set(['effective', 'specs']);
+
+function requestedScope() {
+  const raw = (process.env.HARNESS_SCOPE || '').trim();
+  if (raw === '') return 'effective';
+  if (!SCOPES.has(raw)) {
+    throw new Error(
+      `HARNESS_SCOPE="${raw}" is not a composition scope: use "specs" for the main-spec ` +
+        'composition, or leave it unset for the effective spec.'
+    );
+  }
+  return raw;
+}
+
+function effectivePaths({ changeId = requestedChangeId(), scope = requestedScope() } = {}) {
   const allDeltaPaths = globSync('.extracted/changes/*/specs/**/*.feature', {
     cwd: __dirname,
     posix: true,
   }).filter((p) => !p.includes('changes/archive/'));
 
-  let deltaPaths = allDeltaPaths;
+  const sotPaths = globSync('.extracted/specs/**/*.feature', {
+    cwd: __dirname,
+    posix: true,
+  });
+
+  // A change-scoped run is narrower than any scope: it is the source of truth
+  // plus exactly one change's delta. It wins over HARNESS_SCOPE, so the
+  // suite's supersession probe keeps proving the mechanism even when the run
+  // itself is the main-spec composition.
   if (changeId) {
-    deltaPaths = allDeltaPaths.filter((deltaPath) => changeIdOf(deltaPath) === changeId);
+    if (scope === 'specs') {
+      console.error(
+        `[effective-spec] change-scoped run: HARNESS_CHANGE=${changeId} wins over HARNESS_SCOPE=specs`
+      );
+    }
+    const deltaPaths = allDeltaPaths.filter((deltaPath) => changeIdOf(deltaPath) === changeId);
     if (deltaPaths.length === 0) {
       throw new Error(
         `HARNESS_CHANGE="${changeId}" selects no active change delta: no .extracted/changes/${changeId}/specs/**/*.feature exists. ` +
@@ -134,13 +167,48 @@ function effectivePaths({ changeId = requestedChangeId() } = {}) {
         `${deltaPaths.length} delta feature(s) from that change only` +
         (excluded.length > 0 ? `; other active changes excluded: ${excluded.join(', ')}` : '')
     );
+    return composeEffectivePaths(sotPaths, deltaPaths);
   }
 
-  const sotPaths = globSync('.extracted/specs/**/*.feature', {
-    cwd: __dirname,
-    posix: true,
-  });
+  if (scope === 'specs') {
+    printSpecsScopeReport(allDeltaPaths);
+    // The main-spec composition: every source-of-truth spec as committed. No
+    // delta applies, so nothing is superseded and no line targeting is needed.
+    return sotPaths;
+  }
 
+  return composeEffectivePaths(sotPaths, allDeltaPaths);
+}
+
+// The main-spec composition report: every active change whose delta is left
+// out, by id, so the run states exactly what it does not trust itself to
+// execute yet.
+function printSpecsScopeReport(allDeltaPaths) {
+  const byChange = new Map();
+  for (const deltaPath of allDeltaPaths) {
+    const id = changeIdOf(deltaPath);
+    byChange.set(id, (byChange.get(id) || 0) + 1);
+  }
+  const ids = [...byChange.keys()].sort();
+  if (ids.length === 0) {
+    console.error('[effective-spec] scope=specs: main specs only; no active change delta exists.');
+    return;
+  }
+  console.error(
+    `[effective-spec] scope=specs: main specs only (openspec/specs); ` +
+      `${ids.length} active change(s) excluded from this run:`
+  );
+  for (const id of ids) {
+    console.error(
+      `[effective-spec]   excluded active change: ${id} (${byChange.get(id)} delta feature(s))`
+    );
+  }
+  console.error(
+    `[effective-spec] ${ids.length} active-change exclusion(s); no delta scenario executes in the specs profile`
+  );
+}
+
+function composeEffectivePaths(sotPaths, deltaPaths) {
   const superseded = collectSupersededRules(deltaPaths);
   const paths = [];
   const seenRulesByCapability = new Map();
@@ -173,4 +241,4 @@ function effectivePaths({ changeId = requestedChangeId() } = {}) {
   return paths;
 }
 
-module.exports = { effectivePaths };
+module.exports = { effectivePaths, requestedChangeId, requestedScope, SCOPES };

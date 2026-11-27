@@ -41,6 +41,9 @@ const authTokens = require("../support/auth-tokens");
 const identities = require("../support/identities");
 const { acceptanceEnv, webProcessEnvironment } = require("../support/env");
 const {
+  materialiseDeclaration,
+} = require("../support/production-fixtures");
+const {
   startAppWithUnreachableJwks,
   stopProbeApp,
   runAppWithoutVariable,
@@ -1255,3 +1258,89 @@ Then("it carries no secret or service key", async function () {
       `${jwts.length} public JWT(s); the web environment carries only VITE_ values`,
   );
 });
+
+// ---------------------------------------------------------------------------
+// Production sign-up is closed
+// ---------------------------------------------------------------------------
+//
+// The production posture is part of the deployment declaration, so both
+// scenarios drive the same deployment check the production-environment
+// capability uses (its When step is defined in production-environment.js).
+// Development and preview keep sign-up enabled; production launches closed
+// until the CAPTCHA provider the auth config requires is configured.
+
+Given(
+  "the production declaration records public sign-up as closed",
+  async function () {
+    this.declarationFixture = materialiseDeclaration("complete");
+    const { auth } = this.declarationFixture.declaration;
+    assert.strictEqual(
+      auth.productionSignup,
+      "closed",
+      "the fixture must record production sign-up as closed",
+    );
+  },
+);
+
+Given(
+  "the production declaration opens public sign-up without a CAPTCHA provider",
+  async function () {
+    this.declarationFixture = materialiseDeclaration(
+      "open-signup-without-captcha",
+    );
+    const { auth } = this.declarationFixture.declaration;
+    assert.strictEqual(auth.productionSignup, "open");
+    assert.strictEqual(
+      auth.captcha,
+      null,
+      "the fixture must open sign-up with no CAPTCHA provider",
+    );
+  },
+);
+
+Then("it reports production sign-up closed", async function () {
+  const result = this.deploymentCheck;
+  assert.ok(
+    result,
+    "the deployment check has not run in this scenario — " +
+      '"pnpm run deploy:check" must run first',
+  );
+  const output = `${result.stdout || ""}\n${result.stderr || ""}`;
+  assert.strictEqual(
+    result.code,
+    0,
+    "the deployment check must accept a declaration whose production sign-up is closed.\n" +
+      `Output:\n${tailOf(output)}`,
+  );
+  assert.match(
+    output,
+    /sign-?up[\s\S]{0,40}closed/i,
+    "the check must report production sign-up closed.\n" +
+      `Output:\n${tailOf(output)}`,
+  );
+});
+
+Then(
+  "it fails naming the missing CAPTCHA configuration",
+  async function () {
+    const result = this.deploymentCheck;
+    assert.ok(
+      result,
+      "the deployment check has not run in this scenario — " +
+        '"pnpm run deploy:check" must run first',
+    );
+    const output = `${result.stdout || ""}\n${result.stderr || ""}`;
+    assert.notStrictEqual(
+      result.code,
+      0,
+      "the deployment check must refuse open production sign-up without a CAPTCHA provider; " +
+        `it exited 0.\nOutput:\n${tailOf(output)}`,
+    );
+    assert.match(
+      output,
+      /captcha/i,
+      "the failure must name the missing CAPTCHA configuration.\n" +
+        `Output:\n${tailOf(output)}`,
+    );
+  },
+);

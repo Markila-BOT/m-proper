@@ -1,0 +1,29 @@
+{
+  "vercel": {
+    "team": "markilabots-projects",
+    "plan": "hobby",
+    "project": "m-proper",
+    "root": "web",
+    "framework": "tanstack-start",
+    "productionBranch": "release",
+    "integrationBranch": "master",
+    "region": "sin1",
+    "origin": "https://m-proper.vercel.app"
+  },
+  "supabase": {
+    "plan": "free",
+    "region": "ap-southeast-1",
+    "productionRef": "productionprojectref01",
+    "previewRef": "zmrmdcfxkkumnftmwwhu",
+    "runtimePort": 6543,
+    "migrationPort": 5432,
+    "siteUrl": "https://m-proper.vercel.app",
+    "redirectAllowlist": ["https://m-proper.vercel.app"],
+    "previewProject": "development"
+  },
+  "auth": {
+    "productionSignup": "closed",
+    "captcha": null,
+    "smtp": "resend-test"
+  }
+}

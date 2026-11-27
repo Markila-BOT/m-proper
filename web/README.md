@@ -66,12 +66,27 @@ Required at boot; `src/start.ts` refuses to serve and names every absent one:
 
 Needed only by the migrate step, never by the running app:
 
-| Name                  | Purpose                                              |
-| --------------------- | ---------------------------------------------------- |
-| `DIRECT_DATABASE_URL` | Direct (non-pooled) Postgres URL for `db:migrate`    |
+| Name                  | Purpose                                                       |
+| --------------------- | ------------------------------------------------------------- |
+| `DIRECT_DATABASE_URL` | Session-pooler Postgres URL on 5432 for `db:migrate` and dumps |
 
-`DATABASE_URL` is deliberately not a fallback for migrations: the pooled URL is
-not a valid migration target.
+`DATABASE_URL` is deliberately not a fallback for migrations: the transaction
+pooler on 6543 is not a valid migration target. On the Free plan the IPv6-only
+direct host is not used; the session pooler is the IPv4-reachable migration
+connection.
+
+## Production
+
+Production is Vercel Hobby plus Supabase Free. The app runs in `sin1`; the
+production branch is `release`, and `master` produces previews only. The checked
+declaration is [`../deploy/production.json`](../deploy/production.json), and the
+release/rollback runbook is in the [root README](../README.md).
+
+Free-tier limits are deliberate: the project pauses after seven days without
+activity (the uptime monitor on `/api/health` keeps it active), has no automated
+backups (the release takes a `pg_dump` before migrating), and has a 500 MB
+database limit. Production sign-up is closed during the private phase; the
+first landlord account is created by an operator.
 
 ## Lint / format
 

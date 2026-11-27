@@ -14,7 +14,8 @@ const path = require("node:path");
 const { Given, When, Then } = require("@cucumber/cucumber");
 
 const { extractAll, extractFile } = require("../extract-gherkin.cjs");
-const { effectivePaths } = require("../openspec-effective-paths.cjs");
+const { effectivePaths, requestedScope } = require("../openspec-effective-paths.cjs");
+const { globSync } = require("glob");
 const {
   REPO_ROOT,
   state,
@@ -161,6 +162,11 @@ When("the landlord runs the single test command", async function () {
       timeoutMs: 20 * 60_000,
       env: {
         ...process.env,
+        // The child inherits this run's composition scope: under
+        // HARNESS_SCOPE=specs (the `test:specs` profile) it must execute the
+        // main specs too, not reintroduce the active deltas the parent left
+        // out.
+        HARNESS_SCOPE: requestedScope(),
         HARNESS_WEB_PORT: String(childPorts.web),
       },
     },
@@ -1500,5 +1506,359 @@ Then("no landlord's entries survive the run", async function () {
     selection,
     null,
     `the persisted property selection "${this.ledgerKeyProbes.selection}" must be cleared with the ledger`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// The main-spec profile the release gate runs
+// ---------------------------------------------------------------------------
+//
+// `npm run test:specs` is the profile a release can trust while other active
+// changes are still unimplemented: HARNESS_SCOPE=specs composes
+// openspec/specs only, the composition report names every active change it
+// left out, and the self-check child inherits the same scope. The composition
+// is read from the profile's own message stream; a dry run discovers exactly
+// what the run would execute without booting anything, which is how the
+// supersession self-check above proves its own composition too.
+
+const SPECS_PROFILE_MESSAGES = path.join(
+  HARNESS_DIR,
+  "reports",
+  "test-specs-messages.ndjson",
+);
+
+const SELF_FEATURE = "specs/acceptance-suite/";
+
+function activeChangeIds() {
+  const ids = new Set();
+  for (const deltaPath of globSync(
+    ".extracted/changes/*/specs/**/*.feature",
+    { cwd: HARNESS_DIR, posix: true },
+  )) {
+    if (deltaPath.includes("changes/archive/")) continue;
+    // .extracted/changes/<change-id>/specs/<capability>/spec.feature
+    ids.add(deltaPath.split("/")[2]);
+  }
+  return [...ids].sort();
+}
+
+// The env a child `npm run test:specs` must see: the parent's own scope and
+// change selection are removed, so the profile's own script has to set
+// HARNESS_SCOPE=specs. If it did not, the child would compose the parent's
+// scope and the assertions below would catch it.
+function specsProfileEnvironment(overrides = {}) {
+  const env = { ...process.env };
+  delete env.HARNESS_SCOPE;
+  delete env.HARNESS_CHANGE;
+  return { ...env, ...overrides };
+}
+
+function discoveredSummaries(cases) {
+  return cases
+    .map((testCase) => `${testCase.uri}::${testCase.name}`)
+    .sort();
+}
+
+Given(
+  String.raw`active changes have delta scenarios under openspec\/changes`,
+  async function () {
+    this.activeChanges = activeChangeIds();
+    assert.ok(
+      this.activeChanges.length > 0,
+      "this scenario needs at least one active change with a delta under " +
+        "openspec/changes/<change-id>/specs/ — the specs profile's exclusions " +
+        "have nothing to name otherwise",
+    );
+    assert.ok(
+      !this.activeChanges.includes("archive"),
+      "archived changes must never appear in the active-change set",
+    );
+  },
+);
+
+When("the landlord runs the specs profile", async function () {
+  if (this.profileProbe) {
+    // A main spec was deliberately made to fail (see the Given below). The
+    // profile really runs, filtered to the probe scenario so the failure
+    // arrives without executing the whole main suite; its own hooks run
+    // (preflight, migrate, boot), which is what makes this a real run. The
+    // probe gets an offset port so it never collides with this run's app.
+    const port = state.webPort + 20;
+    let run;
+    try {
+      run = await runCommand(
+        "npm",
+        ["run", "test:specs", "--", "--name", this.profileProbe.scenarioName],
+        {
+          cwd: HARNESS_DIR,
+          timeoutMs: 15 * 60_000,
+          env: specsProfileEnvironment({ HARNESS_WEB_PORT: String(port) }),
+        },
+      );
+    } finally {
+      // The throwaway probe never survives the scenario — not even when the
+      // child run throws. Re-extracting restores .extracted to the committed
+      // tree.
+      fs.rmSync(this.profileProbe.dir, { recursive: true, force: true });
+      extractAll();
+    }
+    this.specsProfileRun = { run, mode: "live", port };
+    return;
+  }
+
+  // Composition only: a dry run of the profile discovers exactly what the
+  // run would execute (same paths, same profile, no hooks, no boot).
+  const run = await runCommand(
+    "npm",
+    ["run", "test:specs", "--", "--dry-run"],
+    {
+      cwd: HARNESS_DIR,
+      timeoutMs: 5 * 60_000,
+      env: specsProfileEnvironment(),
+    },
+  );
+  const cases = parseMessages(fs.readFileSync(SPECS_PROFILE_MESSAGES, "utf8"));
+  this.specsProfileRun = { run, cases, mode: "dry-run" };
+  // Stash for the child-scope scenario, which compares against this set.
+  state.specsProfile = this.specsProfileRun;
+  console.log(
+    `[self] specs profile discovery: ${summarizeCases(cases)} ` +
+      `(exit ${run.code})`,
+  );
+});
+
+Then("only main-spec scenarios execute", async function () {
+  const { run, cases, mode } = this.specsProfileRun;
+  const output = `${run.stdout || ""}\n${run.stderr || ""}`;
+  assert.strictEqual(
+    run.code,
+    0,
+    `npm run test:specs must compose cleanly; it exited ${run.code}.\n` +
+      `Output:\n${tailOf(output)}`,
+  );
+  assert.strictEqual(mode, "dry-run", "the composition check must be a dry run");
+  const foreign = cases
+    .map((testCase) => testCase.uri)
+    .filter((uri) => !uri.startsWith(".extracted/specs/"));
+  assert.deepStrictEqual(
+    foreign,
+    [],
+    `the specs profile must execute only openspec/specs; these features are not ` +
+      `main specs: ${foreign.join(", ")}`,
+  );
+  assert.deepStrictEqual(
+    discoveredSummaries(cases),
+    scenarioSummaries(effectivePaths({ scope: "specs", changeId: null })),
+    "the specs profile must discover exactly the main-spec scenario set",
+  );
+  console.log(
+    `[self] the specs profile executes ${cases.length} main-spec scenario(s) and no delta`,
+  );
+});
+
+Then(
+  "every excluded active change is named in the composition report",
+  async function () {
+    const { run } = this.specsProfileRun;
+    const report = `${run.stderr || ""}\n${run.stdout || ""}`;
+    for (const id of this.activeChanges) {
+      assert.ok(
+        report.includes(`excluded active change: ${id}`),
+        `the composition report must name the excluded active change "${id}".\n` +
+          `Report:\n${tailOf(report)}`,
+      );
+    }
+    assert.match(
+      report,
+      new RegExp(
+        `${this.activeChanges.length} active change\\(s\\) excluded from this run`,
+      ),
+      `the composition report must state how many active changes it excluded.\n` +
+        `Report:\n${tailOf(report)}`,
+    );
+  },
+);
+
+Given("the specs profile starts its suite-minus-self child", async function () {
+  // The child config is the parent's composition minus the acceptance-suite
+  // feature itself. The parent passes its resolved scope in the child's
+  // environment (acceptance-suite.js's single-command step does the same), so
+  // the child cannot widen the composition.
+  const parentScope = state.specsProfile ? "specs" : requestedScope();
+  const run = await runCommand(
+    "npx",
+    ["cucumber-js", "--config", "suite-minus-self.cjs", "--dry-run"],
+    {
+      cwd: HARNESS_DIR,
+      timeoutMs: 5 * 60_000,
+      env: specsProfileEnvironment({
+        HARNESS_SCOPE: parentScope,
+        HARNESS_WEB_PORT: String(state.webPort + 30),
+      }),
+    },
+  );
+  const cases = parseMessages(
+    fs.readFileSync(
+      path.join(HARNESS_DIR, "reports", "suite-minus-self-messages.ndjson"),
+      "utf8",
+    ),
+  );
+  this.specsScopeChild = { run, cases, parentScope };
+});
+
+When("the child composes its scenario set", async function () {
+  assert.ok(
+    this.specsScopeChild,
+    "the child composition must be read first (the Given runs it)",
+  );
+  const { run } = this.specsScopeChild;
+  const output = `${run.stdout || ""}\n${run.stderr || ""}`;
+  assert.strictEqual(
+    run.code,
+    0,
+    `the suite-minus-self child must compose cleanly; it exited ${run.code}.\n` +
+      `Output:\n${tailOf(output)}`,
+  );
+  assert.match(
+    output,
+    /scope=specs: main specs only/,
+    `the child must compose the main-spec scope, but its report does not say so.\n` +
+      `Output:\n${tailOf(output)}`,
+  );
+});
+
+Then(
+  "it uses the same main-spec scope as its parent",
+  async function () {
+    const child = this.specsScopeChild;
+    assert.strictEqual(
+      child.parentScope,
+      "specs",
+      "the parent run's composition scope must be the main-spec scope",
+    );
+    const parent = state.specsProfile;
+    assert.ok(
+      parent && parent.cases,
+      "the specs profile must have been composed earlier in this feature " +
+        '(scenario "The specs profile excludes active deltas" runs first)',
+    );
+    const parentWithoutSelf = parent.cases
+      .map((testCase) => `${testCase.uri}::${testCase.name}`)
+      .filter((summary) => !summary.includes(SELF_FEATURE))
+      .sort();
+    assert.deepStrictEqual(
+      discoveredSummaries(child.cases),
+      parentWithoutSelf,
+      "the child must compose exactly the parent's main-spec scenarios minus " +
+        "the acceptance-suite feature itself",
+    );
+  },
+);
+
+Then("no active-change delta executes in the child", async function () {
+  const deltas = this.specsScopeChild.cases
+    .map((testCase) => testCase.uri)
+    .filter((uri) => uri.includes(".extracted/changes/"));
+  assert.deepStrictEqual(
+    deltas,
+    [],
+    `no active-change delta may execute in the child, but these did: ` +
+      `${deltas.join(", ")}`,
+  );
+});
+
+Given("a main spec whose scenario fails", async function () {
+  // A throwaway main spec, created here and removed in the When's finally, so
+  // the committed tree never carries it. Its scenario uses a step definition
+  // whose only purpose is to fail (below), which makes the profile fail with a
+  // named scenario rather than an undefined step.
+  const dir = path.join(REPO_ROOT, "openspec", "specs", "__profile_probe__");
+  const specPath = path.join(dir, "spec.md");
+  const scenarioName = "A main-spec probe fails the profile";
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    specPath,
+    [
+      "# __profile_probe__",
+      "",
+      "## Purpose",
+      "",
+      "A throwaway main spec. It exists only while the self-check scenario runs",
+      "and is removed again before the scenario ends.",
+      "",
+      "### Requirement: The main-spec profile fails when a main spec fails",
+      "",
+      "The probe requirement exists only to make the profile fail.",
+      "",
+      `#### Scenario: ${scenarioName}`,
+      "",
+      "```gherkin",
+      "Given the main-spec probe scenario deliberately fails",
+      "```",
+      "",
+    ].join("\n"),
+  );
+  this.profileProbe = {
+    dir,
+    specPath,
+    scenarioName,
+    relativeSpecPath: path.join(
+      "openspec",
+      "specs",
+      "__profile_probe__",
+      "spec.md",
+    ),
+  };
+});
+
+Given("the main-spec probe scenario deliberately fails", async function () {
+  // Reached only from the throwaway probe spec above: the run must fail
+  // because a main spec failed, not because a step was undefined.
+  throw new Error(
+    "the main-spec probe scenario deliberately fails: the specs profile must " +
+      "report this scenario and fail the run",
+  );
+});
+
+Then("the run fails", async function () {
+  const { run, mode } = this.specsProfileRun;
+  assert.strictEqual(
+    mode,
+    "live",
+    "a failing main spec needs a real run, not a composition dry run",
+  );
+  assert.notStrictEqual(
+    run.code,
+    0,
+    "the specs profile must fail when a main spec fails; it exited 0.\n" +
+      `Output:\n${tailOf(`${run.stdout}\n${run.stderr}`)}`,
+  );
+});
+
+Then("the failure names the failing main-spec scenario", async function () {
+  const { run } = this.specsProfileRun;
+  const output = `${run.stdout || ""}\n${run.stderr || ""}`;
+  assert.ok(
+    output.includes(this.profileProbe.scenarioName),
+    `the failure must name the failing main-spec scenario ` +
+      `"${this.profileProbe.scenarioName}".\nOutput:\n${tailOf(output)}`,
+  );
+  // And it must fail because that main spec failed, not because a step was
+  // undefined or the profile could not boot.
+  assert.match(
+    output,
+    /deliberately fails/i,
+    `the failure must be the probe scenario's own failure, not an undefined ` +
+      `step or a boot error.\nOutput:\n${tailOf(output)}`,
+  );
+  assert.doesNotMatch(
+    output,
+    /Undefined scenarios/,
+    `no step may be undefined in the specs profile.\nOutput:\n${tailOf(output)}`,
+  );
+  console.log(
+    `[self] the specs profile failed naming "${this.profileProbe.scenarioName}"; ` +
+      "the probe main spec is removed again",
   );
 });

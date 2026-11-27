@@ -12,7 +12,12 @@
     "build": "pnpm --filter web build",
     "build:web": "pnpm --filter web build",
     "seed:auth": "node --experimental-strip-types scripts/seed-auth.ts",
+    "deploy:check": "node --experimental-strip-types scripts/check-deployment.ts",
+    "release": "node --experimental-strip-types scripts/release.ts",
+    "smoke:production": "node --experimental-strip-types scripts/smoke-production.ts",
     "test:scripts": "node --experimental-strip-types --test scripts/*.test.ts",
-    "test:acceptance": "cd acceptance-tests && npm test"
+    "test:acceptance": "cd acceptance-tests && npm test",
+    "lint:specs": "cd acceptance-tests && npm run lint:specs",
+    "test:specs": "cd acceptance-tests && npm run test:specs"
   }
 }

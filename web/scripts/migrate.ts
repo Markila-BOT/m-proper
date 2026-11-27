@@ -1,6 +1,11 @@
 // web/scripts/migrate.ts
 /**
- * Applies Drizzle migrations over the DIRECT (non-pooled) Postgres connection.
+ * Applies Drizzle migrations over the SESSION POOLER Postgres connection.
+ *
+ * `DIRECT_DATABASE_URL` is the IPv4-reachable session pooler on port 5432
+ * (`aws-0-<region>.pooler.supabase.com`). The runtime `DATABASE_URL` is the
+ * transaction pooler on port 6543, which does not preserve the session
+ * semantics a migration needs.
  *
  * Two rules are load-bearing (ADR-0011):
  *
@@ -19,7 +24,8 @@
  * value.
  *
  * `DIRECT_DATABASE_URL` is required and `DATABASE_URL` is never used as a
- * fallback: the runtime URL is pooled and is not a migration target.
+ * fallback: the runtime URL is the transaction pooler and is not a migration
+ * target.
  *
  * Frozen baseline: `db/migrations/0000_baseline.sql` reproduces the schema the
  * sqlx migration history already applied. Its journal entry is checked in, and
@@ -50,8 +56,9 @@ function requireDirectDatabaseUrl(
   const url = env.DIRECT_DATABASE_URL?.trim()
   if (!url) {
     throw new Error(
-      'DIRECT_DATABASE_URL is required: migrations run over the direct (non-pooled) Postgres connection. ' +
-        'Refusing to fall back to DATABASE_URL, which is the pooled runtime URL.',
+      'DIRECT_DATABASE_URL is required: migrations run over the session pooler ' +
+        'Postgres connection on port 5432. ' +
+        'Refusing to fall back to DATABASE_URL, which is the transaction-pooler runtime URL.',
     )
   }
   return url
@@ -113,7 +120,7 @@ async function main(): Promise<void> {
     throw new Error(`No migrations found in ${MIGRATIONS_FOLDER}.`)
   }
 
-  // The direct connection handles one statement stream; migrations are serial.
+  // The session connection handles one statement stream; migrations are serial.
   const sql = postgres(url, { max: 1, onnotice: () => undefined })
   try {
     if (await adoptFrozenBaseline(sql, baseline)) {

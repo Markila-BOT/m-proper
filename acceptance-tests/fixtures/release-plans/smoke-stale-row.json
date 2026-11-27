@@ -1,0 +1,16 @@
+{
+  "smoke": {
+    "existingRows": [
+      {
+        "id": "stub-stale-1",
+        "name": "m-proper-smoke stale property",
+        "marker": true
+      },
+      {
+        "id": "stub-foreign-1",
+        "name": "Central Park Apartments",
+        "marker": false
+      }
+    ]
+  }
+}

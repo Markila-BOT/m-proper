@@ -1,0 +1,51 @@
+{
+  "commit": {
+    "gated": "4f1c2b9a8e7d6c5b4a39281706f5e4d3c2b1a090",
+    "masterTip": "4f1c2b9a8e7d6c5b4a39281706f5e4d3c2b1a090"
+  },
+  "endpoints": {
+    "origin": "{{STUB}}",
+    "vercelApi": "{{STUB}}",
+    "supabase": "{{STUB}}"
+  },
+  "connections": {
+    "runtime": "env",
+    "migration": "env"
+  },
+  "gates": {
+    "install": "pass",
+    "lint": "pass",
+    "typecheck": "pass",
+    "unit": "pass",
+    "build": "pass",
+    "specLint": "pass",
+    "acceptance": "pass"
+  },
+  "backup": {
+    "result": "pass",
+    "artifact": "github-artifact:m-proper-release-backup"
+  },
+  "migration": {
+    "result": "pass"
+  },
+  "deployments": [
+    {
+      "id": "dpl_current",
+      "sha": "4f1c2b9a8e7d6c5b4a39281706f5e4d3c2b1a090",
+      "state": "READY"
+    }
+  ],
+  "previousDeployment": {
+    "id": "dpl_previous",
+    "sha": "0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b"
+  },
+  "smoke": {
+    "runMarker": "m-proper-smoke",
+    "accountEmail": "smoke-account@m-proper.example",
+    "health": 200,
+    "propertiesUnauthenticated": 401,
+    "signUp": "refused",
+    "existingRows": [],
+    "failStep": null
+  }
+}

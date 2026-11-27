@@ -7,7 +7,7 @@
  *   created on first use and a missing `DATABASE_URL` fails that request with a
  *   clear configuration error instead of breaking the module graph.
  * - This URL is pooled, so prepared statements are disabled. Migrations use
- *   `scripts/migrate.ts` and the direct URL; nothing here ever migrates.
+ *   `scripts/migrate.ts` and the session-pooler URL; nothing here ever migrates.
  */
 import { drizzle } from 'drizzle-orm/postgres-js'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'

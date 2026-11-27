@@ -32,6 +32,7 @@ const {
 } = require('./harness');
 const { assertServerEnvironment } = require('./preflight');
 const { loadAcceptanceEnv, webProcessEnvironment } = require('./env');
+const { removeRunFixtures } = require('./production-fixtures');
 const authState = require('./auth-state');
 const identities = require('./identities');
 const {
@@ -242,6 +243,12 @@ After(async function () {
   // are killed here whichever way the scenario ended, before the smoke rows
   // are swept. Forged cookie jars are closed too.
   await stopScenarioProbeApps(this).catch(() => {});
+  // The release/smoke scenarios' stub production world is in-process, so it is
+  // closed here whichever way the scenario ended.
+  if (this.releaseStub) {
+    await this.releaseStub.close().catch(() => {});
+    this.releaseStub = null;
+  }
   for (const context of this.httpContexts || []) {
     await api.closeContext(context);
   }
@@ -289,6 +296,9 @@ AfterAll(async function () {
   await api.closeAllContexts();
   await stopAllSpawnedProcesses();
   console.error('[harness] the app is stopped; nothing left listening on the harness port');
+  // Merged deployment declarations and release plans were written to a
+  // run-scoped temporary directory; they never survive the run.
+  removeRunFixtures();
   // Registered post-teardown checks ("gone after the run" contracts): each
   // prints PASS, or prints FAIL and marks the run's exit code non-zero.
   await runPostTeardownChecks();

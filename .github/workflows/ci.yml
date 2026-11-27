@@ -1,0 +1,64 @@
+name: CI
+
+# Pull requests only. The lean gate: install, lint, typecheck, unit tests,
+# build, and spec lint. The acceptance suite (`test:specs`) runs once per
+# release in the Release workflow's verify job, not here: it writes to the
+# development database and would contend with concurrent PRs, and Free GitHub
+# minutes are finite (design §5).
+
+on:
+  pull_request:
+    branches:
+      - master
+      - release
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Pull request gates
+    runs-on: ubuntu-latest
+    # The `test` environment holds the development identifiers the build and
+    # unit tests read. Production secrets are scoped to `production` and are
+    # not available here (proven in task 5.3).
+    environment: test
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter web lint
+
+      - name: Typecheck
+        run: pnpm --filter web exec tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm --filter web test:unit
+
+      - name: Build
+        run: pnpm --filter web build
+
+      - name: Install acceptance tooling
+        working-directory: acceptance-tests
+        run: npm ci
+
+      - name: Spec lint
+        run: npm run lint:specs

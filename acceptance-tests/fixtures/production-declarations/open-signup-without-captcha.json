@@ -1,0 +1,6 @@
+{
+  "auth": {
+    "productionSignup": "open",
+    "captcha": null
+  }
+}

@@ -69,4 +69,4 @@ The app is one deployable unit after `fullstack-tanstack`, but it has no product
 6. A pre-release dump is stored off-machine and its location is recorded.
 7. No paid plan is active; the production declaration records Hobby and Free.
 8. One rollback to the previous deployment is exercised end to end.
-9. `general-ledger` is gone and the bundle digest and location are recorded.
+9. `general-ledger` is gone; the bundle was explicitly waived by the user on 2026-11-27, and the deletion date is recorded.

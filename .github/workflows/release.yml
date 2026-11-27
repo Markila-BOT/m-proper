@@ -1,0 +1,137 @@
+name: Release
+
+# One manual dispatch takes the tip of `master` to production. Two jobs:
+#
+#   verify   the full release gate on the `test` environment: install, lint,
+#            typecheck, unit tests, build, spec lint, and the main-spec
+#            acceptance run (`test:specs`). It never touches production.
+#   release  the mutating stages on the `production` environment: the
+#            deployment check, the pg_dump, the off-machine dump, the
+#            migration, the `release` fast-forward, the deployment wait, and
+#            the live smoke.
+#
+# The required reviewers on the `production` environment are configured in
+# repository settings (task 5.4), not here. The `release` job has
+# `contents: write` only so the workflow token can fast-forward `release`.
+# Nothing here creates an environment or changes branch protection.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Release gate
+    runs-on: ubuntu-latest
+    environment: test
+    concurrency:
+      group: release-verify-${{ github.ref }}
+      cancel-in-progress: false
+    timeout-minutes: 90
+    env:
+      # The acceptance suite reads acceptance-tests/.env.local. The `test`
+      # environment holds it as one secret so the harness sees the same
+      # shape an operator uses locally. It never reaches the release job.
+      ACCEPTANCE_ENV_FILE: ${{ secrets.ACCEPTANCE_ENV_FILE }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Write the acceptance environment
+        working-directory: acceptance-tests
+        run: |
+          umask 077
+          printf '%s\n' "$ACCEPTANCE_ENV_FILE" > .env.local
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install acceptance tooling
+        working-directory: acceptance-tests
+        run: npm ci
+
+      - name: Install Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      # `--mode=gate` runs the fixed gate order and the master-tip check
+      # through the release command itself, then stops before any mutation.
+      - name: Release gate
+        run: pnpm run release -- --mode=gate
+
+  release:
+    name: Deploy and smoke
+    needs: verify
+    runs-on: ubuntu-latest
+    # Required reviewers are set on the `production` environment in
+    # repository settings; the job waits for their approval before running.
+    environment: production
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      # Production identifiers and credentials. The service-role key is
+      # confined to this job; the database URLs are the production poolers.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_JWKS_URL }}
+      SUPABASE_JWT_ISSUER: ${{ secrets.SUPABASE_JWT_ISSUER }}
+      SUPABASE_JWT_AUD: ${{ secrets.SUPABASE_JWT_AUD }}
+      SMOKE_ACCOUNT_EMAIL: ${{ secrets.SMOKE_ACCOUNT_EMAIL }}
+      SMOKE_ORIGIN: ${{ vars.SMOKE_ORIGIN }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      # The pre-release dump must land off-machine before the migration.
+      # `RELEASE_DUMP_UPLOAD_COMMAND` is a shell command; `{dump}` is replaced
+      # with the dump file path (for example `aws s3 cp {dump} s3://…`).
+      RELEASE_DUMP_UPLOAD_COMMAND: ${{ vars.RELEASE_DUMP_UPLOAD_COMMAND }}
+      RELEASE_DUMP_LOCATION: ${{ vars.RELEASE_DUMP_LOCATION }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # The fast-forward needs the history and the release branch. The
+          # checkout is the dispatch SHA, not `master`'s current tip: the
+          # release command aborts if `master` moved after the gate.
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure pg_dump is available
+        run: command -v pg_dump || sudo apt-get install -y postgresql-client
+
+      # The deployment check runs inside the release command, before the
+      # backup. `--mode=mutating` rechecks the master tip, dumps, migrates,
+      # advances `release`, waits for the matching Vercel deployment, and
+      # runs the live smoke. It never runs a down migration.
+      - name: Backup, migrate, advance, deploy, smoke
+        run: pnpm run release -- --mode=mutating

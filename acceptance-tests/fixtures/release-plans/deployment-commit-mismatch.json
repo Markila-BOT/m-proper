@@ -1,0 +1,9 @@
+{
+  "deployments": [
+    {
+      "id": "dpl_other_commit",
+      "sha": "7d6c5b4a39281706f5e4d3c2b1a0909e8d7c6b5a",
+      "state": "READY"
+    }
+  ]
+}

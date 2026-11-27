@@ -1,0 +1,8 @@
+{
+  "supabase": {
+    "redirectAllowlist": [
+      "https://m-proper.vercel.app",
+      "https://*-git-*.vercel.app"
+    ]
+  }
+}
