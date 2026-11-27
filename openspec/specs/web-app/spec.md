@@ -42,16 +42,6 @@ Given the user has recorded transactions and reloads the application
 Then those transactions are still available in the UI
 ```
 
-### Requirement: API base configuration
-The web application MUST call the properties API using a configurable base URL so the Rust API host/port can differ between local development and deployment without code changes.
-
-#### Scenario: Configurable API host
-
-```gherkin
-Given the API base URL is configured for the environment
-Then property list, create, and delete requests target that base URL
-```
-
 ### Requirement: An unreachable API is named, not zeroed
 
 When the properties API is unreachable, the web application MUST distinguish that condition from an empty ledger: one shared unreachable state MUST appear at the property rail, the properties register, and the totals strip, naming the problem and the recovery in the application's own voice. The state MUST NOT be a modal or a transient notification, and the silent zero — empty lists with ₱0.00 figures as though the ledger were merely empty — MUST NOT render unaccompanied by that state.
@@ -177,24 +167,24 @@ Then the session ends and a protected screen sends the visitor to sign in
 
 ### Requirement: API requests carry the landlord's access token
 
-Every API request MUST carry the landlord's **Access token** as a Bearer credential. On a 401 the client MUST refresh the session once and retry; a second 401, or a refresh failure, MUST sign the landlord out. A server-side auth outage MUST surface as the app's unreachable state, not as a sign-out or an empty record.
+Every properties request MUST carry the landlord's Supabase session cookie, and the server MUST resolve the identity from it. When the access token has expired, the **server** MUST refresh the session and answer with rotated cookies before serving the request; the browser does not refresh, and no token is readable from script. A session that cannot be refreshed MUST sign the landlord out. A server-side auth outage — including an unreachable key set — MUST surface as the app's unreachable state, not as a sign-out or an empty record.
 
 #### Scenario: A valid token reaches the API
 
 ```gherkin
 Given a signed-in landlord
 When the app requests the properties list
-Then the request carries the access token
+Then the request carries the session cookie
 And the response is accepted
 ```
 
 #### Scenario: An expired token refreshes once and retries
 
 ```gherkin
-Given the access token has expired and the refresh token is valid
+Given the session's access token has expired and the refresh token is valid
 When the app makes a request
-Then the client refreshes once and retries
-And the retried request succeeds
+Then the server refreshes the session once and answers with rotated cookies
+And the request succeeds without a second client round trip
 ```
 
 #### Scenario: A revoked session signs out
@@ -225,4 +215,17 @@ Given a signed-in landlord with properties and a ledger on screen
 When the landlord signs out
 Then the visible ledger, property list, and cached queries are cleared
 And the next account does not see the previous landlord's data flash on screen
+```
+
+### Requirement: Property calls stay on the app's origin
+
+The web application MUST call the properties routes on its own origin, so no API host or port is configured for a deployment, and local development MUST work without a base URL. No runtime override MAY redirect the calls.
+
+#### Scenario: Same-origin calls need no configured host
+
+```gherkin
+Given the web application is deployed at its production origin
+When the app requests the properties list
+Then the request targets the same origin
+And no separate API base URL was configured
 ```

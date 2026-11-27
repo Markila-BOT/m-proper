@@ -8,7 +8,7 @@ TBD
 
 ### Requirement: Direct dependencies declare explicit version ranges
 
-Every direct dependency declared in `web/package.json`, `api/Cargo.toml`, and the root `package.json` MUST carry an explicit version constraint, MUST NOT use a dist-tag or any other unbounded specifier, and MUST be referenced by the repository's source, configuration, build, or test files.
+Every direct dependency declared in `web/package.json` and the root `package.json` MUST carry an explicit version constraint, MUST NOT use a dist-tag or any other unbounded specifier, and MUST be referenced by the repository's source, configuration, build, or test files.
 
 #### Scenario: Manifest scan finds no dist-tags
 
@@ -50,38 +50,30 @@ Then one accepted record states the explicit-range rule and the per-major review
 And every deferred major appears there with its reopening condition
 ```
 
-### Requirement: API contract is unchanged by dependency upgrades
+### Requirement: The properties contract is guarded by shared types
 
-After any change to the API or its dependencies, regenerating the OpenAPI document MUST produce the same committed contract: no path added or removed, and no property, required flag, or type changed.
+The route handlers and the client MUST share the domain types, so the type check fails when a request or response shape drifts, and the acceptance suite MUST pin the envelope and status codes with a round trip. Message text is not contractual.
 
-#### Scenario: Regenerated OpenAPI document matches the committed contract
-
-```gherkin
-Given the API built with its current dependencies
-When its OpenAPI document is regenerated
-Then the regenerated document matches the committed one in paths and schemas
-```
-
-#### Scenario: Properties round-trip through the running API
+#### Scenario: Properties round-trip through the running app
 
 ```gherkin
-Given the API running against the configured database
-When a property is created, listed, and deleted through the API
+Given the app running against the configured database
+When a property is created, listed, and deleted through the routes
 Then each response carries the success envelope with camelCase fields
 And the property is gone from the list after the delete
 ```
 
-### Requirement: Build and check commands stay green
-
-The documented check and build commands MUST succeed at the committed state of the repository.
-
-#### Scenario: Rust check gate
+#### Scenario: A drifted response shape fails the type check
 
 ```gherkin
-Given the API at its committed state
-When the API check command runs
-Then it completes without errors
+Given a route response no longer matches the shared domain type
+When the type check runs
+Then it fails and names the mismatch
 ```
+
+### Requirement: Node check and build gates stay green
+
+The documented check and build commands MUST succeed at the committed state of the repository.
 
 #### Scenario: Web build gate
 
@@ -89,4 +81,12 @@ Then it completes without errors
 Given the web application at its committed state
 When the web production build runs
 Then the client and server builds complete without errors
+```
+
+#### Scenario: Type check gate
+
+```gherkin
+Given the web application at its committed state
+When the TypeScript check runs
+Then it completes without errors
 ```
