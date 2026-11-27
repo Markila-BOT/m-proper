@@ -9,7 +9,8 @@ context: |
   Architecture: one TanStack Start app owns the pages, the auth server functions, and the /api routes. Drizzle owns the schema and migrations over Supabase Postgres. The Supabase session cookie is the identity. No Rust service exists.
   Wire format: JSON envelope { success, message, data? } with camelCase fields.
   Monorepo: web/ (TanStack Start); there is no api/ package.
-  DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL. Migrations use DIRECT_DATABASE_URL, the non-pooled connection.
+  DATABASE_URL must be a postgresql:// URI from Supabase Database settings, not the https project URL. Migrations and the pre-release dump use DIRECT_DATABASE_URL, the session-pooler connection on port 5432.
+  Deployment: Vercel Hobby plus Supabase Free; production branch release, region sin1, canonical origin recorded in deploy/production.json. Release with pnpm run release (gates, pg_dump, migrate, release branch, deployment-SHA wait, live smoke); check with pnpm run deploy:check and pnpm run smoke:production. The main-spec release gate is cd acceptance-tests && npm run test:specs.
   Conventional commits. Prefer small, focused changes.
 
   Agents: Route source implementation to the senior-dev subagent and
