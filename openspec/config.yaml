@@ -3,7 +3,7 @@ schema: intent-driven
 context: |
   Product: m-proper — landlord property income/expense tracker.
   Domain: properties and income/expense transactions; financial records are sensitive.
-  Stack: one TanStack Start app (React Query, Tailwind) over Supabase Postgres; pnpm for JS.
+  Stack: one TanStack Start app (React 19, Vite, TypeScript, Tailwind, React Query, Zustand) over Supabase Postgres; Drizzle and postgres for data, jose for token verification, Nitro for the production build; pnpm workspace.
   Tooling: pnpm --filter web build, pnpm --filter web test:unit, and the Drizzle migrate step.
 
   Architecture: one TanStack Start app owns the pages, the auth server functions, and the /api routes. Drizzle owns the schema and migrations over Supabase Postgres. The Supabase session cookie is the identity. No Rust service exists.
